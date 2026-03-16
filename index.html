@@ -3,645 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maaz International CRM | Core Systems</title>
+    <title>Agent Sales CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:,">
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        [data-lucide] { width: 1.25rem; height: 1.25rem; }
+        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        [v-cloak] { display: none; }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-slate-900 overflow-hidden">
+<body class="bg-gray-50 font-sans text-gray-900">
 
-    <div id="app" class="h-screen flex flex-col">
-        <!-- Loading State Overlay -->
-        <div id="loading-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f172a] text-white">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mb-6"></div>
-            <p class="animate-pulse tracking-widest uppercase text-xs font-bold text-blue-400">Synchronizing Maaz Cloud...</p>
-        </div>
-
-        <div id="main-container" class="hidden h-full flex overflow-hidden">
-            <!-- Navigation Sidebar -->
-            <aside id="sidebar" class="w-72 bg-[#0f172a] flex flex-col shadow-2xl relative z-10 shrink-0">
-                <div class="p-8 border-b border-white/5">
-                    <div class="flex items-center gap-3 mb-2 text-left">
-                        <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
-                            <i data-lucide="shield-check" class="text-white"></i>
-                        </div>
-                        <h1 class="text-xl font-black text-white tracking-tighter leading-tight uppercase">MAAZ<br/><span class="text-blue-400 font-light text-sm uppercase tracking-[0.2em]">International</span></h1>
-                    </div>
-                </div>
-                
-                <nav id="nav-links" class="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
-                    <!-- Nav items injected by JS -->
-                </nav>
-
-                <div class="p-6 bg-white/5 border-t border-white/5" id="user-profile-section">
-                    <!-- Profile injected by JS -->
-                </div>
-            </aside>
-
-            <!-- Main Workspace -->
-            <main class="flex-1 overflow-y-auto p-12 bg-[#f8fafc]">
-                <div id="content-area" class="max-w-7xl mx-auto animate-fade-in">
-                    <!-- Views injected here -->
-                </div>
-            </main>
-        </div>
-
-        <!-- Login Portal Overlay -->
-        <div id="login-portal" class="hidden fixed inset-0 z-40 flex items-center justify-center bg-[#0f172a] p-6">
-            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>
-            <div class="max-w-xl w-full bg-white rounded-[48px] shadow-2xl overflow-hidden relative">
-                <div class="bg-[#1e293b] p-12 text-center text-white relative">
-                    <div class="bg-blue-600 w-20 h-20 rounded-[28px] flex items-center justify-center mx-auto mb-8 shadow-2xl rotate-3">
-                        <i data-lucide="shield-check" style="width: 40px; height: 40px;"></i>
-                    </div>
-                    <h2 class="text-4xl font-black tracking-tighter mb-2 uppercase">MAAZ</h2>
-                    <p class="text-blue-400 font-black text-[10px] uppercase tracking-[0.5em] opacity-80">Core Systems Login</p>
-                </div>
-                
-                <div class="p-12 space-y-8">
-                    <div class="flex p-2 bg-slate-100 rounded-3xl border border-slate-200">
-                        <button onclick="setLoginRole('admin')" id="role-admin" class="role-btn flex-1 py-3 text-xs font-black rounded-2xl transition-all uppercase tracking-widest text-slate-400">Admin</button>
-                        <button onclick="setLoginRole('agent')" id="role-agent" class="role-btn flex-1 py-3 text-xs font-black rounded-2xl transition-all uppercase tracking-widest bg-white text-blue-600 shadow-xl">Agent</button>
-                        <button onclick="setLoginRole('manager')" id="role-manager" class="role-btn flex-1 py-3 text-xs font-black rounded-2xl transition-all uppercase tracking-widest text-slate-400">Manager</button>
-                    </div>
-
-                    <form id="login-form" class="space-y-6">
-                        <div id="login-error" class="hidden bg-red-50 text-red-600 p-5 rounded-3xl text-[10px] font-black flex items-center gap-3 border border-red-100 uppercase tracking-widest">
-                            <i data-lucide="shield-alert"></i> <span id="error-text"></span>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Access Key</label>
-                            <div class="relative">
-                                <i data-lucide="user" class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300"></i>
-                                <input type="text" id="login-id" class="w-full pl-16 pr-8 py-5 rounded-[24px] border-2 border-slate-100 outline-none text-sm font-bold focus:border-blue-600 bg-slate-50/50" placeholder="Identity ID" required>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Security Cipher</label>
-                            <div class="relative">
-                                <i data-lucide="key-round" class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300"></i>
-                                <input type="password" id="login-pass" class="w-full pl-16 pr-8 py-5 rounded-[24px] border-2 border-slate-100 outline-none text-sm font-bold focus:border-blue-600 bg-slate-50/50" placeholder="••••••••" required>
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-6 rounded-[28px] shadow-2xl transition-all uppercase tracking-[0.3em] text-xs mt-4">Request Access</button>
-                    </form>
-                </div>
+    <!-- Auth Container -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600">Agent Portal</h1>
+                <p class="text-gray-500 mt-2">Sign in to manage your customers</p>
             </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="login-email" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="agent@crm.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="login-password" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••">
+                </div>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Login</button>
+            </form>
+            <div id="auth-error" class="mt-4 text-red-500 text-sm text-center hidden"></div>
         </div>
     </div>
 
+    <!-- Main CRM Container (Hidden by default) -->
+    <div id="app-section" class="hidden">
+        <!-- Sidebar Navigation -->
+        <nav class="bg-white border-b border-gray-200 fixed w-full z-30">
+            <div class="px-3 py-3 lg:px-5 lg:pl-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold text-blue-600 ml-2">Maaz CRM</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="user-display" class="text-sm font-medium text-gray-600"></span>
+                        <button id="logout-btn" class="bg-gray-100 text-gray-700 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-200">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="flex pt-16">
+            <!-- Sidebar -->
+            <aside class="w-64 h-screen fixed bg-white border-r border-gray-200 hidden md:block">
+                <div class="p-4 space-y-2">
+                    <button onclick="switchTab('dashboard')" class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition font-medium" id="nav-dashboard">Dashboard</button>
+                    <button onclick="switchTab('add-customer')" class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition font-medium" id="nav-add-customer">Add Customer</button>
+                    <button onclick="switchTab('customer-list')" class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition font-medium" id="nav-customer-list">Customers</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 md:ml-64 p-6 bg-gray-50 min-h-screen">
+                
+                <!-- Dashboard Section -->
+                <section id="tab-dashboard" class="tab-content">
+                    <h2 class="text-2xl font-bold mb-6">Sales Overview</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <p class="text-sm text-gray-500 font-medium">Total Customers</p>
+                            <h3 id="stat-total-customers" class="text-3xl font-bold text-gray-800">0</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <p class="text-sm text-gray-500 font-medium">Total Enrollment Fees</p>
+                            <h3 id="stat-total-fees" class="text-3xl font-bold text-green-600">$0</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <p class="text-sm text-gray-500 font-medium">Pending Payments (This Month)</p>
+                            <h3 id="stat-pending" class="text-3xl font-bold text-blue-600">0</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Customer Section -->
+                <section id="tab-add-customer" class="tab-content hidden">
+                    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                        <h2 class="text-2xl font-bold mb-6">New Customer Enrollment</h2>
+                        <form id="customer-form" class="space-y-8">
+                            
+                            <!-- Personal Details -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Personal Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" name="name" placeholder="Full Name" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="tel" name="number" placeholder="Phone Number" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="email" name="email" placeholder="Email Address" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="date" name="dob" placeholder="Date of Birth" required class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+
+                            <!-- FSA Information -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">FSA Account Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" name="fsaUserId" placeholder="FSA User ID" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="fsaPassword" placeholder="FSA Password" required class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+
+                            <!-- Loan Information -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Loan Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" name="loanLender" placeholder="Loan Lender" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="number" name="enrollmentFee" placeholder="Enrollment Fee ($)" required class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                                <div class="mt-4">
+                                    <textarea name="mailingAddress" id="mailingAddress" placeholder="Mailing Address" required class="w-full px-4 py-2 border rounded-lg h-24"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Payment Details -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Payment & Card Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <input type="date" name="paymentDate" placeholder="Initial Payment Date" required class="form-input px-4 py-2 border rounded-lg">
+                                    <select name="paymentMode" class="form-input px-4 py-2 border rounded-lg">
+                                        <option value="Card">Card</option>
+                                        <option value="ACH">ACH</option>
+                                        <option value="Wire">Wire Transfer</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="cardDetails" placeholder="Card Number / Details" class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                                <div class="mt-4 flex items-center gap-2">
+                                    <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()">
+                                    <label for="sameAddress" class="text-sm text-gray-600">Billing Address same as Mailing Address</label>
+                                </div>
+                                <div class="mt-2">
+                                    <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-4 py-2 border rounded-lg h-20"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Payment Tenure -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Payment Tenure</h3>
+                                <div class="flex items-center gap-4 mb-4">
+                                    <label class="text-sm text-gray-600">Number of Months:</label>
+                                    <input type="number" id="tenureCount" value="6" min="1" max="24" class="w-20 px-2 py-1 border rounded" onchange="generateTenureFields()">
+                                </div>
+                                <div id="tenure-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- JS generates fields here -->
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-6">
+                                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Customer Enrollment</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Customer List Section -->
+                <section id="tab-customer-list" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6">Manage Customers</h2>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Customer</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Loan Amount</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">FSA ID</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Payment Date</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customer-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- UI Feedback Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 transition-transform duration-300 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl z-50">
+        Message goes here
+    </div>
+
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, query, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Core Environment Configuration ---
-        // Mandatory: Always use global __firebase_config if available.
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "", // Mandatory Rule: Must be empty string, platform injects key.
-                authDomain: "maaz-crm.firebaseapp.com",
-                projectId: "maaz-crm",
-                storageBucket: "maaz-crm.firebasestorage.app",
-                messagingSenderId: "90365984370",
-                appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb",
-                measurementId: "G-LYLH7JHK16"
-            };
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
+            authDomain: "maaz-crm.firebaseapp.com",
+            projectId: "maaz-crm",
+            storageBucket: "maaz-crm.firebasestorage.app",
+            messagingSenderId: "90365984370",
+            appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb",
+            measurementId: "G-LYLH7JHK16"
+        };
 
-        // Standard App ID resolution
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm';
-
-        // Initialize Firebase Services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm-app';
 
-        // --- Application State ---
-        let state = {
-            firebaseUser: null,
-            sessionUser: JSON.parse(localStorage.getItem('maaz_crm_session')) || null,
-            leads: [],
-            agents: [],
-            attendance: [],
-            currentPage: 'dashboard',
-            loginRole: 'agent',
-            isSyncing: false
-        };
+        // DOM Elements
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+        const customerForm = document.getElementById('customer-form');
+        const customerTableBody = document.getElementById('customer-table-body');
+        const userDisplay = document.getElementById('user-display');
 
-        // --- Initialization Lifecycle ---
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initAuth();
-            lucide.createIcons();
-            updateUI();
+        // State
+        let currentUser = null;
+
+        // Auth Logic
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                userDisplay.textContent = `Agent: ${user.email || 'Anonymous'}`;
+                loadDashboardData();
+                loadCustomers();
+                window.switchTab('dashboard');
+            } else {
+                currentUser = null;
+                authSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+            }
         });
 
-        async function initAuth() {
-            try {
-                // Mandatory Rule 3: Auth First (Sign in before any queries)
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Firebase Auth Init Error:", err);
-                // If the error is specific to the API key injection, we retry or wait
-                if (err.code === 'auth/invalid-api-key') {
-                   setTimeout(initAuth, 1000); // Simple backoff if platform injection is slow
-                }
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                state.firebaseUser = user;
-                const loader = document.getElementById('loading-overlay');
-                if (loader) loader.classList.add('hidden');
-                
-                if (user) {
-                    setupListeners();
-                    updateUI();
-                }
-            });
-        }
-
-        function setupListeners() {
-            if (!state.firebaseUser) return;
-
-            // Mandatory Rule 1: Use strict artifacts path for the database
-            const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
-
-            onSnapshot(query(publicPath('agents')), (snap) => {
-                state.agents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                updateUI();
-            }, (err) => console.error("Agent Sync Error:", err));
-
-            if (state.sessionUser) {
-                onSnapshot(query(publicPath('leads')), (snap) => {
-                    state.leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    updateUI();
-                }, (err) => console.error("Leads Sync Error:", err));
-
-                onSnapshot(query(publicPath('attendance')), (snap) => {
-                    state.attendance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    updateUI();
-                }, (err) => console.error("Attendance Sync Error:", err));
-            }
-        }
-
-        // --- UI Rendering Logic ---
-        function updateUI() {
-            const main = document.getElementById('main-container');
-            const portal = document.getElementById('login-portal');
-
-            if (!state.sessionUser) {
-                if (main) main.classList.add('hidden');
-                if (portal) portal.classList.remove('hidden');
-                return;
-            }
-
-            if (main) main.classList.remove('hidden');
-            if (portal) portal.classList.add('hidden');
-            
-            renderSidebar();
-            renderContent();
-            lucide.createIcons();
-        }
-
-        function renderSidebar() {
-            const nav = document.getElementById('nav-links');
-            const profile = document.getElementById('user-profile-section');
-            if (!nav || !profile) return;
-            
-            const role = state.sessionUser.role;
-
-            const items = [
-                { id: 'dashboard', label: 'Executive View', icon: 'layout-dashboard', roles: ['admin', 'manager', 'agent'] },
-                { id: 'add_lead', label: 'New Registration', icon: 'user-plus', roles: ['admin', 'manager', 'agent'] },
-                { id: 'all_leads', label: 'Lead Registry', icon: 'clipboard-list', roles: ['admin', 'manager'] },
-                { id: 'attendance', label: 'Operational Logs', icon: 'activity', roles: ['admin', 'manager', 'agent'] },
-                { id: 'onboarding', label: 'Team HQ', icon: 'user-cog', roles: ['admin'] }
-            ];
-
-            nav.innerHTML = items
-                .filter(i => i.roles.includes(role))
-                .map(i => `
-                    <button onclick="navigate('${i.id}')" class="flex items-center gap-4 w-full p-4 rounded-2xl transition-all duration-300 group ${state.currentPage === i.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-white/50 hover:bg-white/5 hover:text-white'}">
-                        <i data-lucide="${i.icon}" class="${state.currentPage === i.id ? 'scale-110' : ''}"></i>
-                        <span class="text-sm font-bold tracking-tight">${i.label}</span>
-                        ${state.currentPage === i.id ? '<i data-lucide="arrow-up-right" class="ml-auto w-4 h-4 opacity-50"></i>' : ''}
-                    </button>
-                `).join('');
-
-            profile.innerHTML = `
-                <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold shadow-lg text-lg">
-                        ${state.sessionUser.name ? state.sessionUser.name[0].toUpperCase() : 'U'}
-                    </div>
-                    <div class="truncate flex-1 text-left">
-                        <p class="font-bold text-white text-sm tracking-tight">${state.sessionUser.name}</p>
-                        <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest">${state.sessionUser.role}</p>
-                    </div>
-                </div>
-                <button onclick="logout()" class="flex items-center gap-2 text-white/40 hover:text-red-400 transition-all text-xs w-full p-4 mt-2 font-bold uppercase tracking-widest">
-                    <i data-lucide="log-out"></i> Secure Logout
-                </button>
-            `;
-        }
-
-        function renderContent() {
-            const area = document.getElementById('content-area');
-            if (!area) return;
-
-            switch(state.currentPage) {
-                case 'dashboard': area.innerHTML = renderDashboardView(); break;
-                case 'add_lead': area.innerHTML = renderLeadFormView(); break;
-                case 'all_leads': area.innerHTML = renderRegistryView(); break;
-                case 'attendance': area.innerHTML = renderAttendanceView(); break;
-                case 'onboarding': area.innerHTML = renderOnboardingView(); break;
-            }
-        }
-
-        // --- View Component Builders ---
-        function renderDashboardView() {
-            const today = new Date().toISOString().split('T')[0];
-            const visibleLeads = state.sessionUser.role === 'agent' 
-                ? state.leads.filter(l => l.agentId === state.sessionUser.agentId || l.agentId === state.sessionUser.uid)
-                : state.leads;
-
-            const stats = {
-                todaySales: visibleLeads.filter(l => l.paymentDate === today && l.status === 'Sale').length,
-                upcoming: visibleLeads.filter(l => l.paymentDate > today).length,
-                total: visibleLeads.length,
-                volume: visibleLeads.reduce((s, l) => s + Number(l.fees || 0), 0)
-            };
-
-            return `
-                <div class="space-y-12 text-left">
-                    <header class="flex justify-between items-start">
-                        <div class="space-y-1">
-                            <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Portal <span class="text-blue-600">Console</span></h2>
-                            <p class="text-slate-400 font-medium tracking-tight uppercase text-[10px] tracking-[0.2em]">System Node: Online &bull; ${new Date().toLocaleDateString()}</p>
-                        </div>
-                    </header>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        ${statCard("Daily Sales", stats.todaySales, "Conversions", "zap", "from-green-500 to-emerald-600")}
-                        ${statCard("Active Pipeline", stats.upcoming, "Enrollments", "calendar", "from-blue-500 to-indigo-600")}
-                        ${statCard("Total Assets", stats.total, "Managed", "users", "from-slate-700 to-slate-900")}
-                        ${statCard("Net Revenue", '$' + stats.volume.toLocaleString(), "Aggregate", "trending-up", "from-blue-600 to-blue-800")}
-                    </div>
-
-                    <div class="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden text-left">
-                        <div class="p-10 border-b border-slate-50 bg-slate-50/20 flex justify-between items-center">
-                            <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3"><i data-lucide="activity" class="text-blue-600"></i> Active Queue</h3>
-                        </div>
-                        ${renderLeadTable(visibleLeads.slice(0, 5))}
-                    </div>
-                </div>
-            `;
-        }
-
-        function statCard(title, val, sub, icon, color) {
-            return `
-                <div class="bg-white p-8 rounded-[35px] shadow-2xl border border-slate-100 hover:scale-[1.03] transition-all group overflow-hidden relative">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${color} opacity-[0.03] rounded-full -mr-12 -mt-12 transition-all group-hover:scale-150"></div>
-                    <div class="w-14 h-14 rounded-[20px] flex items-center justify-center mb-8 shadow-xl bg-gradient-to-tr text-white ${color}">
-                        <i data-lucide="${icon}"></i>
-                    </div>
-                    <h3 class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">${title}</h3>
-                    <p class="text-4xl font-black text-slate-800 tracking-tighter tabular-nums mb-2 leading-none">${val}</p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${sub}</p>
-                </div>
-            `;
-        }
-
-        function renderLeadTable(leads) {
-            if (leads.length === 0) return `<div class="p-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">No records in cloud cache</div>`;
-            return `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-[#0f172a] text-white/50 text-[10px] uppercase tracking-[0.2em] font-black">
-                            <tr>
-                                <th class="px-10 py-6">Lead Portfolio</th>
-                                <th class="px-10 py-6">Protocol Status</th>
-                                <th class="px-10 py-6">Volume Metrics</th>
-                                <th class="px-10 py-6">Fees</th>
-                                <th class="px-10 py-6">Date</th>
-                                <th class="px-10 py-6 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${leads.map(l => `
-                                <tr class="hover:bg-slate-50 transition-colors group">
-                                    <td class="px-10 py-6">
-                                        <div class="font-black text-slate-800 tracking-tighter text-sm uppercase">${l.name}</div>
-                                        <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest">${l.phone}</div>
-                                    </td>
-                                    <td class="px-10 py-6">
-                                        <span class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${l.status === 'Sale' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${l.status}</span>
-                                    </td>
-                                    <td class="px-10 py-6 text-sm font-black text-slate-800 tabular-nums">$${Number(l.loanAmount || 0).toLocaleString()}</td>
-                                    <td class="px-10 py-6 text-sm font-black text-slate-800 tabular-nums">$${Number(l.fees || 0).toLocaleString()}</td>
-                                    <td class="px-10 py-6 text-[11px] font-bold text-slate-400">${l.paymentDate}</td>
-                                    <td class="px-10 py-6 text-right">
-                                        <button onclick="editLead('${l.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><i data-lucide="edit"></i></button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        function renderRegistryView() {
-            return `
-                <div class="space-y-12 text-left">
-                    <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Lead <span class="text-blue-600">Registry</span></h2>
-                    <div class="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden text-left">
-                        ${renderLeadTable(state.leads)}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderLeadFormView() {
-            return `
-                <div class="max-w-4xl mx-auto pb-20">
-                    <div class="bg-white rounded-[40px] shadow-2xl overflow-hidden text-left border border-slate-100">
-                        <div class="bg-[#0f172a] p-10 text-white flex justify-between items-center">
-                            <h2 class="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-                                <i data-lucide="plus-circle" class="text-blue-500"></i> New Registration
-                            </h2>
-                        </div>
-                        <form id="lead-form" class="p-12 space-y-12">
-                            <section>
-                                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 mb-8 flex items-center gap-2">Identification</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div class="space-y-2">
-                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
-                                        <input type="text" name="name" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</label>
-                                        <input type="text" name="phone" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    </div>
-                                </div>
-                            </section>
-                            <section>
-                                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 mb-8 flex items-center gap-2">Financials</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div class="space-y-2">
-                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Fee Scale ($)</label>
-                                        <input type="number" name="fees" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Date</label>
-                                        <input type="date" name="paymentDate" value="${new Date().toISOString().split('T')[0]}" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    </div>
-                                </div>
-                            </section>
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs">Execute Data Entry</button>
-                        </form>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAttendanceView() {
-            return `
-                <div class="space-y-12 text-left">
-                    <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Operational <span class="text-blue-600">Logs</span></h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div class="lg:col-span-1">
-                            <div class="bg-white p-10 rounded-[40px] shadow-2xl border border-slate-100">
-                                <h3 class="text-lg font-black mb-10 flex items-center gap-3 text-blue-600 uppercase tracking-tighter"><i data-lucide="activity"></i> Log Request</h3>
-                                <form id="attendance-form" class="space-y-8">
-                                    <div class="space-y-3">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</label>
-                                        <input type="date" id="attn-date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/30" required>
-                                    </div>
-                                    <div class="space-y-3">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Key</label>
-                                        <select id="attn-type" class="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 bg-white outline-none focus:border-blue-600 font-black uppercase text-xs">
-                                            <option>Present</option>
-                                            <option>Casual Leave</option>
-                                            <option>Sick Leave</option>
-                                            <option>Holiday</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs">Log Handshake</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2">
-                             <div class="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden">
-                                <div class="p-10 border-b border-slate-50 bg-slate-50/30">
-                                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Historic Sequence</h3>
-                                </div>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left">
-                                        <thead class="bg-[#0f172a] text-white/50 text-[10px] uppercase font-black tracking-widest">
-                                            <tr><th class="px-10 py-6">Timestamp</th><th class="px-10 py-6">Resource</th><th class="px-10 py-6">Protocol</th><th class="px-10 py-6">Auth</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            ${state.attendance.sort((a,b) => b.date.localeCompare(a.date)).map(a => `
-                                                <tr class="border-b border-slate-50">
-                                                    <td class="px-10 py-6 text-xs font-black">${a.date}</td>
-                                                    <td class="px-10 py-6 text-[10px] font-black text-blue-600 uppercase">${a.agentName}</td>
-                                                    <td class="px-10 py-6">
-                                                        <span class="px-3 py-1 bg-slate-100 rounded-full text-[9px] font-black uppercase">${a.type}</span>
-                                                    </td>
-                                                    <td class="px-10 py-6">
-                                                        <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase ${a.status === 'Approved' ? 'bg-green-500 text-white' : 'bg-slate-400 text-white'}">${a.status}</span>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderOnboardingView() {
-            return `
-                <div class="space-y-12 text-left">
-                    <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Team <span class="text-blue-600">HQ</span></h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div class="lg:col-span-1">
-                            <div class="bg-white p-10 rounded-[40px] shadow-2xl border border-slate-100">
-                                <h3 class="text-lg font-black mb-10 flex items-center gap-3 text-blue-600 uppercase tracking-tighter leading-none"><i data-lucide="user-plus"></i> Provision Access</h3>
-                                <form id="onboard-form" class="space-y-6">
-                                    <input type="text" name="name" placeholder="Full Legal Name" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    <input type="text" name="agentId" placeholder="Identity Key (UID)" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    <input type="password" name="password" placeholder="Access Cipher" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-blue-600 bg-slate-50/50" required>
-                                    <select name="role" class="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 outline-none focus:border-blue-600 font-black uppercase text-xs">
-                                        <option value="agent">Agent Unit</option>
-                                        <option value="manager">Manager Unit</option>
-                                    </select>
-                                    <button type="submit" class="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs">Execute Provisioning</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2">
-                            <div class="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden">
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left">
-                                        <thead class="bg-[#0f172a] text-white/50 text-[10px] uppercase font-black tracking-widest">
-                                            <tr><th class="px-10 py-6">Personnel</th><th class="px-10 py-6">Unit</th><th class="px-10 py-6">ID</th><th class="px-10 py-6 text-right">Ops</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            ${state.agents.map(a => `
-                                                <tr class="border-b border-slate-100">
-                                                    <td class="px-10 py-6 font-black text-sm uppercase">${a.name}</td>
-                                                    <td class="px-10 py-6">
-                                                        <span class="px-3 py-1 ${a.role === 'manager' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'} rounded-full text-[9px] font-black uppercase">${a.role}</span>
-                                                    </td>
-                                                    <td class="px-10 py-6 text-xs text-slate-400 font-bold">${a.agentId}</td>
-                                                    <td class="px-10 py-6 text-right">
-                                                        <button onclick="deleteAgent('${a.id}')" class="p-2 text-red-300 hover:text-red-600"><i data-lucide="trash-2"></i></button>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- Controller Action Callbacks ---
-        window.navigate = (page) => {
-            state.currentPage = page;
-            updateUI();
-        };
-
-        window.logout = () => {
-            state.sessionUser = null;
-            localStorage.removeItem('maaz_crm_session');
-            updateUI();
-        };
-
-        window.setLoginRole = (role) => {
-            state.loginRole = role;
-            document.querySelectorAll('.role-btn').forEach(btn => {
-                btn.classList.remove('bg-white', 'text-blue-600', 'shadow-xl');
-                btn.classList.add('text-slate-400');
-            });
-            const active = document.getElementById(`role-${role}`);
-            if (active) {
-                active.classList.add('bg-white', 'text-blue-600', 'shadow-xl');
-                active.classList.remove('text-slate-400');
-            }
-        };
-
-        // --- Data Interaction Handlers ---
-        document.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const form = e.target;
-            const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('auth-error');
+            const btn = document.getElementById('login-btn');
 
-            if (form.id === 'login-form') {
-                const id = document.getElementById('login-id').value;
-                const pass = document.getElementById('login-pass').value;
+            btn.disabled = true;
+            btn.textContent = "Logging in...";
+            errorDiv.classList.add('hidden');
 
-                if (state.loginRole === 'admin') {
-                    if (id === 'Maaz' && pass === 'Maaz') {
-                        loginSuccess({ uid: 'admin-maaz', name: 'Admin Maaz', role: 'admin' });
-                    } else {
-                        loginError("Invalid Admin Credentials");
-                    }
-                    return;
-                }
-
-                const found = state.agents.find(a => a.agentId.toLowerCase() === id.toLowerCase() && a.password === pass && a.role === state.loginRole);
-                if (found) {
-                    loginSuccess({ uid: found.id, agentId: found.agentId, name: found.name, role: found.role });
-                } else {
-                    loginError(`Invalid ${state.loginRole} credentials`);
-                }
-            }
-
-            if (form.id === 'lead-form') {
-                const fd = new FormData(form);
-                const data = Object.fromEntries(fd.entries());
-                const today = new Date().toISOString().split('T')[0];
-                await addDoc(publicPath('leads'), {
-                    ...data,
-                    status: data.paymentDate === today ? 'Sale' : 'Enrollment',
-                    agentId: state.sessionUser.agentId || state.sessionUser.uid,
-                    agentName: state.sessionUser.name,
-                    createdAt: serverTimestamp()
-                });
-                navigate('dashboard');
-            }
-
-            if (form.id === 'attendance-form') {
-                const date = document.getElementById('attn-date').value;
-                const type = document.getElementById('attn-type').value;
-                await addDoc(publicPath('attendance'), {
-                    date, type,
-                    agentId: state.sessionUser.agentId || state.sessionUser.uid,
-                    agentName: state.sessionUser.name,
-                    status: 'Pending',
-                    createdAt: serverTimestamp()
-                });
-                form.reset();
-            }
-
-            if (form.id === 'onboard-form') {
-                const fd = new FormData(form);
-                await addDoc(publicPath('agents'), {
-                    ...Object.fromEntries(fd.entries()),
-                    createdAt: serverTimestamp()
-                });
-                form.reset();
+            try {
+                // For the demo environment, you might need to use signInAnonymously if specific users aren't created
+                // But generally we use Email/Password
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                errorDiv.textContent = "Invalid credentials. If this is a new setup, ensure the user exists in Firebase console.";
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = "Login";
             }
         });
 
-        function loginSuccess(user) {
-            state.sessionUser = user;
-            localStorage.setItem('maaz_crm_session', JSON.stringify(user));
-            setupListeners();
-            updateUI();
-        }
+        logoutBtn.addEventListener('click', () => signOut(auth));
 
-        function loginError(msg) {
-            const errBox = document.getElementById('login-error');
-            const txt = document.getElementById('error-text');
-            if (errBox && txt) {
-                errBox.classList.remove('hidden');
-                txt.innerText = msg;
-                setTimeout(() => errBox.classList.add('hidden'), 3000);
+        // Firestore Logic
+        customerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const formData = new FormData(customerForm);
+            const customerData = Object.fromEntries(formData.entries());
+            
+            // Add metadata
+            customerData.agentId = currentUser.uid;
+            customerData.agentEmail = currentUser.email;
+            customerData.createdAt = new Date().toISOString();
+            
+            // Collect Tenure data
+            const tenures = [];
+            const tenureFields = document.querySelectorAll('.tenure-date-input');
+            tenureFields.forEach((field, index) => {
+                tenures.push({
+                    month: index + 1,
+                    date: field.value,
+                    status: 'pending'
+                });
+            });
+            customerData.paymentTenures = tenures;
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), customerData);
+                showToast("Customer enrolled successfully!");
+                customerForm.reset();
+                window.switchTab('customer-list');
+            } catch (error) {
+                console.error(error);
+                showToast("Error saving customer. Check permissions.");
             }
+        });
+
+        function loadCustomers() {
+            if (!currentUser) return;
+            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snapshot) => {
+                customerTableBody.innerHTML = '';
+                let totalFee = 0;
+                let pendingCount = 0;
+                let count = 0;
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    count++;
+                    totalFee += parseFloat(data.enrollmentFee || 0);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-gray-100 hover:bg-gray-50 transition";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">${data.name}</div>
+                            <div class="text-xs text-gray-500">${data.email} | ${data.number}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">$${data.loanAmount}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600 font-mono">${data.fsaUserId}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${data.paymentDate}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">ACTIVE</span>
+                        </td>
+                    `;
+                    customerTableBody.appendChild(tr);
+                });
+
+                document.getElementById('stat-total-customers').textContent = count;
+                document.getElementById('stat-total-fees').textContent = `$${totalFee.toLocaleString()}`;
+            }, (error) => {
+                console.error("Firestore Error:", error);
+            });
         }
 
-        window.deleteAgent = async (id) => {
-            if (confirm("Decommission this resource node?")) {
-                const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'agents', id));
+        function loadDashboardData() {
+            // Simplified summary calculation is done inside the onSnapshot of loadCustomers for efficiency
+        }
+
+        // UI Helpers
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(n => {
+                n.classList.remove('bg-blue-50', 'text-blue-600');
+                n.classList.add('text-gray-700');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const nav = document.getElementById(`nav-${tabId}`);
+            if (nav) {
+                nav.classList.add('bg-blue-50', 'text-blue-600');
             }
         };
 
-        // Expose state for debugging/console if needed
-        window.state = state;
+        window.toggleBillingAddress = () => {
+            const same = document.getElementById('sameAddress').checked;
+            const mailing = document.getElementById('mailingAddress').value;
+            const billing = document.getElementById('billingAddress');
+            if (same) {
+                billing.value = mailing;
+                billing.readOnly = true;
+                billing.classList.add('bg-gray-100');
+            } else {
+                billing.readOnly = false;
+                billing.classList.remove('bg-gray-100');
+            }
+        };
+
+        window.generateTenureFields = () => {
+            const count = parseInt(document.getElementById('tenureCount').value);
+            const container = document.getElementById('tenure-container');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= count; i++) {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100";
+                div.innerHTML = `
+                    <span class="text-xs font-bold text-gray-400 w-6">#${i}</span>
+                    <input type="date" class="tenure-date-input w-full bg-transparent border-0 focus:ring-0 text-sm" required>
+                `;
+                container.appendChild(div);
+            }
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('translate-y-20');
+            setTimeout(() => toast.classList.add('translate-y-20'), 3000);
+        }
+
+        // Initialize Tenure
+        window.generateTenureFields();
+
     </script>
 </body>
 </html>
