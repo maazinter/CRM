@@ -105,12 +105,12 @@
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, query, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // --- Configuration ---
-        // Using global environment variables to resolve auth/invalid-api-key
+        // --- Core Environment Configuration ---
+        // Mandatory: Always use global __firebase_config if available.
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config) 
             : {
-                apiKey: "", 
+                apiKey: "", // Mandatory Rule: Must be empty string, platform injects key.
                 authDomain: "maaz-crm.firebaseapp.com",
                 projectId: "maaz-crm",
                 storageBucket: "maaz-crm.firebasestorage.app",
@@ -119,10 +119,13 @@
                 measurementId: "G-LYLH7JHK16"
             };
 
+        // Standard App ID resolution
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm';
+
+        // Initialize Firebase Services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm';
 
         // --- Application State ---
         let state = {
@@ -136,7 +139,7 @@
             isSyncing: false
         };
 
-        // --- Initialization ---
+        // --- Initialization Lifecycle ---
         window.addEventListener('DOMContentLoaded', async () => {
             await initAuth();
             lucide.createIcons();
@@ -145,20 +148,25 @@
 
         async function initAuth() {
             try {
-                // Mandatory Rule 3: Auth First with custom token or anonymous login
+                // Mandatory Rule 3: Auth First (Sign in before any queries)
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("Auth Failure:", err);
+                console.error("Firebase Auth Init Error:", err);
+                // If the error is specific to the API key injection, we retry or wait
+                if (err.code === 'auth/invalid-api-key') {
+                   setTimeout(initAuth, 1000); // Simple backoff if platform injection is slow
+                }
             }
 
             onAuthStateChanged(auth, (user) => {
                 state.firebaseUser = user;
                 const loader = document.getElementById('loading-overlay');
                 if (loader) loader.classList.add('hidden');
+                
                 if (user) {
                     setupListeners();
                     updateUI();
@@ -169,26 +177,28 @@
         function setupListeners() {
             if (!state.firebaseUser) return;
 
-            // Mandatory Rule 1: Strict Paths
-            onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'agents')), (snap) => {
+            // Mandatory Rule 1: Use strict artifacts path for the database
+            const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
+
+            onSnapshot(query(publicPath('agents')), (snap) => {
                 state.agents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 updateUI();
-            }, (err) => console.error("Agent Listener Error:", err));
+            }, (err) => console.error("Agent Sync Error:", err));
 
             if (state.sessionUser) {
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'leads')), (snap) => {
+                onSnapshot(query(publicPath('leads')), (snap) => {
                     state.leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     updateUI();
-                }, (err) => console.error("Leads Listener Error:", err));
+                }, (err) => console.error("Leads Sync Error:", err));
 
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'attendance')), (snap) => {
+                onSnapshot(query(publicPath('attendance')), (snap) => {
                     state.attendance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     updateUI();
-                }, (err) => console.error("Attendance Listener Error:", err));
+                }, (err) => console.error("Attendance Sync Error:", err));
             }
         }
 
-        // --- Core UI Controller ---
+        // --- UI Rendering Logic ---
         function updateUI() {
             const main = document.getElementById('main-container');
             const portal = document.getElementById('login-portal');
@@ -261,7 +271,7 @@
             }
         }
 
-        // --- View Builders ---
+        // --- View Component Builders ---
         function renderDashboardView() {
             const today = new Date().toISOString().split('T')[0];
             const visibleLeads = state.sessionUser.role === 'agent' 
@@ -316,7 +326,7 @@
         }
 
         function renderLeadTable(leads) {
-            if (leads.length === 0) return `<div class="p-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">No data records found</div>`;
+            if (leads.length === 0) return `<div class="p-20 text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">No records in cloud cache</div>`;
             return `
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -517,7 +527,7 @@
             `;
         }
 
-        // --- Controller Actions ---
+        // --- Controller Action Callbacks ---
         window.navigate = (page) => {
             state.currentPage = page;
             updateUI();
@@ -542,10 +552,11 @@
             }
         };
 
-        // --- Form Handlers (Delegated) ---
+        // --- Data Interaction Handlers ---
         document.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
+            const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
 
             if (form.id === 'login-form') {
                 const id = document.getElementById('login-id').value;
@@ -572,7 +583,7 @@
                 const fd = new FormData(form);
                 const data = Object.fromEntries(fd.entries());
                 const today = new Date().toISOString().split('T')[0];
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), {
+                await addDoc(publicPath('leads'), {
                     ...data,
                     status: data.paymentDate === today ? 'Sale' : 'Enrollment',
                     agentId: state.sessionUser.agentId || state.sessionUser.uid,
@@ -585,7 +596,7 @@
             if (form.id === 'attendance-form') {
                 const date = document.getElementById('attn-date').value;
                 const type = document.getElementById('attn-type').value;
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), {
+                await addDoc(publicPath('attendance'), {
                     date, type,
                     agentId: state.sessionUser.agentId || state.sessionUser.uid,
                     agentName: state.sessionUser.name,
@@ -597,7 +608,7 @@
 
             if (form.id === 'onboard-form') {
                 const fd = new FormData(form);
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'agents'), {
+                await addDoc(publicPath('agents'), {
                     ...Object.fromEntries(fd.entries()),
                     createdAt: serverTimestamp()
                 });
@@ -624,11 +635,12 @@
 
         window.deleteAgent = async (id) => {
             if (confirm("Decommission this resource node?")) {
+                const publicPath = (coll) => collection(db, 'artifacts', appId, 'public', 'data', coll);
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'agents', id));
             }
         };
 
-        // Custom expose for global handlers
+        // Expose state for debugging/console if needed
         window.state = state;
     </script>
 </body>
