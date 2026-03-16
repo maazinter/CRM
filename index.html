@@ -38,9 +38,8 @@
         </div>
     </div>
 
-    <!-- Main CRM Container (Hidden by default) -->
+    <!-- Main CRM Container -->
     <div id="app-section" class="hidden">
-        <!-- Sidebar Navigation -->
         <nav class="bg-white border-b border-gray-200 fixed w-full z-30">
             <div class="px-3 py-3 lg:px-5 lg:pl-3">
                 <div class="flex items-center justify-between">
@@ -56,7 +55,6 @@
         </nav>
 
         <div class="flex pt-16">
-            <!-- Sidebar -->
             <aside class="w-64 h-screen fixed bg-white border-r border-gray-200 hidden md:block">
                 <div class="p-4 space-y-2">
                     <button onclick="switchTab('dashboard')" class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition font-medium" id="nav-dashboard">Dashboard</button>
@@ -65,10 +63,7 @@
                 </div>
             </aside>
 
-            <!-- Main Content -->
             <main class="flex-1 md:ml-64 p-6 bg-gray-50 min-h-screen">
-                
-                <!-- Dashboard Section -->
                 <section id="tab-dashboard" class="tab-content">
                     <h2 class="text-2xl font-bold mb-6">Sales Overview</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -80,20 +75,14 @@
                             <p class="text-sm text-gray-500 font-medium">Total Enrollment Fees</p>
                             <h3 id="stat-total-fees" class="text-3xl font-bold text-green-600">$0</h3>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-500 font-medium">Pending Payments (This Month)</p>
-                            <h3 id="stat-pending" class="text-3xl font-bold text-blue-600">0</h3>
-                        </div>
                     </div>
                 </section>
 
-                <!-- Add Customer Section -->
                 <section id="tab-add-customer" class="tab-content hidden">
                     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
                         <h2 class="text-2xl font-bold mb-6">New Customer Enrollment</h2>
                         <form id="customer-form" class="space-y-8">
-                            
-                            <!-- Personal Details -->
+                            <!-- Personal Information -->
                             <div>
                                 <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Personal Information</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,47 +90,85 @@
                                     <input type="tel" name="number" placeholder="Phone Number" required class="form-input px-4 py-2 border rounded-lg">
                                     <input type="email" name="email" placeholder="Email Address" required class="form-input px-4 py-2 border rounded-lg">
                                     <input type="date" name="dob" placeholder="Date of Birth" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="drivingLicense" placeholder="Driving License Number" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="ssn" placeholder="SSN Number" required class="form-input px-4 py-2 border rounded-lg">
                                 </div>
-                            </div>
-
-                            <!-- FSA Information -->
-                            <div>
-                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">FSA Account Details</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input type="text" name="fsaUserId" placeholder="FSA User ID" required class="form-input px-4 py-2 border rounded-lg">
-                                    <input type="text" name="fsaPassword" placeholder="FSA Password" required class="form-input px-4 py-2 border rounded-lg">
-                                </div>
-                            </div>
-
-                            <!-- Loan Information -->
-                            <div>
-                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Loan Details</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <input type="text" name="loanLender" placeholder="Loan Lender" required class="form-input px-4 py-2 border rounded-lg">
-                                    <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="form-input px-4 py-2 border rounded-lg">
-                                    <input type="number" name="enrollmentFee" placeholder="Enrollment Fee ($)" required class="form-input px-4 py-2 border rounded-lg">
+                                <!-- New Income & Status Grid -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                    <input type="number" name="annualIncome" placeholder="Annual Gross Income ($)" required class="form-input px-4 py-2 border rounded-lg">
+                                    <select name="taxStatus" required class="form-input px-4 py-2 border rounded-lg">
+                                        <option value="" disabled selected>Tax Filing Status</option>
+                                        <option value="Single">Single</option>
+                                        <option value="Married-Joint">Married Filing Jointly</option>
+                                        <option value="Married-Separate">Married Filing Separately</option>
+                                        <option value="Head-of-Household">Head of Household</option>
+                                        <option value="Qualifying-Widow">Qualifying Widow(er)</option>
+                                    </select>
+                                    <input type="number" name="familySize" placeholder="Family Size" min="1" required class="form-input px-4 py-2 border rounded-lg">
                                 </div>
                                 <div class="mt-4">
                                     <textarea name="mailingAddress" id="mailingAddress" placeholder="Mailing Address" required class="w-full px-4 py-2 border rounded-lg h-24"></textarea>
                                 </div>
                             </div>
 
-                            <!-- Payment Details -->
+                            <!-- FSA Details -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">FSA Account Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" name="fsaUserId" placeholder="FSA User ID" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="fsaPassword" placeholder="FSA Password" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="fsaBackupCode" placeholder="Backup Code" required class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+
+                            <!-- Loan Details -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Loan Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input type="text" name="loanLender" placeholder="Loan Lender" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Enrollment Fee ($)" required class="form-input px-4 py-2 border rounded-lg" oninput="updatePaymentSchedule()">
+                                    
+                                    <select name="processor" required class="form-input px-4 py-2 border rounded-lg">
+                                        <option value="" disabled selected>Select Processor</option>
+                                        <option value="P1">Processor P1</option>
+                                        <option value="P2">Processor P2</option>
+                                        <option value="P3">Processor P3</option>
+                                    </select>
+                                    <input type="text" name="fileNumber" placeholder="File Number" required class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+
+                            <!-- Payment & Card Details -->
                             <div>
                                 <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Payment & Card Details</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <input type="date" name="paymentDate" placeholder="Initial Payment Date" required class="form-input px-4 py-2 border rounded-lg">
-                                    <select name="paymentMode" class="form-input px-4 py-2 border rounded-lg">
+                                    <select name="paymentMode" class="form-input px-4 py-2 border rounded-lg w-full">
                                         <option value="Card">Card</option>
                                         <option value="ACH">ACH</option>
                                         <option value="Wire">Wire Transfer</option>
                                     </select>
+                                    <select name="paymentType" id="paymentType" class="form-input px-4 py-2 border rounded-lg w-full" onchange="updatePaymentSchedule()">
+                                        <option value="Single">Single Shot Payment</option>
+                                        <option value="Installments">Monthly Installments</option>
+                                    </select>
                                 </div>
+                                
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="form-input px-4 py-2 border rounded-lg">
-                                    <input type="text" name="cardDetails" placeholder="Card Number / Details" class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="cardNumber" placeholder="Card Number" class="form-input px-4 py-2 border rounded-lg">
                                 </div>
-                                <div class="mt-4 flex items-center gap-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    <input type="text" name="cardExpiry" placeholder="Expiration Date (MM/YY)" class="form-input px-4 py-2 border rounded-lg">
+                                    <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="form-input px-4 py-2 border rounded-lg">
+                                </div>
+
+                                <div class="mt-6 flex items-center gap-2">
+                                    <input type="checkbox" id="payToday" name="payToday" onchange="updatePaymentSchedule()">
+                                    <label for="payToday" class="text-sm font-medium text-blue-800">Pay 1st Installment (or Single Shot) Today</label>
+                                </div>
+
+                                <div class="mt-6 flex items-center gap-2">
                                     <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()">
                                     <label for="sameAddress" class="text-sm text-gray-600">Billing Address same as Mailing Address</label>
                                 </div>
@@ -150,26 +177,33 @@
                                 </div>
                             </div>
 
-                            <!-- Payment Tenure -->
+                            <!-- Payment Schedule Section -->
                             <div>
-                                <h3 class="text-lg font-semibold text-blue-600 border-b pb-2 mb-4">Payment Tenure</h3>
-                                <div class="flex items-center gap-4 mb-4">
-                                    <label class="text-sm text-gray-600">Number of Months:</label>
-                                    <input type="number" id="tenureCount" value="6" min="1" max="24" class="w-20 px-2 py-1 border rounded" onchange="generateTenureFields()">
+                                <div class="flex items-center justify-between border-b pb-2 mb-4">
+                                    <h3 class="text-lg font-semibold text-blue-600">Payment Schedule / Tenure</h3>
+                                    <span class="text-xs text-gray-400 font-medium italic">*Amounts can be edited individually below</span>
                                 </div>
-                                <div id="tenure-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <!-- JS generates fields here -->
+                                
+                                <div id="tenure-input-group" class="hidden mb-4">
+                                    <div class="flex items-center gap-4">
+                                        <label class="text-sm text-gray-600">Number of Months:</label>
+                                        <input type="number" id="tenureCount" name="tenureCount" value="6" min="2" max="24" class="w-20 px-2 py-1 border rounded" oninput="updatePaymentSchedule()">
+                                        <span id="installmentAmountDisplay" class="text-xs font-bold text-blue-600"></span>
+                                    </div>
+                                </div>
+
+                                <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <!-- Dynamic schedule items generated here -->
                                 </div>
                             </div>
 
                             <div class="flex justify-end pt-6">
-                                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Customer Enrollment</button>
+                                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg">Save Customer Enrollment</button>
                             </div>
                         </form>
                     </div>
                 </section>
 
-                <!-- Customer List Section -->
                 <section id="tab-customer-list" class="tab-content hidden">
                     <h2 class="text-2xl font-bold mb-6">Manage Customers</h2>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -178,33 +212,26 @@
                                 <tr>
                                     <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Customer</th>
                                     <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Loan Amount</th>
-                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">FSA ID</th>
-                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Payment Date</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Processor / File #</th>
+                                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Enrollment Fee</th>
                                     <th class="px-6 py-4 text-sm font-semibold text-gray-600 uppercase">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="customer-table-body">
-                                <!-- Data injected here -->
-                            </tbody>
+                            <tbody id="customer-table-body"></tbody>
                         </table>
                     </div>
                 </section>
-
             </main>
         </div>
     </div>
 
-    <!-- UI Feedback Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 transition-transform duration-300 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl z-50">
-        Message goes here
-    </div>
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 transition-transform duration-300 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl z-50"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
@@ -220,160 +247,109 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm-app';
 
-        // DOM Elements
-        const authSection = document.getElementById('auth-section');
-        const appSection = document.getElementById('app-section');
-        const loginForm = document.getElementById('login-form');
-        const logoutBtn = document.getElementById('logout-btn');
-        const customerForm = document.getElementById('customer-form');
-        const customerTableBody = document.getElementById('customer-table-body');
-        const userDisplay = document.getElementById('user-display');
-
-        // State
         let currentUser = null;
 
-        // Auth Logic
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                authSection.classList.add('hidden');
-                appSection.classList.remove('hidden');
-                userDisplay.textContent = `Agent: ${user.email || 'Anonymous'}`;
-                loadDashboardData();
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                document.getElementById('user-display').textContent = `Agent: ${user.email}`;
                 loadCustomers();
                 window.switchTab('dashboard');
             } else {
                 currentUser = null;
-                authSection.classList.remove('hidden');
-                appSection.classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
             }
         });
 
-        loginForm.addEventListener('submit', async (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            const errorDiv = document.getElementById('auth-error');
             const btn = document.getElementById('login-btn');
-
             btn.disabled = true;
-            btn.textContent = "Logging in...";
-            errorDiv.classList.add('hidden');
-
             try {
-                // For the demo environment, you might need to use signInAnonymously if specific users aren't created
-                // But generally we use Email/Password
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
-                errorDiv.textContent = "Invalid credentials. If this is a new setup, ensure the user exists in Firebase console.";
-                errorDiv.classList.remove('hidden');
+                document.getElementById('auth-error').textContent = "Login failed. Please check credentials.";
+                document.getElementById('auth-error').classList.remove('hidden');
                 btn.disabled = false;
-                btn.textContent = "Login";
             }
         });
 
-        logoutBtn.addEventListener('click', () => signOut(auth));
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-        // Firestore Logic
-        customerForm.addEventListener('submit', async (e) => {
+        document.getElementById('customer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
-
-            const formData = new FormData(customerForm);
+            const formData = new FormData(e.target);
             const customerData = Object.fromEntries(formData.entries());
-            
-            // Add metadata
             customerData.agentId = currentUser.uid;
-            customerData.agentEmail = currentUser.email;
             customerData.createdAt = new Date().toISOString();
-            
-            // Collect Tenure data
-            const tenures = [];
-            const tenureFields = document.querySelectorAll('.tenure-date-input');
-            tenureFields.forEach((field, index) => {
-                tenures.push({
-                    month: index + 1,
-                    date: field.value,
-                    status: 'pending'
+
+            const schedule = [];
+            document.querySelectorAll('.schedule-item').forEach((item, index) => {
+                const dateField = item.querySelector('input[type="date"]');
+                const amountField = item.querySelector('.tenure-amount-input');
+                const isPaid = item.dataset.paid === "true";
+                
+                schedule.push({
+                    installment: index + 1,
+                    amount: parseFloat(amountField.value || 0),
+                    date: isPaid ? new Date().toISOString().split('T')[0] : (dateField ? dateField.value : ""),
+                    status: isPaid ? 'paid' : 'pending'
                 });
             });
-            customerData.paymentTenures = tenures;
+            customerData.paymentSchedule = schedule;
 
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), customerData);
                 showToast("Customer enrolled successfully!");
-                customerForm.reset();
+                e.target.reset();
                 window.switchTab('customer-list');
-            } catch (error) {
-                console.error(error);
-                showToast("Error saving customer. Check permissions.");
+                updatePaymentSchedule();
+            } catch (err) {
+                showToast("Error saving customer.");
             }
         });
 
         function loadCustomers() {
-            if (!currentUser) return;
             const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), orderBy('createdAt', 'desc'));
-            
             onSnapshot(q, (snapshot) => {
-                customerTableBody.innerHTML = '';
-                let totalFee = 0;
-                let pendingCount = 0;
-                let count = 0;
-
-                snapshot.forEach((doc) => {
+                const tbody = document.getElementById('customer-table-body');
+                tbody.innerHTML = '';
+                let totalFee = 0, count = 0;
+                snapshot.forEach(doc => {
                     const data = doc.data();
                     count++;
                     totalFee += parseFloat(data.enrollmentFee || 0);
-                    
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b border-gray-100 hover:bg-gray-50 transition";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4">
-                            <div class="font-medium text-gray-900">${data.name}</div>
-                            <div class="text-xs text-gray-500">${data.email} | ${data.number}</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">$${data.loanAmount}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600 font-mono">${data.fsaUserId}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${data.paymentDate}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">ACTIVE</span>
-                        </td>
-                    `;
-                    customerTableBody.appendChild(tr);
+                    tbody.innerHTML += `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4"><div class="font-medium text-gray-900">${data.name}</div><div class="text-xs text-gray-400">${data.email}</div></td>
+                            <td class="px-6 py-4 text-sm text-gray-600">$${data.loanAmount}</td>
+                            <td class="px-6 py-4 text-sm font-mono text-gray-600">${data.processor || 'N/A'} / #${data.fileNumber || 'N/A'}</td>
+                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">$${data.enrollmentFee}</td>
+                            <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">ACTIVE</span></td>
+                        </tr>`;
                 });
-
                 document.getElementById('stat-total-customers').textContent = count;
                 document.getElementById('stat-total-fees').textContent = `$${totalFee.toLocaleString()}`;
-            }, (error) => {
-                console.error("Firestore Error:", error);
             });
         }
 
-        function loadDashboardData() {
-            // Simplified summary calculation is done inside the onSnapshot of loadCustomers for efficiency
-        }
-
-        // UI Helpers
-        window.switchTab = (tabId) => {
+        window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('.nav-link').forEach(n => {
-                n.classList.remove('bg-blue-50', 'text-blue-600');
-                n.classList.add('text-gray-700');
-            });
-
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            const nav = document.getElementById(`nav-${tabId}`);
-            if (nav) {
-                nav.classList.add('bg-blue-50', 'text-blue-600');
-            }
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-50', 'text-blue-600'));
+            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            document.getElementById(`nav-${id}`).classList.add('bg-blue-50', 'text-blue-600');
         };
 
         window.toggleBillingAddress = () => {
             const same = document.getElementById('sameAddress').checked;
-            const mailing = document.getElementById('mailingAddress').value;
             const billing = document.getElementById('billingAddress');
             if (same) {
-                billing.value = mailing;
+                billing.value = document.getElementById('mailingAddress').value;
                 billing.readOnly = true;
                 billing.classList.add('bg-gray-100');
             } else {
@@ -382,32 +358,88 @@
             }
         };
 
-        window.generateTenureFields = () => {
-            const count = parseInt(document.getElementById('tenureCount').value);
-            const container = document.getElementById('tenure-container');
+        window.updatePaymentSchedule = () => {
+            const type = document.getElementById('paymentType').value;
+            const payToday = document.getElementById('payToday').checked;
+            const fee = parseFloat(document.getElementById('enrollmentFee').value || 0);
+            const container = document.getElementById('schedule-container');
+            const tenureGroup = document.getElementById('tenure-input-group');
+            const amtDisplay = document.getElementById('installmentAmountDisplay');
+            
             container.innerHTML = '';
             
-            for (let i = 1; i <= count; i++) {
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100";
-                div.innerHTML = `
-                    <span class="text-xs font-bold text-gray-400 w-6">#${i}</span>
-                    <input type="date" class="tenure-date-input w-full bg-transparent border-0 focus:ring-0 text-sm" required>
-                `;
-                container.appendChild(div);
+            if (type === 'Single') {
+                tenureGroup.classList.add('hidden');
+                if (payToday) {
+                    container.innerHTML = `
+                        <div class="schedule-item flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200" data-paid="true">
+                            <div class="flex-1">
+                                <span class="text-xs font-bold text-blue-600 uppercase">Single Payment</span>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <span class="text-gray-400 text-sm">$</span>
+                                    <input type="number" step="0.01" class="tenure-amount-input w-24 font-bold text-sm border-b border-transparent focus:border-blue-300 focus:outline-none" value="${fee.toFixed(2)}">
+                                </div>
+                            </div>
+                            <div class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">PAID TODAY</div>
+                        </div>`;
+                } else {
+                    container.innerHTML = `
+                        <div class="schedule-item flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm" data-paid="false">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-400 uppercase">Single Payment</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-gray-400 text-xs">$</span>
+                                    <input type="number" step="0.01" class="tenure-amount-input w-20 text-xs font-bold border-b border-gray-100 focus:border-blue-200 focus:outline-none" value="${fee.toFixed(2)}">
+                                </div>
+                            </div>
+                            <input type="date" class="w-full bg-transparent border-0 text-sm focus:ring-0 p-0" required>
+                        </div>`;
+                }
+            } else {
+                tenureGroup.classList.remove('hidden');
+                const count = parseInt(document.getElementById('tenureCount').value || 2);
+                const perMonth = fee / count;
+                amtDisplay.textContent = `($${perMonth.toFixed(2)} / month default)`;
+                
+                for (let i = 1; i <= count; i++) {
+                    const isFirst = (i === 1);
+                    if (isFirst && payToday) {
+                        container.innerHTML += `
+                            <div class="schedule-item flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200" data-paid="true">
+                                <div class="flex-1">
+                                    <span class="text-xs font-bold text-blue-600 uppercase">Inst. #${i}</span>
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <span class="text-gray-400 text-sm">$</span>
+                                        <input type="number" step="0.01" class="tenure-amount-input w-20 font-bold text-sm border-b border-transparent focus:border-blue-300 focus:outline-none" value="${perMonth.toFixed(2)}">
+                                    </div>
+                                </div>
+                                <div class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">PAID TODAY</div>
+                            </div>`;
+                    } else {
+                        container.innerHTML += `
+                            <div class="schedule-item flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm" data-paid="false">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-400 uppercase">Inst. #${i}</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-gray-400 text-xs">$</span>
+                                        <input type="number" step="0.01" class="tenure-amount-input w-20 text-xs font-bold border-b border-gray-100 focus:border-blue-200 focus:outline-none" value="${perMonth.toFixed(2)}">
+                                    </div>
+                                </div>
+                                <input type="date" class="w-full bg-transparent border-0 text-sm focus:ring-0 p-0" required>
+                            </div>`;
+                    }
+                }
             }
         };
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.remove('translate-y-20');
-            setTimeout(() => toast.classList.add('translate-y-20'), 3000);
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('translate-y-20');
+            setTimeout(() => t.classList.add('translate-y-20'), 3000);
         }
 
-        // Initialize Tenure
-        window.generateTenureFields();
-
+        window.updatePaymentSchedule();
     </script>
 </body>
 </html>
