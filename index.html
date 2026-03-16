@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:,">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -105,20 +106,23 @@
         import { getFirestore, collection, doc, addDoc, onSnapshot, query, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // --- Configuration ---
-        const firebaseConfig = {
-            apiKey: "", // Provided by environment
-            authDomain: "maaz-crm.firebaseapp.com",
-            projectId: "maaz-crm",
-            storageBucket: "maaz-crm.firebasestorage.app",
-            messagingSenderId: "90365984370",
-            appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb",
-            measurementId: "G-LYLH7JHK16"
-        };
+        // Using global environment variables to resolve auth/invalid-api-key
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "", 
+                authDomain: "maaz-crm.firebaseapp.com",
+                projectId: "maaz-crm",
+                storageBucket: "maaz-crm.firebasestorage.app",
+                messagingSenderId: "90365984370",
+                appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb",
+                measurementId: "G-LYLH7JHK16"
+            };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = "maaz-crm";
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm';
 
         // --- Application State ---
         let state = {
@@ -141,7 +145,7 @@
 
         async function initAuth() {
             try {
-                // Rule 3: Auth First
+                // Mandatory Rule 3: Auth First with custom token or anonymous login
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -153,7 +157,8 @@
 
             onAuthStateChanged(auth, (user) => {
                 state.firebaseUser = user;
-                document.getElementById('loading-overlay').classList.add('hidden');
+                const loader = document.getElementById('loading-overlay');
+                if (loader) loader.classList.add('hidden');
                 if (user) {
                     setupListeners();
                     updateUI();
@@ -164,22 +169,22 @@
         function setupListeners() {
             if (!state.firebaseUser) return;
 
-            // Rule 1: Strict Paths
+            // Mandatory Rule 1: Strict Paths
             onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'agents')), (snap) => {
                 state.agents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 updateUI();
-            });
+            }, (err) => console.error("Agent Listener Error:", err));
 
             if (state.sessionUser) {
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'leads')), (snap) => {
                     state.leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     updateUI();
-                });
+                }, (err) => console.error("Leads Listener Error:", err));
 
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'attendance')), (snap) => {
                     state.attendance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     updateUI();
-                });
+                }, (err) => console.error("Attendance Listener Error:", err));
             }
         }
 
@@ -189,13 +194,13 @@
             const portal = document.getElementById('login-portal');
 
             if (!state.sessionUser) {
-                main.classList.add('hidden');
-                portal.classList.remove('hidden');
+                if (main) main.classList.add('hidden');
+                if (portal) portal.classList.remove('hidden');
                 return;
             }
 
-            main.classList.remove('hidden');
-            portal.classList.add('hidden');
+            if (main) main.classList.remove('hidden');
+            if (portal) portal.classList.add('hidden');
             
             renderSidebar();
             renderContent();
@@ -205,6 +210,8 @@
         function renderSidebar() {
             const nav = document.getElementById('nav-links');
             const profile = document.getElementById('user-profile-section');
+            if (!nav || !profile) return;
+            
             const role = state.sessionUser.role;
 
             const items = [
@@ -228,7 +235,7 @@
             profile.innerHTML = `
                 <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold shadow-lg text-lg">
-                        ${state.sessionUser.name[0].toUpperCase()}
+                        ${state.sessionUser.name ? state.sessionUser.name[0].toUpperCase() : 'U'}
                     </div>
                     <div class="truncate flex-1 text-left">
                         <p class="font-bold text-white text-sm tracking-tight">${state.sessionUser.name}</p>
@@ -243,24 +250,14 @@
 
         function renderContent() {
             const area = document.getElementById('content-area');
-            const role = state.sessionUser.role;
+            if (!area) return;
 
             switch(state.currentPage) {
-                case 'dashboard':
-                    area.innerHTML = renderDashboardView();
-                    break;
-                case 'add_lead':
-                    area.innerHTML = renderLeadFormView();
-                    break;
-                case 'all_leads':
-                    area.innerHTML = renderRegistryView();
-                    break;
-                case 'attendance':
-                    area.innerHTML = renderAttendanceView();
-                    break;
-                case 'onboarding':
-                    area.innerHTML = renderOnboardingView();
-                    break;
+                case 'dashboard': area.innerHTML = renderDashboardView(); break;
+                case 'add_lead': area.innerHTML = renderLeadFormView(); break;
+                case 'all_leads': area.innerHTML = renderRegistryView(); break;
+                case 'attendance': area.innerHTML = renderAttendanceView(); break;
+                case 'onboarding': area.innerHTML = renderOnboardingView(); break;
             }
         }
 
@@ -268,7 +265,7 @@
         function renderDashboardView() {
             const today = new Date().toISOString().split('T')[0];
             const visibleLeads = state.sessionUser.role === 'agent' 
-                ? state.leads.filter(l => l.agentId === state.sessionUser.agentId)
+                ? state.leads.filter(l => l.agentId === state.sessionUser.agentId || l.agentId === state.sessionUser.uid)
                 : state.leads;
 
             const stats = {
@@ -353,6 +350,17 @@
                             `).join('')}
                         </tbody>
                     </table>
+                </div>
+            `;
+        }
+
+        function renderRegistryView() {
+            return `
+                <div class="space-y-12 text-left">
+                    <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Lead <span class="text-blue-600">Registry</span></h2>
+                    <div class="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden text-left">
+                        ${renderLeadTable(state.leads)}
+                    </div>
                 </div>
             `;
         }
@@ -528,8 +536,10 @@
                 btn.classList.add('text-slate-400');
             });
             const active = document.getElementById(`role-${role}`);
-            active.classList.add('bg-white', 'text-blue-600', 'shadow-xl');
-            active.classList.remove('text-slate-400');
+            if (active) {
+                active.classList.add('bg-white', 'text-blue-600', 'shadow-xl');
+                active.classList.remove('text-slate-400');
+            }
         };
 
         // --- Form Handlers (Delegated) ---
@@ -540,7 +550,6 @@
             if (form.id === 'login-form') {
                 const id = document.getElementById('login-id').value;
                 const pass = document.getElementById('login-pass').value;
-                const errBox = document.getElementById('login-error');
 
                 if (state.loginRole === 'admin') {
                     if (id === 'Maaz' && pass === 'Maaz') {
@@ -606,9 +615,11 @@
         function loginError(msg) {
             const errBox = document.getElementById('login-error');
             const txt = document.getElementById('error-text');
-            errBox.classList.remove('hidden');
-            txt.innerText = msg;
-            setTimeout(() => errBox.classList.add('hidden'), 3000);
+            if (errBox && txt) {
+                errBox.classList.remove('hidden');
+                txt.innerText = msg;
+                setTimeout(() => errBox.classList.add('hidden'), 3000);
+            }
         }
 
         window.deleteAgent = async (id) => {
