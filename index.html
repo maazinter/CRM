@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Independent Multi-Role CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs for Cloud Storage -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
@@ -15,8 +15,8 @@
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .loader-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900 custom-scroll">
@@ -30,8 +30,8 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
-                <h1 class="text-3xl font-extrabold text-gray-900">CRM Login</h1>
-                <p class="text-gray-500 mt-2">Enter your system credentials</p>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">CRM Login</h1>
+                <p class="text-gray-500 mt-2">Enter your database credentials</p>
             </div>
             <form id="login-form" class="space-y-6">
                 <div>
@@ -42,9 +42,9 @@
                     <label class="block text-sm font-bold text-gray-700 mb-2">Password</label>
                     <input type="password" id="login-password" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="••••••••">
                 </div>
-                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Sign In</button>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50">Sign In</button>
             </form>
-            <div id="auth-error" class="mt-4 p-3 bg-red-50 text-red-600 text-sm text-center rounded-lg hidden"></div>
+            <div id="auth-error" class="mt-4 p-4 bg-red-50 text-red-600 text-xs rounded-xl hidden border border-red-100"></div>
         </div>
     </div>
 
@@ -57,7 +57,7 @@
                         <span class="text-2xl font-black text-blue-600 tracking-tighter">MAAZ CRM</span>
                         <span id="role-badge" class="ml-4 px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100"></span>
                     </div>
-                    <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-4">
                         <span id="user-display" class="hidden md:block text-sm font-semibold text-gray-500"></span>
                         <button id="logout-btn" class="flex items-center gap-2 text-gray-400 hover:text-red-500 font-bold transition">
                             <span class="text-sm">Logout</span>
@@ -95,7 +95,7 @@
             <main class="flex-1 md:ml-64 p-8 bg-gray-50 min-h-[calc(100vh-64px)]">
                 
                 <!-- Manage Users Section -->
-                <section id="tab-manage-users" class="tab-content hidden animate-in fade-in duration-500">
+                <section id="tab-manage-users" class="tab-content hidden animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -135,32 +135,22 @@
                 </section>
 
                 <!-- Dashboard Section -->
-                <section id="tab-dashboard" class="tab-content">
+                <section id="tab-dashboard" class="tab-content animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">Performance Dashboard</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <div class="flex items-center gap-4 mb-4">
-                                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                                </div>
-                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest">Total Enrollments</p>
-                            </div>
+                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-4xl font-black text-gray-900">0</h3>
                         </div>
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <div class="flex items-center gap-4 mb-4">
-                                <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </div>
-                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest">Enrollment Volume</p>
-                            </div>
+                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Enrollment Volume</p>
                             <h3 id="stat-total-fees" class="text-4xl font-black text-green-600">$0</h3>
                         </div>
                     </div>
                 </section>
 
-                <!-- Enrollment Form Section -->
-                <section id="tab-add-customer" class="tab-content hidden">
+                <!-- Enrollment Form -->
+                <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
                     <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-10">
                         <div class="flex justify-between items-center mb-10">
                             <h2 id="form-title" class="text-3xl font-black text-gray-900 tracking-tight">Customer Enrollment</h2>
@@ -170,109 +160,63 @@
                         <form id="customer-form" class="space-y-12">
                             <input type="hidden" id="edit-customer-id">
                             
-                            <!-- Personal Details -->
+                            <!-- Personal Identification -->
                             <div class="space-y-6">
-                                <div class="flex items-center gap-3 text-blue-600">
+                                <div class="flex items-center gap-3 text-blue-600 border-b border-gray-50 pb-4">
                                     <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
                                     </div>
                                     <h3 class="text-lg font-black uppercase tracking-widest">Personal Identification</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Full Name</label>
-                                        <input type="text" name="name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Phone Number</label>
-                                        <input type="tel" name="number" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Email Address</label>
-                                        <input type="email" name="email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Date of Birth</label>
-                                        <input type="date" name="dob" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">SSN Number</label>
-                                        <input type="text" name="ssn" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Driving License</label>
-                                        <input type="text" name="drivingLicense" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
+                                    <input type="text" name="name" placeholder="Full Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="tel" name="number" placeholder="Phone Number" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="date" name="dob" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="text" name="ssn" placeholder="SSN Number" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="text" name="drivingLicense" placeholder="Driving License" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Annual Gross Income</label>
-                                        <input type="number" name="annualIncome" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Tax Status</label>
-                                        <select name="taxStatus" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                            <option value="Single">Single</option>
-                                            <option value="Married-Joint">Married Filing Jointly</option>
-                                            <option value="Head-of-Household">Head of Household</option>
-                                        </select>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Family Size</label>
-                                        <input type="number" name="familySize" min="1" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
+                                    <input type="number" name="annualIncome" placeholder="Annual Gross Income ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <select name="taxStatus" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="Single">Single</option>
+                                        <option value="Married-Joint">Married Filing Jointly</option>
+                                        <option value="Head-of-Household">Head of Household</option>
+                                    </select>
+                                    <input type="number" name="familySize" placeholder="Family Size" min="1" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Mailing Address</label>
-                                    <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Admin Only Status -->
-                            <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
-                                <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Administrative Workflow</h3>
-                                <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none">
-                                    <option value="Active">Active</option>
-                                    <option value="Processing">Processing</option>
-                                    <option value="Pending Docs">Pending Docs</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
+                                <textarea name="mailingAddress" id="mailingAddress" placeholder="Mailing Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"></textarea>
                             </div>
 
                             <!-- FSA & Loan -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                 <div class="space-y-6">
-                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600">FSA Account</h3>
-                                    <div class="space-y-4">
-                                        <input type="text" name="fsaUserId" placeholder="User ID" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <input type="password" name="fsaPassword" placeholder="Password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <input type="text" name="fsaBackupCode" placeholder="Backup Code" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
+                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">FSA Account</h3>
+                                    <input type="text" name="fsaUserId" placeholder="User ID" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="password" name="fsaPassword" placeholder="Password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="text" name="fsaBackupCode" placeholder="Backup Code" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
                                 <div class="space-y-6">
-                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600">Loan & Processing</h3>
-                                    <div class="space-y-4">
-                                        <input type="text" name="loanLender" placeholder="Lender Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                            <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Fee ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePaymentSchedule()">
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <select name="processor" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                                <option value="P1">Processor P1</option>
-                                                <option value="P2">Processor P2</option>
-                                                <option value="P3">Processor P3</option>
-                                            </select>
-                                            <input type="text" name="fileNumber" placeholder="File #" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        </div>
+                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">Loan & Processing</h3>
+                                    <input type="text" name="loanLender" placeholder="Lender Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Fee ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePaymentSchedule()">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <select name="processor" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="P1">Processor P1</option>
+                                            <option value="P2">Processor P2</option>
+                                            <option value="P3">Processor P3</option>
+                                        </select>
+                                        <input type="text" name="fileNumber" placeholder="File #" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Financial Details -->
+                            <!-- Billing & Payment -->
                             <div class="space-y-6">
-                                <h3 class="text-lg font-black uppercase tracking-widest text-blue-600">Billing & Payment</h3>
+                                <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">Billing & Payment</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <select name="paymentMode" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                         <option value="Card">Credit/Debit Card</option>
@@ -284,7 +228,7 @@
                                         <option value="Installments">Monthly Installments</option>
                                     </select>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
                                     <input type="text" name="cardNumber" placeholder="Card Number" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
                                     <div class="grid grid-cols-2 gap-4">
@@ -314,6 +258,17 @@
                                 </div>
                             </div>
 
+                            <!-- Admin workflow dropdown -->
+                            <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
+                                <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
+                                <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl outline-none">
+                                    <option value="Active">Active</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+
                             <div class="flex justify-end pt-6">
                                 <button type="submit" id="submit-btn" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95">Complete Enrollment</button>
                             </div>
@@ -321,8 +276,8 @@
                     </div>
                 </section>
 
-                <!-- Customer List Section -->
-                <section id="tab-customer-list" class="tab-content hidden">
+                <!-- Database View -->
+                <section id="tab-customer-list" class="tab-content hidden animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">Enrollment Database</h2>
                     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto">
                         <table class="w-full text-left min-w-[1000px]">
@@ -344,14 +299,15 @@
         </div>
     </div>
 
-    <!-- Feedback Toast -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 font-bold"></div>
+    <!-- Toast UI -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 font-bold text-center min-w-[200px]"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
@@ -367,52 +323,69 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm-app';
 
-        // --- GLOBAL STATE ---
+        // GLOBAL STATE
         let users = [];
         let customers = [];
         let currentUser = null;
+        let authUser = null;
         let isFirebaseReady = false;
 
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
         const ADMIN_PASS = "Maaz@2026";
 
-        // Initialization
-        async function startApp() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+        // APP INITIALIZATION (RULE 3 - Auth Before Queries)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authUser = user;
                 isFirebaseReady = true;
+                console.log("Firebase Auth Verified.");
                 
-                // Load existing session if present
-                const saved = localStorage.getItem('crm_session_v2');
+                // Once authenticated, check if there's a stored custom session
+                const saved = localStorage.getItem('crm_session_v5');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    // Re-verify against cloud to ensure user still exists
-                    await attemptSilentLogin(data);
+                    if (data.email === ADMIN_EMAIL) loginSuccess(data);
+                    else verifyCloudCredentials(data);
                 }
-            } catch (err) {
-                console.error("Initial Auth Error:", err);
+            } else {
+                authUser = null;
+                isFirebaseReady = false;
+                signInAnonymously(auth).catch(handleCloudFailure);
+            }
+        });
+
+        function handleCloudFailure(err) {
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.classList.remove('hidden');
+            errorDiv.innerHTML = `
+                <div class="font-bold mb-2 uppercase tracking-wide">Database Access Denied</div>
+                <p class="mb-4 text-xs">Permission Error: ${err.code || 'Forbidden'}</p>
+                <p>Please check your Firebase Console settings:</p>
+                <ol class="list-decimal ml-4 mt-2 space-y-1">
+                    <li>Enable 'Anonymous' Auth.</li>
+                    <li>Add your GitHub domain to 'Authorized Domains'.</li>
+                    <li>Set Firestore Rules to allow read/write for authenticated users.</li>
+                </ol>
+            `;
+        }
+
+        async function verifyCloudCredentials(data) {
+            if (!authUser) return;
+            try {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
+                let found = null;
+                snap.forEach(d => {
+                    const u = d.data();
+                    if (u.email === data.email && u.password === data.password) found = { ...u, id: d.id };
+                });
+                if (found) loginSuccess(found);
+                else localStorage.removeItem('crm_session_v5');
+            } catch(e) {
+                console.error("Verification failed", e);
             }
         }
-        startApp();
 
-        async function attemptSilentLogin(data) {
-            if (data.email === ADMIN_EMAIL) return loginSuccess(data);
-            
-            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
-            let found = null;
-            snap.forEach(d => {
-                const u = d.data();
-                if (u.email === data.email && u.password === data.password) found = { ...u, id: d.id };
-            });
-            if (found) loginSuccess(found);
-            else localStorage.removeItem('crm_session_v2');
-        }
-
-        // --- AUTH LOGIC ---
+        // CUSTOM LOGIN LOGIC
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -423,26 +396,31 @@
             btn.disabled = true;
             errorDiv.classList.add('hidden');
 
+            // 1. Super Admin Check
+            if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
+                return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
+            }
+
+            if (!isFirebaseReady || !authUser) {
+                errorDiv.textContent = "Connecting to database... please wait a few seconds.";
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                return;
+            }
+
             try {
-                // 1. Super Admin Check
-                if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
-                    return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
-                }
-
-                if (!isFirebaseReady) throw new Error("Connecting to database... please try again in a moment.");
-
-                // 2. Cloud User Check
+                // 2. Database lookup
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
-                let foundUser = null;
+                let matchedUser = null;
                 snap.forEach(d => {
                     const data = d.data();
-                    if (data.email === email && data.password === pass) foundUser = { ...data, id: d.id };
+                    if (data.email === email && data.password === pass) matchedUser = { ...data, id: d.id };
                 });
 
-                if (foundUser) {
-                    return loginSuccess(foundUser);
+                if (matchedUser) {
+                    loginSuccess(matchedUser);
                 } else {
-                    throw new Error("Invalid credentials.");
+                    throw new Error("Invalid username or password.");
                 }
             } catch (error) {
                 errorDiv.textContent = error.message;
@@ -453,19 +431,19 @@
 
         function loginSuccess(userObj) {
             currentUser = userObj;
-            localStorage.setItem('crm_session_v2', JSON.stringify(userObj));
+            localStorage.setItem('crm_session_v5', JSON.stringify(userObj));
             
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
             document.getElementById('user-display').textContent = currentUser.email;
             document.getElementById('role-badge').textContent = currentUser.role;
 
-            applyPermissions();
-            syncData();
+            applyRolePermissions();
+            syncDataStreams();
             switchTab('dashboard');
         }
 
-        function applyPermissions() {
+        function applyRolePermissions() {
             const role = currentUser.role;
             document.getElementById('nav-add-customer').classList.toggle('hidden', role === 'manager');
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
@@ -475,32 +453,87 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = null;
-            localStorage.removeItem('crm_session_v2');
+            localStorage.removeItem('crm_session_v5');
             location.reload();
         });
 
-        // --- DATA SYNCING ---
-        function syncData() {
-            // Sync Users
+        // REAL-TIME SYNC (With Error Callbacks Required)
+        function syncDataStreams() {
+            if (!authUser) return;
+
+            // User accounts (Admin only)
             if (currentUser.role === 'admin') {
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                     users = [];
                     snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                     renderUsers();
-                });
+                }, (err) => console.error("User list failed:", err));
             }
 
-            // Sync Customers
+            // Customer Records
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
+            }, (err) => {
+                console.error("Customer list failed:", err);
+                if (err.code === 'permission-denied') showToast("Access Denied to records.");
             });
         }
 
-        // --- USER MANAGEMENT ---
+        function renderUsers() {
+            const tbody = document.getElementById('user-management-table');
+            tbody.innerHTML = users.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(u => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-bold text-gray-700">${u.email}</td>
+                    <td class="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-blue-500">${u.role}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:underline transition font-black text-xs uppercase">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customer-table-body');
+            let filtered = customers;
+            
+            // RULE 2: Manual filtering instead of where()
+            if (currentUser.role === 'agent') {
+                filtered = customers.filter(c => c.agentId === currentUser.id);
+            }
+
+            // RULE 2: Manual sorting
+            filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            tbody.innerHTML = filtered.map(c => `
+                <tr class="hover:bg-gray-50 transition animate-fade-in">
+                    <td class="px-8 py-5">
+                        <div class="font-black text-gray-900">${c.name}</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
+                    </td>
+                    <td class="px-8 py-5 text-xs font-bold text-gray-500">${c.agentEmail}</td>
+                    <td class="px-8 py-5">
+                        <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
+                        <div class="text-[10px] text-gray-400">${c.loanLender}</div>
+                    </td>
+                    <td class="px-8 py-5 font-black text-blue-600">$${parseFloat(c.enrollmentFee || 0).toLocaleString()}</td>
+                    <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusStyle(c.status)}">${c.status || 'Active'}</span></td>
+                    <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
+                        <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('stat-total-customers').textContent = filtered.length;
+            const total = filtered.reduce((sum, c) => sum + parseFloat(c.enrollmentFee || 0), 0);
+            document.getElementById('stat-total-fees').textContent = `$${total.toLocaleString()}`;
+        }
+
+        // CRUD HANDLERS
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!authUser) return;
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
@@ -511,34 +544,14 @@
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
                     email, password, role, createdAt: new Date().toISOString() 
                 });
-                showToast("User created in Cloud");
+                showToast("User added to cloud.");
                 e.target.reset();
-            } catch(e) { showToast("Error saving user."); }
+            } catch(e) { showToast("Save failed."); }
         });
 
-        function renderUsers() {
-            const tbody = document.getElementById('user-management-table');
-            tbody.innerHTML = users.sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map(u => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 font-bold text-gray-700">${u.email}</td>
-                    <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${u.role === 'manager' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}">${u.role}</span></td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-xs uppercase">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        window.deleteUser = async (id) => {
-            if (confirm("Permanently remove this user?")) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
-                showToast("User removed.");
-            }
-        };
-
-        // --- CUSTOMER LOGIC ---
         document.getElementById('customer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!authUser) return;
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             const editId = document.getElementById('edit-customer-id').value;
@@ -559,60 +572,31 @@
             try {
                 if (editId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("Record updated in Cloud");
+                    showToast("Cloud record updated.");
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("Enrollment saved to Cloud");
+                    showToast("Saved to database.");
                 }
                 resetForm();
                 switchTab('customer-list');
-            } catch(e) { showToast("Save failed."); }
+            } catch(e) { showToast("Database error."); }
         });
 
-        function renderCustomers() {
-            const tbody = document.getElementById('customer-table-body');
-            let filtered = customers;
-            
-            if (currentUser.role === 'agent') {
-                filtered = customers.filter(c => c.agentId === currentUser.id);
-            }
-
-            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-8 py-5">
-                        <div class="font-black text-gray-900">${c.name}</div>
-                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
-                    </td>
-                    <td class="px-8 py-5 text-xs font-bold text-gray-500">${c.agentEmail}</td>
-                    <td class="px-8 py-5">
-                        <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
-                        <div class="text-[10px] text-gray-400">${c.loanLender}</div>
-                    </td>
-                    <td class="px-8 py-5 font-black text-blue-600">$${parseFloat(c.enrollmentFee).toLocaleString()}</td>
-                    <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusClass(c.status)}">${c.status}</span></td>
-                    <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
-                        <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-            renderDashboard(filtered);
-        }
-
-        function renderDashboard(filteredData) {
-            document.getElementById('stat-total-customers').textContent = filteredData.length;
-            const total = filteredData.reduce((sum, c) => sum + parseFloat(c.enrollmentFee || 0), 0);
-            document.getElementById('stat-total-fees').textContent = `$${total.toLocaleString()}`;
-        }
+        window.deleteUser = async (id) => {
+            if (!authUser || !confirm("Delete user?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
+            showToast("Removed.");
+        };
 
         window.editCustomer = (id) => {
             const c = customers.find(x => x.id === id);
             switchTab('add-customer');
-            document.getElementById('form-title').textContent = "Update Record";
-            document.getElementById('submit-btn').textContent = "Apply Updates";
+            document.getElementById('form-title').textContent = "Modify Record";
+            document.getElementById('submit-btn').textContent = "Save Changes";
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
 
@@ -625,7 +609,7 @@
             updatePaymentSchedule(sched);
         };
 
-        // --- UI HELPERS ---
+        // UI HELPERS
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.nav-link').forEach(n => {
@@ -649,7 +633,7 @@
                 group.classList.add('hidden');
                 const amt = existing ? existing[0].amount : fee;
                 container.innerHTML = `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
-                    <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Single Payment</div>
+                    <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Total Amount</div>
                     <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div>
                     ${payToday ? '<div class="text-xs font-black text-green-600 bg-green-50 py-2 rounded-xl text-center">PAID TODAY</div>' : `<input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${existing ? existing[0].date : ''}">`}
                 </div>`;
@@ -661,7 +645,7 @@
                     const isPaid = (i === 1 && payToday);
                     const sched = existing && existing[i-1] ? existing[i-1] : null;
                     container.innerHTML += `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${isPaid}">
-                        <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Installment #${i}</div>
+                        <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Inst. #${i}</div>
                         <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${sched ? sched.amount : perMonth.toFixed(2)}"></div>
                         ${isPaid ? '<div class="text-xs font-black text-green-600 bg-green-50 py-2 rounded-xl text-center">PAID TODAY</div>' : `<input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : ''}">`}
                     </div>`;
@@ -691,7 +675,7 @@
             updatePaymentSchedule();
         };
 
-        function getStatusClass(s) {
+        function getStatusStyle(s) {
             if (s === 'Approved') return 'bg-green-50 text-green-600 border border-green-100';
             if (s === 'Cancelled') return 'bg-red-50 text-red-600 border border-red-100';
             if (s === 'Processing') return 'bg-blue-50 text-blue-600 border border-blue-100';
@@ -705,10 +689,13 @@
             setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
+        updatePaymentSchedule();
         window.updatePaymentSchedule = updatePaymentSchedule;
         window.switchTab = switchTab;
         window.toggleBillingAddress = toggleBillingAddress;
         window.resetForm = resetForm;
+        window.deleteUser = deleteUser;
+        window.editCustomer = editCustomer;
     </script>
 </body>
 </html>
