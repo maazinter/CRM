@@ -137,14 +137,19 @@
                 <!-- Dashboard Section -->
                 <section id="tab-dashboard" class="tab-content animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">Performance Dashboard</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                             <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-4xl font-black text-gray-900">0</h3>
                         </div>
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Enrollment Volume</p>
+                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Paid Collected Volume</p>
                             <h3 id="stat-total-fees" class="text-4xl font-black text-green-600">$0</h3>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Upcoming (This Month)</p>
+                            <h3 id="stat-upcoming" class="text-4xl font-black text-blue-600">$0</h3>
+                            <p id="stat-upcoming-count" class="text-xs font-bold text-gray-400 mt-2">0 Customers scheduled</p>
                         </div>
                     </div>
                 </section>
@@ -243,11 +248,11 @@
                                 <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20"></textarea>
                                 
                                 <div class="bg-gray-50 p-8 rounded-3xl border border-gray-100">
-                                    <div class="flex items-center justify-between mb-8">
-                                        <h4 class="font-black uppercase tracking-widest text-gray-400">Payment Schedule</h4>
+                                    <div class="flex items-center justify-between mb-8 text-blue-600">
+                                        <h4 class="font-black uppercase tracking-widest">Payment Schedule & Status</h4>
                                         <div class="flex items-center gap-3">
                                             <input type="checkbox" id="payToday" onchange="updatePaymentSchedule()" class="w-5 h-5 rounded text-blue-600">
-                                            <label for="payToday" class="text-sm font-black text-gray-900">Pay Initial Today</label>
+                                            <label for="payToday" class="text-sm font-black text-gray-900">1st Payment is Today</label>
                                         </div>
                                     </div>
                                     <div id="tenure-input-group" class="hidden mb-6 flex items-center gap-4">
@@ -258,7 +263,6 @@
                                 </div>
                             </div>
 
-                            <!-- Admin workflow dropdown -->
                             <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
                                 <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
                                 <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl outline-none">
@@ -286,7 +290,7 @@
                                     <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Customer</th>
                                     <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Agent</th>
                                     <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Details</th>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Fee</th>
+                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Paid Collected</th>
                                     <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
                                     <th id="th-actions" class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right hidden">Manage</th>
                                 </tr>
@@ -333,14 +337,12 @@
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
         const ADMIN_PASS = "Maaz@2026";
 
-        // APP INITIALIZATION (RULE 3 - Auth Before Queries)
+        // APP INITIALIZATION
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authUser = user;
                 isFirebaseReady = true;
-                console.log("Firebase Auth Verified.");
-                
-                const saved = localStorage.getItem('crm_session_v5');
+                const saved = localStorage.getItem('crm_session_v6');
                 if (saved) {
                     const data = JSON.parse(saved);
                     if (data.email === ADMIN_EMAIL) loginSuccess(data);
@@ -358,8 +360,8 @@
             errorDiv.classList.remove('hidden');
             errorDiv.innerHTML = `
                 <div class="font-bold mb-2 uppercase tracking-wide text-red-600">Database Access Denied</div>
-                <p class="mb-4 text-xs">Rule Error: ${err.code || 'Forbidden'}</p>
-                <p class="text-xs">Your Firebase Rules are blocking access. Please update them in the console as instructed in the chat.</p>
+                <p class="mb-4 text-xs text-red-500">Firebase Error: ${err.code}</p>
+                <p class="text-xs">Update your Firestore Rules in the console to allow access.</p>
             `;
         }
 
@@ -373,13 +375,11 @@
                     if (u.email === data.email && u.password === data.password) found = { ...u, id: d.id };
                 });
                 if (found) loginSuccess(found);
-                else localStorage.removeItem('crm_session_v5');
-            } catch(e) {
-                console.error("Verification failed", e);
-            }
+                else localStorage.removeItem('crm_session_v6');
+            } catch(e) {}
         }
 
-        // CUSTOM LOGIN LOGIC
+        // LOGIN FLOW
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -394,8 +394,8 @@
                 return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
             }
 
-            if (!isFirebaseReady || !authUser) {
-                errorDiv.textContent = "Connecting to database... try again in 5 seconds.";
+            if (!isFirebaseReady) {
+                errorDiv.textContent = "Connecting to database... please wait.";
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
                 return;
@@ -423,13 +423,11 @@
 
         function loginSuccess(userObj) {
             currentUser = userObj;
-            localStorage.setItem('crm_session_v5', JSON.stringify(userObj));
-            
+            localStorage.setItem('crm_session_v6', JSON.stringify(userObj));
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
             document.getElementById('user-display').textContent = currentUser.email;
             document.getElementById('role-badge').textContent = currentUser.role;
-
             applyRolePermissions();
             syncDataStreams();
             switchTab('dashboard');
@@ -445,26 +443,24 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = null;
-            localStorage.removeItem('crm_session_v5');
+            localStorage.removeItem('crm_session_v6');
             location.reload();
         });
 
         function syncDataStreams() {
             if (!authUser) return;
-
             if (currentUser.role === 'admin') {
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                     users = [];
                     snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                     renderUsers();
-                }, (err) => console.error("User list failed:", err));
+                });
             }
-
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
-            }, (err) => console.error("Customer list failed:", err));
+            });
         }
 
         function renderUsers() {
@@ -488,33 +484,68 @@
             }
             filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-            tbody.innerHTML = filtered.map(c => `
+            let totalPaidCollected = 0;
+            let upcomingAmount = 0;
+            let upcomingCount = 0;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            tbody.innerHTML = filtered.map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : c.paymentSchedule;
+                let paidSum = 0;
+                
+                sched.forEach(item => {
+                    const amount = parseFloat(item.amount || 0);
+                    if (item.status === 'paid') {
+                        paidSum += amount;
+                    } else if (item.date) {
+                        const d = new Date(item.date);
+                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                            upcomingAmount += amount;
+                            // We mark the customer as upcoming only once if they have at least one pending this month
+                        }
+                    }
+                });
+                
+                const hasUpcomingThisMonth = sched.some(item => {
+                    if (!item.date || item.status === 'paid') return false;
+                    const d = new Date(item.date);
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                });
+                
+                if (hasUpcomingThisMonth) upcomingCount++;
+                totalPaidCollected += paidSum;
+
+                return `
                 <tr class="hover:bg-gray-50 transition animate-fade-in">
                     <td class="px-8 py-5">
                         <div class="font-black text-gray-900">${c.name}</div>
                         <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
+                        <div class="text-[10px] text-blue-500 font-bold">${c.number || 'No Phone'}</div>
                     </td>
                     <td class="px-8 py-5 text-xs font-bold text-gray-500">${c.agentEmail}</td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
                         <div class="text-[10px] text-gray-400">${c.loanLender}</div>
                     </td>
-                    <td class="px-8 py-5 font-black text-blue-600">$${parseFloat(c.enrollmentFee || 0).toLocaleString()}</td>
+                    <td class="px-8 py-5 font-black text-green-600">$${paidSum.toLocaleString()}</td>
                     <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusStyle(c.status)}">${c.status || 'Active'}</span></td>
                     <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
                         <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
             
             document.getElementById('stat-total-customers').textContent = filtered.length;
-            const total = filtered.reduce((sum, c) => sum + parseFloat(c.enrollmentFee || 0), 0);
-            document.getElementById('stat-total-fees').textContent = `$${total.toLocaleString()}`;
+            document.getElementById('stat-total-fees').textContent = `$${totalPaidCollected.toLocaleString()}`;
+            document.getElementById('stat-upcoming').textContent = `$${upcomingAmount.toLocaleString()}`;
+            document.getElementById('stat-upcoming-count').textContent = `${upcomingCount} Customer(s) scheduled for ${now.toLocaleString('default', { month: 'long' })}`;
         }
 
+        // CRUD
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!authUser) return;
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
@@ -523,7 +554,7 @@
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
                     email, password, role, createdAt: new Date().toISOString() 
                 });
-                showToast("User added to cloud.");
+                showToast("User created.");
                 e.target.reset();
             } catch(e) { showToast("Save failed."); }
         });
@@ -539,11 +570,12 @@
             document.querySelectorAll('.schedule-item').forEach((item, index) => {
                 const amount = item.querySelector('.tenure-amount-input').value;
                 const dateInput = item.querySelector('input[type="date"]');
+                const statusInput = item.querySelector('.tenure-status-select');
                 schedule.push({
                     month: index + 1,
                     amount: parseFloat(amount),
-                    date: dateInput ? dateInput.value : new Date().toISOString().split('T')[0],
-                    status: item.dataset.paid === 'true' ? 'paid' : 'pending'
+                    date: dateInput ? dateInput.value : "",
+                    status: statusInput ? statusInput.value : 'pending'
                 });
             });
             data.paymentSchedule = JSON.stringify(schedule);
@@ -551,18 +583,18 @@
             try {
                 if (editId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("Record updated.");
+                    showToast("Cloud Record Updated.");
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("Enrollment saved.");
+                    showToast("New Enrollment Saved.");
                 }
                 resetForm();
                 switchTab('customer-list');
-            } catch(e) { showToast("Save failed."); }
+            } catch(e) { showToast("Cloud save error."); }
         });
 
         window.deleteUser = async (id) => {
@@ -574,7 +606,7 @@
         window.editCustomer = (id) => {
             const c = customers.find(x => x.id === id);
             switchTab('add-customer');
-            document.getElementById('form-title').textContent = "Modify Record";
+            document.getElementById('form-title').textContent = "Modify Enrollment";
             document.getElementById('submit-btn').textContent = "Save Changes";
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
@@ -588,6 +620,7 @@
             updatePaymentSchedule(sched);
         };
 
+        // UI HELPERS
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.nav-link').forEach(n => {
@@ -610,22 +643,42 @@
             if (type === 'Single') {
                 group.classList.add('hidden');
                 const amt = existing ? existing[0].amount : fee;
-                container.innerHTML = `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
-                    <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Amount</div>
+                const currentStatus = existing ? existing[0].status : (payToday ? 'paid' : 'pending');
+                
+                container.innerHTML = `
+                <div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-black text-gray-400 uppercase">Single Total</span>
+                        <select class="tenure-status-select text-[10px] font-bold border rounded p-1">
+                            <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option>
+                        </select>
+                    </div>
                     <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div>
-                    ${payToday ? '<div class="text-xs font-black text-green-600 bg-green-50 py-2 rounded-xl text-center">PAID TODAY</div>' : `<input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${existing ? existing[0].date : ''}">`}
+                    <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${existing ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}">
                 </div>`;
             } else {
                 group.classList.remove('hidden');
                 const count = parseInt(document.getElementById('tenureCount').value);
                 const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
-                    const isPaid = (i === 1 && payToday);
+                    const isFirstToday = (i === 1 && payToday);
                     const sched = existing && existing[i-1] ? existing[i-1] : null;
-                    container.innerHTML += `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${isPaid}">
-                        <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Inst. #${i}</div>
+                    const currentStatus = sched ? sched.status : (isFirstToday ? 'paid' : 'pending');
+
+                    container.innerHTML += `
+                    <div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Inst. #${i}</span>
+                            <select class="tenure-status-select text-[10px] font-bold border rounded p-1">
+                                <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option>
+                                <option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option>
+                            </select>
+                        </div>
                         <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${sched ? sched.amount : perMonth.toFixed(2)}"></div>
-                        ${isPaid ? '<div class="text-xs font-black text-green-600 bg-green-50 py-2 rounded-xl text-center">PAID TODAY</div>' : `<input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : ''}">`}
+                        <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : (isFirstToday ? new Date().toISOString().split('T')[0] : '')}">
                     </div>`;
                 }
             }
@@ -658,6 +711,12 @@
             if (s === 'Cancelled') return 'bg-red-50 text-red-600 border border-red-100';
             if (s === 'Processing') return 'bg-blue-50 text-blue-600 border border-blue-100';
             return 'bg-gray-50 text-gray-600 border border-gray-100';
+        }
+
+        function getStatusClass(s) {
+            if (s === 'paid') return 'text-green-600 bg-green-50';
+            if (s === 'decline') return 'text-red-600 bg-red-50';
+            return 'text-gray-400 bg-gray-50';
         }
 
         function showToast(m) {
