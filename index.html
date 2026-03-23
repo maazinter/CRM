@@ -57,7 +57,7 @@
                         <span class="text-2xl font-black text-blue-600 tracking-tighter">MAAZ CRM</span>
                         <span id="role-badge" class="ml-4 px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100"></span>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-6">
                         <span id="user-display" class="hidden md:block text-sm font-semibold text-gray-500"></span>
                         <button id="logout-btn" class="flex items-center gap-2 text-gray-400 hover:text-red-500 font-bold transition">
                             <span class="text-sm">Logout</span>
@@ -340,7 +340,6 @@
                 isFirebaseReady = true;
                 console.log("Firebase Auth Verified.");
                 
-                // Once authenticated, check if there's a stored custom session
                 const saved = localStorage.getItem('crm_session_v5');
                 if (saved) {
                     const data = JSON.parse(saved);
@@ -358,14 +357,9 @@
             const errorDiv = document.getElementById('auth-error');
             errorDiv.classList.remove('hidden');
             errorDiv.innerHTML = `
-                <div class="font-bold mb-2 uppercase tracking-wide">Database Access Denied</div>
-                <p class="mb-4 text-xs">Permission Error: ${err.code || 'Forbidden'}</p>
-                <p>Please check your Firebase Console settings:</p>
-                <ol class="list-decimal ml-4 mt-2 space-y-1">
-                    <li>Enable 'Anonymous' Auth.</li>
-                    <li>Add your GitHub domain to 'Authorized Domains'.</li>
-                    <li>Set Firestore Rules to allow read/write for authenticated users.</li>
-                </ol>
+                <div class="font-bold mb-2 uppercase tracking-wide text-red-600">Database Access Denied</div>
+                <p class="mb-4 text-xs">Rule Error: ${err.code || 'Forbidden'}</p>
+                <p class="text-xs">Your Firebase Rules are blocking access. Please update them in the console as instructed in the chat.</p>
             `;
         }
 
@@ -396,20 +390,18 @@
             btn.disabled = true;
             errorDiv.classList.add('hidden');
 
-            // 1. Super Admin Check
             if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
                 return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
             }
 
             if (!isFirebaseReady || !authUser) {
-                errorDiv.textContent = "Connecting to database... please wait a few seconds.";
+                errorDiv.textContent = "Connecting to database... try again in 5 seconds.";
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
                 return;
             }
 
             try {
-                // 2. Database lookup
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
                 let matchedUser = null;
                 snap.forEach(d => {
@@ -457,11 +449,9 @@
             location.reload();
         });
 
-        // REAL-TIME SYNC (With Error Callbacks Required)
         function syncDataStreams() {
             if (!authUser) return;
 
-            // User accounts (Admin only)
             if (currentUser.role === 'admin') {
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                     users = [];
@@ -470,15 +460,11 @@
                 }, (err) => console.error("User list failed:", err));
             }
 
-            // Customer Records
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
-            }, (err) => {
-                console.error("Customer list failed:", err);
-                if (err.code === 'permission-denied') showToast("Access Denied to records.");
-            });
+            }, (err) => console.error("Customer list failed:", err));
         }
 
         function renderUsers() {
@@ -497,13 +483,9 @@
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
             let filtered = customers;
-            
-            // RULE 2: Manual filtering instead of where()
             if (currentUser.role === 'agent') {
                 filtered = customers.filter(c => c.agentId === currentUser.id);
             }
-
-            // RULE 2: Manual sorting
             filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             tbody.innerHTML = filtered.map(c => `
@@ -530,16 +512,13 @@
             document.getElementById('stat-total-fees').textContent = `$${total.toLocaleString()}`;
         }
 
-        // CRUD HANDLERS
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!authUser) return;
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
-
             if (users.some(u => u.email === email)) return showToast("User exists!");
-
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
                     email, password, role, createdAt: new Date().toISOString() 
@@ -572,18 +551,18 @@
             try {
                 if (editId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("Cloud record updated.");
+                    showToast("Record updated.");
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("Saved to database.");
+                    showToast("Enrollment saved.");
                 }
                 resetForm();
                 switchTab('customer-list');
-            } catch(e) { showToast("Database error."); }
+            } catch(e) { showToast("Save failed."); }
         });
 
         window.deleteUser = async (id) => {
@@ -609,7 +588,6 @@
             updatePaymentSchedule(sched);
         };
 
-        // UI HELPERS
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.nav-link').forEach(n => {
@@ -633,7 +611,7 @@
                 group.classList.add('hidden');
                 const amt = existing ? existing[0].amount : fee;
                 container.innerHTML = `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
-                    <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Total Amount</div>
+                    <div class="text-[10px] font-black text-gray-400 uppercase mb-2">Amount</div>
                     <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div>
                     ${payToday ? '<div class="text-xs font-black text-green-600 bg-green-50 py-2 rounded-xl text-center">PAID TODAY</div>' : `<input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${existing ? existing[0].date : ''}">`}
                 </div>`;
