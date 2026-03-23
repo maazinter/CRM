@@ -99,33 +99,38 @@
                     <h2 class="text-2xl font-black text-gray-900 mb-8">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-900 mb-6">Create New User</h3>
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 id="user-form-title" class="text-lg font-bold text-gray-900">Create New User</h3>
+                                <button id="cancel-user-edit" class="hidden text-xs font-bold text-red-500" onclick="resetUserForm()">Cancel</button>
+                            </div>
                             <form id="add-user-form" class="space-y-4">
+                                <input type="hidden" id="edit-user-id-field">
                                 <div>
                                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Email</label>
-                                    <input type="email" name="userEmail" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="email" name="userEmail" id="user-field-email" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Password</label>
-                                    <input type="password" name="userPassword" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <input type="text" name="userPassword" id="user-field-password" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Role</label>
-                                    <select name="userRole" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <select name="userRole" id="user-field-role" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                         <option value="agent">Agent</option>
                                         <option value="manager">Manager</option>
                                     </select>
                                 </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100">Add User Account</button>
+                                <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100">Add User Account</button>
                             </form>
                         </div>
-                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <table class="w-full text-left">
+                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+                            <table class="w-full text-left min-w-[600px]">
                                 <thead class="bg-gray-50 border-b border-gray-100">
                                     <tr>
                                         <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Password</th>
                                         <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Role</th>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="user-management-table" class="divide-y divide-gray-50"></tbody>
@@ -263,7 +268,6 @@
                                 </div>
                             </div>
 
-                            <!-- Admin workflow dropdown -->
                             <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
                                 <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
                                 <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl outline-none">
@@ -471,9 +475,13 @@
             tbody.innerHTML = users.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(u => `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4 font-bold text-gray-700">${u.email}</td>
+                    <td class="px-6 py-4 font-mono text-xs text-gray-500">${u.password}</td>
                     <td class="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-blue-500">${u.role}</td>
                     <td class="px-6 py-4 text-right">
-                        <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:underline transition font-black text-xs uppercase">Remove</button>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editUserAccount('${u.id}')" class="text-blue-600 hover:underline transition font-black text-xs uppercase">Edit</button>
+                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:underline transition font-black text-xs uppercase">Remove</button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -554,13 +562,22 @@
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
-            if (users.some(u => u.email === email)) return showToast("User exists!");
+            const editUserId = document.getElementById('edit-user-id-field').value;
+
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
-                    email, password, role, createdAt: new Date().toISOString() 
-                });
-                showToast("User added to cloud.");
-                e.target.reset();
+                if (editUserId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editUserId), {
+                        email, password, role
+                    });
+                    showToast("User account updated.");
+                } else {
+                    if (users.some(u => u.email === email)) return showToast("User exists!");
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
+                        email, password, role, createdAt: new Date().toISOString() 
+                    });
+                    showToast("User created.");
+                }
+                resetUserForm();
             } catch(e) { showToast("Save failed."); }
         });
 
@@ -617,6 +634,26 @@
                 console.error("Delete failed:", err);
                 showToast("Error deleting record.");
             }
+        };
+
+        window.editUserAccount = (id) => {
+            const u = users.find(x => x.id === id);
+            if (!u) return;
+            document.getElementById('user-form-title').textContent = "Edit User";
+            document.getElementById('edit-user-id-field').value = id;
+            document.getElementById('user-field-email').value = u.email;
+            document.getElementById('user-field-password').value = u.password;
+            document.getElementById('user-field-role').value = u.role;
+            document.getElementById('user-submit-btn').textContent = "Update Account";
+            document.getElementById('cancel-user-edit').classList.remove('hidden');
+        };
+
+        window.resetUserForm = () => {
+            document.getElementById('add-user-form').reset();
+            document.getElementById('edit-user-id-field').value = "";
+            document.getElementById('user-form-title').textContent = "Create New User";
+            document.getElementById('user-submit-btn').textContent = "Add User Account";
+            document.getElementById('cancel-user-edit').classList.add('hidden');
         };
 
         window.editCustomer = (id) => {
@@ -743,6 +780,8 @@
         window.deleteUser = deleteUser;
         window.editCustomer = editCustomer;
         window.deleteCustomer = deleteCustomer;
+        window.editUserAccount = editUserAccount;
+        window.resetUserForm = resetUserForm;
     </script>
 </body>
 </html>
