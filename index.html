@@ -263,6 +263,7 @@
                                 </div>
                             </div>
 
+                            <!-- Admin workflow dropdown -->
                             <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
                                 <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
                                 <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl outline-none">
@@ -394,8 +395,8 @@
                 return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
             }
 
-            if (!isFirebaseReady) {
-                errorDiv.textContent = "Connecting to database... please wait.";
+            if (!isFirebaseReady || !authUser) {
+                errorDiv.textContent = "Connecting to database... try again in 5 seconds.";
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
                 return;
@@ -449,18 +450,20 @@
 
         function syncDataStreams() {
             if (!authUser) return;
+
             if (currentUser.role === 'admin') {
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                     users = [];
                     snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                     renderUsers();
-                });
+                }, (err) => console.error("User list failed:", err));
             }
+
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
-            });
+            }, (err) => console.error("Customer list failed:", err));
         }
 
         function renderUsers() {
@@ -492,7 +495,7 @@
             const currentYear = now.getFullYear();
 
             tbody.innerHTML = filtered.map(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : c.paymentSchedule;
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 let paidSum = 0;
                 
                 sched.forEach(item => {
@@ -503,7 +506,6 @@
                         const d = new Date(item.date);
                         if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
                             upcomingAmount += amount;
-                            // We mark the customer as upcoming only once if they have at least one pending this month
                         }
                     }
                 });
@@ -532,7 +534,10 @@
                     <td class="px-8 py-5 font-black text-green-600">$${paidSum.toLocaleString()}</td>
                     <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusStyle(c.status)}">${c.status || 'Active'}</span></td>
                     <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
-                        <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
+                            <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Delete</button>
+                        </div>
                     </td>
                 </tr>`;
             }).join('');
@@ -543,9 +548,9 @@
             document.getElementById('stat-upcoming-count').textContent = `${upcomingCount} Customer(s) scheduled for ${now.toLocaleString('default', { month: 'long' })}`;
         }
 
-        // CRUD
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!authUser) return;
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
@@ -554,7 +559,7 @@
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
                     email, password, role, createdAt: new Date().toISOString() 
                 });
-                showToast("User created.");
+                showToast("User added to cloud.");
                 e.target.reset();
             } catch(e) { showToast("Save failed."); }
         });
@@ -603,11 +608,22 @@
             showToast("Removed.");
         };
 
+        window.deleteCustomer = async (id) => {
+            if (!authUser || !confirm("Are you sure you want to permanently delete this customer record?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
+                showToast("Customer record deleted.");
+            } catch (err) {
+                console.error("Delete failed:", err);
+                showToast("Error deleting record.");
+            }
+        };
+
         window.editCustomer = (id) => {
             const c = customers.find(x => x.id === id);
             switchTab('add-customer');
             document.getElementById('form-title').textContent = "Modify Enrollment";
-            document.getElementById('submit-btn').textContent = "Save Changes";
+            document.getElementById('submit-btn').textContent = "Update Cloud Record";
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
 
@@ -616,11 +632,10 @@
                 if (el) el.value = c[key];
             });
 
-            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : c.paymentSchedule;
+            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
             updatePaymentSchedule(sched);
         };
 
-        // UI HELPERS
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.nav-link').forEach(n => {
@@ -642,8 +657,8 @@
             container.innerHTML = '';
             if (type === 'Single') {
                 group.classList.add('hidden');
-                const amt = existing ? existing[0].amount : fee;
-                const currentStatus = existing ? existing[0].status : (payToday ? 'paid' : 'pending');
+                const amt = (existing && existing[0]) ? existing[0].amount : fee;
+                const currentStatus = (existing && existing[0]) ? existing[0].status : (payToday ? 'paid' : 'pending');
                 
                 container.innerHTML = `
                 <div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
@@ -656,7 +671,7 @@
                         </select>
                     </div>
                     <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div>
-                    <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${existing ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}">
+                    <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${(existing && existing[0]) ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}">
                 </div>`;
             } else {
                 group.classList.remove('hidden');
@@ -713,12 +728,6 @@
             return 'bg-gray-50 text-gray-600 border border-gray-100';
         }
 
-        function getStatusClass(s) {
-            if (s === 'paid') return 'text-green-600 bg-green-50';
-            if (s === 'decline') return 'text-red-600 bg-red-50';
-            return 'text-gray-400 bg-gray-50';
-        }
-
         function showToast(m) {
             const t = document.getElementById('toast');
             t.textContent = m;
@@ -733,6 +742,7 @@
         window.resetForm = resetForm;
         window.deleteUser = deleteUser;
         window.editCustomer = editCustomer;
+        window.deleteCustomer = deleteCustomer;
     </script>
 </body>
 </html>
