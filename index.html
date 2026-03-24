@@ -94,7 +94,8 @@
 
             <main class="flex-1 md:ml-64 p-8 bg-gray-50 min-h-[calc(100vh-64px)] relative">
                 
-                <!-- User Stats Modal (Admin Only) -->
+                <!-- Modals -->
+                <!-- User Stats Modal -->
                 <div id="user-stats-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
                     <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
                         <div class="p-8 border-b border-gray-100 flex justify-between items-center">
@@ -106,46 +107,36 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lifetime Performance</p>
-                                <div class="space-y-4">
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-500">Total Sales</p>
-                                        <h3 id="stat-user-total-sales" class="text-2xl font-black text-gray-900">0</h3>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-500">Total Revenue</p>
-                                        <h3 id="stat-user-total-revenue" class="text-2xl font-black text-green-600">$0</h3>
-                                    </div>
-                                </div>
+                        <div id="user-stats-content" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Payments Detail Modal -->
+                <div id="upcoming-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+                        <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-blue-600 text-white">
+                            <div>
+                                <h2 class="text-2xl font-black">Upcoming Payments Detail</h2>
+                                <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Scheduled for Current Month</p>
                             </div>
-                            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                                <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Current Month</p>
-                                <div class="space-y-4">
-                                    <div>
-                                        <p class="text-xs font-bold text-blue-600">Sales this Month</p>
-                                        <h3 id="stat-user-month-sales" class="text-2xl font-black text-gray-900">0</h3>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-blue-600">Revenue this Month</p>
-                                        <h3 id="stat-user-month-revenue" class="text-2xl font-black text-blue-700">$0</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 md:col-span-2">
-                                <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Today's Activity</p>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex-1">
-                                        <p class="text-xs font-bold text-amber-600">New Enrollments Today</p>
-                                        <h3 id="stat-user-day-sales" class="text-2xl font-black text-gray-900">0</h3>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-bold text-amber-600">Payments Collected Today</p>
-                                        <h3 id="stat-user-day-revenue" class="text-2xl font-black text-amber-700">$0</h3>
-                                    </div>
-                                </div>
-                            </div>
+                            <button onclick="closeUpcomingModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6 custom-scroll">
+                            <table class="w-full text-left">
+                                <thead class="sticky top-0 bg-white border-b border-gray-100 z-10">
+                                    <tr>
+                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="upcoming-details-table" class="divide-y divide-gray-50"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -154,7 +145,7 @@
                 <section id="tab-manage-users" class="tab-content hidden animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit">
                             <div class="flex justify-between items-center mb-6">
                                 <h3 id="user-form-title" class="text-lg font-bold text-gray-900">Create New User</h3>
                                 <button id="cancel-user-edit" class="hidden text-xs font-bold text-red-500" onclick="resetUserForm()">Cancel</button>
@@ -201,26 +192,69 @@
                 </section>
 
                 <!-- Dashboard Section -->
-                <section id="tab-dashboard" class="tab-content animate-fade-in">
-                    <h2 class="text-2xl font-black text-gray-900 mb-8">Performance Dashboard</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total Enrollments</p>
-                            <h3 id="stat-total-customers" class="text-4xl font-black text-gray-900">0</h3>
+                <section id="tab-dashboard" class="tab-content animate-fade-in space-y-12">
+                    <!-- Lifetime Section -->
+                    <div>
+                        <h2 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Lifetime Summary</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total System Enrollments</p>
+                                <h3 id="stat-total-customers" class="text-4xl font-black text-gray-900">0</h3>
+                            </div>
+                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total Paid Collected</p>
+                                <h3 id="stat-total-fees" class="text-4xl font-black text-green-600">$0</h3>
+                            </div>
                         </div>
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Paid Collected Volume</p>
-                            <h3 id="stat-total-fees" class="text-4xl font-black text-green-600">$0</h3>
+                    </div>
+
+                    <!-- Daily & Monthly Reports -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <!-- Full Day Report -->
+                        <div class="bg-amber-50 p-8 rounded-[2rem] border border-amber-100">
+                            <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest mb-6">Today's Activity Report</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">New Sales</p>
+                                    <h4 id="stat-day-sales" class="text-2xl font-black text-gray-900">0</h4>
+                                </div>
+                                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Revenue</p>
+                                    <h4 id="stat-day-revenue" class="text-2xl font-black text-amber-600">$0</h4>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                            <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Upcoming (This Month)</p>
-                            <h3 id="stat-upcoming" class="text-4xl font-black text-blue-600">$0</h3>
-                            <p id="stat-upcoming-count" class="text-xs font-bold text-gray-400 mt-2">0 Customers scheduled</p>
+
+                        <!-- Monthly Report -->
+                        <div class="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
+                            <h3 class="text-sm font-black text-blue-700 uppercase tracking-widest mb-6">Current Month Report</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Total Sales</p>
+                                    <h4 id="stat-month-sales" class="text-2xl font-black text-gray-900">0</h4>
+                                </div>
+                                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Collected</p>
+                                    <h4 id="stat-month-revenue" class="text-2xl font-black text-blue-600">$0</h4>
+                                </div>
+                                <div id="card-upcoming" onclick="openUpcomingModal()" class="col-span-2 bg-white p-6 rounded-2xl shadow-sm border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all active:scale-[0.98]">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="text-[10px] font-black text-blue-400 uppercase mb-1">Upcoming Payments (Click for Detail)</p>
+                                            <h4 id="stat-upcoming" class="text-3xl font-black text-blue-600">$0</h4>
+                                            <p id="stat-upcoming-count" class="text-[10px] font-bold text-gray-400 mt-2">0 records found</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Enrollment Form -->
+                <!-- Enrollment Form Section -->
                 <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
                     <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-10">
                         <div class="flex justify-between items-center mb-10">
@@ -231,7 +265,7 @@
                         <form id="customer-form" class="space-y-12">
                             <input type="hidden" id="edit-customer-id">
                             
-                            <!-- Personal Identification -->
+                            <!-- Fields... (Mailing Address, Personal Info, FSA, Loan, etc.) -->
                             <div class="space-y-6">
                                 <div class="flex items-center gap-3 text-blue-600 border-b border-gray-50 pb-4">
                                     <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -259,7 +293,6 @@
                                 <textarea name="mailingAddress" id="mailingAddress" placeholder="Mailing Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"></textarea>
                             </div>
 
-                            <!-- FSA & Loan -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                 <div class="space-y-6">
                                     <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">FSA Account</h3>
@@ -285,7 +318,6 @@
                                 </div>
                             </div>
 
-                            <!-- Billing & Payment -->
                             <div class="space-y-6">
                                 <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">Billing & Payment</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -346,7 +378,7 @@
                     </div>
                 </section>
 
-                <!-- Database View -->
+                <!-- Customer Database View -->
                 <section id="tab-customer-list" class="tab-content hidden animate-fade-in">
                     <h2 class="text-2xl font-black text-gray-900 mb-8">Enrollment Database</h2>
                     
@@ -417,6 +449,7 @@
         let currentUser = null;
         let authUser = null;
         let isFirebaseReady = false;
+        let upcomingPaymentList = [];
 
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
         const ADMIN_PASS = "Maaz@2026";
@@ -573,50 +606,34 @@
             if (!user) return;
             
             const agentCustomers = customers.filter(c => c.agentId === userId);
-            
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            const todayStr = now.toISOString().split('T')[0];
-
-            let lifetimeRevenue = 0;
-            let monthRevenue = 0;
-            let dayRevenue = 0;
-            
-            let lifetimeSales = agentCustomers.length;
-            let monthSales = 0;
-            let daySales = 0;
-
-            agentCustomers.forEach(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                
-                if (c.createdAt) {
-                    const createdDate = new Date(c.createdAt);
-                    if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) monthSales++;
-                    if (c.createdAt.startsWith(todayStr)) daySales++;
-                }
-
-                sched.forEach(item => {
-                    const amt = parseFloat(item.amount || 0);
-                    if (item.status === 'paid') {
-                        lifetimeRevenue += amt;
-                        if (item.date) {
-                            if (item.date.startsWith(todayStr)) dayRevenue += amt;
-                            const d = new Date(item.date);
-                            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) monthRevenue += amt;
-                        }
-                    }
-                });
-            });
+            const stats = calculateStats(agentCustomers);
 
             document.getElementById('stats-user-email').textContent = user.name || user.email;
             document.getElementById('stats-user-role').textContent = user.role;
-            document.getElementById('stat-user-total-sales').textContent = lifetimeSales;
-            document.getElementById('stat-user-total-revenue').textContent = `$${lifetimeRevenue.toLocaleString()}`;
-            document.getElementById('stat-user-month-sales').textContent = monthSales;
-            document.getElementById('stat-user-month-revenue').textContent = `$${monthRevenue.toLocaleString()}`;
-            document.getElementById('stat-user-day-sales').textContent = daySales;
-            document.getElementById('stat-user-day-revenue').textContent = `$${dayRevenue.toLocaleString()}`;
+            
+            document.getElementById('user-stats-content').innerHTML = `
+                <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lifetime Performance</p>
+                    <div class="space-y-4">
+                        <div><p class="text-xs font-bold text-gray-500">Total Sales</p><h3 class="text-2xl font-black text-gray-900">${stats.lifetimeSales}</h3></div>
+                        <div><p class="text-xs font-bold text-gray-500">Total Revenue</p><h3 class="text-2xl font-black text-green-600">$${stats.lifetimeRevenue.toLocaleString()}</h3></div>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Current Month</p>
+                    <div class="space-y-4">
+                        <div><p class="text-xs font-bold text-blue-600">Sales this Month</p><h3 class="text-2xl font-black text-gray-900">${stats.monthSalesCount}</h3></div>
+                        <div><p class="text-xs font-bold text-blue-600">Revenue this Month</p><h3 class="text-2xl font-black text-blue-700">$${stats.monthRevenueSum.toLocaleString()}</h3></div>
+                    </div>
+                </div>
+                <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 md:col-span-2">
+                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Today's Activity</p>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1"><p class="text-xs font-bold text-amber-600">Enrollments Today</p><h3 class="text-2xl font-black text-gray-900">${stats.todaySalesCount}</h3></div>
+                        <div class="flex-1"><p class="text-xs font-bold text-amber-600">Collected Today</p><h3 class="text-2xl font-black text-amber-700">$${stats.todayRevenueSum.toLocaleString()}</h3></div>
+                    </div>
+                </div>
+            `;
 
             document.getElementById('user-stats-modal').classList.remove('hidden');
             document.getElementById('user-stats-modal').classList.add('flex');
@@ -627,6 +644,62 @@
             document.getElementById('user-stats-modal').classList.remove('flex');
         };
 
+        function calculateStats(targetData) {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const todayStr = now.toISOString().split('T')[0];
+
+            let res = {
+                lifetimeSales: targetData.length,
+                lifetimeRevenue: 0,
+                todaySalesCount: 0,
+                todayRevenueSum: 0,
+                monthSalesCount: 0,
+                monthRevenueSum: 0,
+                upcomingAmount: 0,
+                upcomingCount: 0,
+                upcomingDetails: []
+            };
+
+            targetData.forEach(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                
+                if (c.createdAt) {
+                    if (c.createdAt.startsWith(todayStr)) res.todaySalesCount++;
+                    const d = new Date(c.createdAt);
+                    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) res.monthSalesCount++;
+                }
+
+                let hasUpcomingThisMonth = false;
+                sched.forEach(item => {
+                    const amt = parseFloat(item.amount || 0);
+                    if (item.status === 'paid') {
+                        res.lifetimeRevenue += amt;
+                        if (item.date) {
+                            if (item.date === todayStr) res.todayRevenueSum += amt;
+                            const d = new Date(item.date);
+                            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) res.monthRevenueSum += amt;
+                        }
+                    } else if (item.date) {
+                        const d = new Date(item.date);
+                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                            res.upcomingAmount += amt;
+                            hasUpcomingThisMonth = true;
+                            res.upcomingDetails.push({
+                                name: c.name,
+                                phone: c.number || 'N/A',
+                                date: item.date,
+                                amount: amt
+                            });
+                        }
+                    }
+                });
+                if (hasUpcomingThisMonth) res.upcomingCount++;
+            });
+            return res;
+        }
+
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
             const searchTerm = document.getElementById('search-phone').value.trim();
@@ -635,52 +708,36 @@
             if (currentUser.role === 'agent') {
                 filtered = customers.filter(c => c.agentId === currentUser.id);
             }
-
-            // Phone Search Filter
-            if (searchTerm) {
-                filtered = filtered.filter(c => (c.number || '').includes(searchTerm));
-            }
+            if (searchTerm) filtered = filtered.filter(c => (c.number || '').includes(searchTerm));
 
             filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-            let totalPaidCollected = 0;
-            let upcomingAmount = 0;
-            let upcomingCount = 0;
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            // Dashboard & Upcoming Logic
+            const stats = calculateStats(filtered);
+            upcomingPaymentList = stats.upcomingDetails;
+
+            document.getElementById('stat-total-customers').textContent = stats.lifetimeSales;
+            document.getElementById('stat-list-total').textContent = stats.lifetimeSales;
+            document.getElementById('stat-total-fees').textContent = `$${stats.lifetimeRevenue.toLocaleString()}`;
+            
+            // Today Report
+            document.getElementById('stat-day-sales').textContent = stats.todaySalesCount;
+            document.getElementById('stat-day-revenue').textContent = `$${stats.todayRevenueSum.toLocaleString()}`;
+            
+            // Month Report
+            document.getElementById('stat-month-sales').textContent = stats.monthSalesCount;
+            document.getElementById('stat-month-revenue').textContent = `$${stats.monthRevenueSum.toLocaleString()}`;
+            document.getElementById('stat-upcoming').textContent = `$${stats.upcomingAmount.toLocaleString()}`;
+            document.getElementById('stat-upcoming-count').textContent = `${stats.upcomingCount} Customer(s) scheduled`;
 
             tbody.innerHTML = filtered.map(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                let paidSum = 0;
-                
-                sched.forEach(item => {
-                    const amount = parseFloat(item.amount || 0);
-                    if (item.status === 'paid') {
-                        paidSum += amount;
-                    } else if (item.date) {
-                        const d = new Date(item.date);
-                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                            upcomingAmount += amount;
-                        }
-                    }
-                });
-                
-                const hasUpcomingThisMonth = sched.some(item => {
-                    if (!item.date || item.status === 'paid') return false;
-                    const d = new Date(item.date);
-                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-                });
-                
-                if (hasUpcomingThisMonth) upcomingCount++;
-                totalPaidCollected += paidSum;
+                let paidSum = sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
 
-                // Look up agent name from current users list if possible
                 let displayedAgentName = c.agentName;
                 if (!displayedAgentName || displayedAgentName.includes('@')) {
                     const foundUser = users.find(u => u.id === c.agentId);
-                    if (foundUser && foundUser.name) displayedAgentName = foundUser.name;
-                    else displayedAgentName = c.agentName || c.agentEmail || 'Unknown';
+                    displayedAgentName = foundUser ? foundUser.name : (c.agentName || c.agentEmail);
                 }
 
                 return `
@@ -705,14 +762,40 @@
                     </td>
                 </tr>`;
             }).join('');
-            
-            document.getElementById('stat-total-customers').textContent = filtered.length;
-            document.getElementById('stat-list-total').textContent = filtered.length;
-            document.getElementById('stat-total-fees').textContent = `$${totalPaidCollected.toLocaleString()}`;
-            document.getElementById('stat-upcoming').textContent = `$${upcomingAmount.toLocaleString()}`;
-            document.getElementById('stat-upcoming-count').textContent = `${upcomingCount} Customer(s) scheduled for ${now.toLocaleString('default', { month: 'long' })}`;
         }
 
+        window.openUpcomingModal = () => {
+            const tbody = document.getElementById('upcoming-details-table');
+            // Sort by date
+            upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            
+            tbody.innerHTML = upcomingPaymentList.map(item => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-gray-900 text-sm">${item.name}</div>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-bold text-blue-600">${item.phone}</td>
+                    <td class="px-6 py-4 text-xs font-black text-gray-500 uppercase">${item.date}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="font-black text-gray-900">$${item.amount.toLocaleString()}</div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if (upcomingPaymentList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-gray-400 font-bold">No payments scheduled for the remainder of this month.</td></tr>';
+            }
+
+            document.getElementById('upcoming-modal').classList.remove('hidden');
+            document.getElementById('upcoming-modal').classList.add('flex');
+        };
+
+        window.closeUpcomingModal = () => {
+            document.getElementById('upcoming-modal').classList.add('hidden');
+            document.getElementById('upcoming-modal').classList.remove('flex');
+        };
+
+        // CRUD, FORM, and UI Helpers...
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!authUser) return;
@@ -721,18 +804,13 @@
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
             const editUserId = document.getElementById('edit-user-id-field').value;
-
             try {
                 if (editUserId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editUserId), {
-                        name, email, password, role
-                    });
-                    showToast("User account updated.");
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editUserId), { name, email, password, role });
+                    showToast("User updated.");
                 } else {
                     if (users.some(u => u.email === email)) return showToast("User exists!");
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
-                        name, email, password, role, createdAt: new Date().toISOString() 
-                    });
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { name, email, password, role, createdAt: new Date().toISOString() });
                     showToast("User created.");
                 }
                 resetUserForm();
@@ -746,11 +824,9 @@
             const data = Object.fromEntries(formData.entries());
             const editId = document.getElementById('edit-customer-id').value;
 
-            // Strict Duplicate Phone Check (Only for NEW enrollments)
             if (!editId) {
                 const phone = data.number.trim();
-                const isDuplicate = customers.some(c => c.number && c.number.trim() === phone);
-                if (isDuplicate) {
+                if (customers.some(c => c.number && c.number.trim() === phone)) {
                     showToast("Error: Phone number already exists!");
                     return;
                 }
@@ -761,28 +837,22 @@
                 const amount = item.querySelector('.tenure-amount-input').value;
                 const dateInput = item.querySelector('input[type="date"]');
                 const statusInput = item.querySelector('.tenure-status-select');
-                schedule.push({
-                    month: index + 1,
-                    amount: parseFloat(amount),
-                    date: dateInput ? dateInput.value : "",
-                    status: statusInput ? statusInput.value : 'pending'
-                });
+                schedule.push({ month: index + 1, amount: parseFloat(amount), date: dateInput ? dateInput.value : "", status: statusInput ? statusInput.value : 'pending' });
             });
             data.paymentSchedule = JSON.stringify(schedule);
 
             try {
                 if (editId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("Cloud Record Updated.");
+                    showToast("Record updated.");
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
-                    // Ensure the most recent name is saved
                     data.agentName = currentUser.name || currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("New Enrollment Saved.");
+                    showToast("Enrollment saved.");
                 }
                 resetForm();
                 switchTab('customer-list');
@@ -796,14 +866,9 @@
         };
 
         window.deleteCustomer = async (id) => {
-            if (!authUser || !confirm("Are you sure you want to permanently delete this customer record?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-                showToast("Customer record deleted.");
-            } catch (err) {
-                console.error("Delete failed:", err);
-                showToast("Error deleting record.");
-            }
+            if (!authUser || !confirm("Permanently delete customer?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
+            showToast("Deleted.");
         };
 
         window.editUserAccount = (id) => {
@@ -834,12 +899,10 @@
             document.getElementById('submit-btn').textContent = "Update Cloud Record";
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
-
             Object.keys(c).forEach(key => {
                 const el = document.getElementsByName(key)[0];
                 if (el) el.value = c[key];
             });
-
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
             updatePaymentSchedule(sched);
         };
@@ -867,20 +930,7 @@
                 group.classList.add('hidden');
                 const amt = (existing && existing[0]) ? existing[0].amount : fee;
                 const currentStatus = (existing && existing[0]) ? existing[0].status : (payToday ? 'paid' : 'pending');
-                
-                container.innerHTML = `
-                <div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm" data-paid="${payToday}">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-[10px] font-black text-gray-400 uppercase">Single Total</span>
-                        <select class="tenure-status-select text-[10px] font-bold border rounded p-1">
-                            <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option>
-                            <option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div>
-                    <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${(existing && existing[0]) ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}">
-                </div>`;
+                container.innerHTML = `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-3"><span class="text-[10px] font-black text-gray-400 uppercase">Single Total</span><select class="tenure-status-select text-[10px] font-bold border rounded p-1"><option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div><input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${(existing && existing[0]) ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}"></div>`;
             } else {
                 group.classList.remove('hidden');
                 const count = parseInt(document.getElementById('tenureCount').value);
@@ -889,20 +939,7 @@
                     const isFirstToday = (i === 1 && payToday);
                     const sched = existing && existing[i-1] ? existing[i-1] : null;
                     const currentStatus = sched ? sched.status : (isFirstToday ? 'paid' : 'pending');
-
-                    container.innerHTML += `
-                    <div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Inst. #${i}</span>
-                            <select class="tenure-status-select text-[10px] font-bold border rounded p-1">
-                                <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option>
-                                <option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option>
-                            </select>
-                        </div>
-                        <div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${sched ? sched.amount : perMonth.toFixed(2)}"></div>
-                        <input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : (isFirstToday ? new Date().toISOString().split('T')[0] : '')}">
-                    </div>`;
+                    container.innerHTML += `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-3"><span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Inst. #${i}</span><select class="tenure-status-select text-[10px] font-bold border rounded p-1"><option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${sched ? sched.amount : perMonth.toFixed(2)}"></div><input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : (isFirstToday ? new Date().toISOString().split('T')[0] : '')}"></div>`;
                 }
             }
         };
@@ -910,14 +947,8 @@
         window.toggleBillingAddress = () => {
             const same = document.getElementById('sameAddress').checked;
             const billing = document.getElementById('billingAddress');
-            if (same) {
-                billing.value = document.getElementById('mailingAddress').value;
-                billing.readOnly = true;
-                billing.classList.add('bg-gray-100');
-            } else {
-                billing.readOnly = false;
-                billing.classList.remove('bg-gray-100');
-            }
+            if (same) { billing.value = document.getElementById('mailingAddress').value; billing.readOnly = true; billing.classList.add('bg-gray-100'); }
+            else { billing.readOnly = false; billing.classList.remove('bg-gray-100'); }
         };
 
         window.resetForm = () => {
@@ -956,6 +987,8 @@
         window.viewUserStats = viewUserStats;
         window.closeStats = closeStats;
         window.renderCustomers = renderCustomers;
+        window.openUpcomingModal = openUpcomingModal;
+        window.closeUpcomingModal = closeUpcomingModal;
     </script>
 </body>
 </html>
