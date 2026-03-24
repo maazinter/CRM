@@ -675,6 +675,14 @@
                 if (hasUpcomingThisMonth) upcomingCount++;
                 totalPaidCollected += paidSum;
 
+                // Look up agent name from current users list if possible
+                let displayedAgentName = c.agentName;
+                if (!displayedAgentName || displayedAgentName.includes('@')) {
+                    const foundUser = users.find(u => u.id === c.agentId);
+                    if (foundUser && foundUser.name) displayedAgentName = foundUser.name;
+                    else displayedAgentName = c.agentName || c.agentEmail || 'Unknown';
+                }
+
                 return `
                 <tr class="hover:bg-gray-50 transition animate-fade-in">
                     <td class="px-8 py-5">
@@ -682,7 +690,7 @@
                         <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
                         <div class="text-[10px] text-blue-500 font-bold">${c.number || 'No Phone'}</div>
                     </td>
-                    <td class="px-8 py-5 text-xs font-bold text-gray-800">${c.agentName || c.agentEmail}</td>
+                    <td class="px-8 py-5 text-xs font-bold text-gray-800">${displayedAgentName}</td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
                         <div class="text-[10px] text-gray-400">${c.loanLender}</div>
@@ -769,6 +777,7 @@
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
+                    // Ensure the most recent name is saved
                     data.agentName = currentUser.name || currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
