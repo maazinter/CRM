@@ -58,7 +58,7 @@
                         <span id="role-badge" class="ml-4 px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100"></span>
                     </div>
                     <div class="flex items-center gap-6">
-                        <span id="user-display" class="hidden md:block text-sm font-semibold text-gray-500"></span>
+                        <span id="user-display" class="hidden md:block text-sm font-black text-gray-800"></span>
                         <button id="logout-btn" class="flex items-center gap-2 text-gray-400 hover:text-red-500 font-bold transition">
                             <span class="text-sm">Logout</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,6 +165,10 @@
                             <form id="add-user-form" class="space-y-4">
                                 <input type="hidden" id="edit-user-id-field">
                                 <div>
+                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Full Name</label>
+                                    <input type="text" name="userName" id="user-field-name" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
                                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Email</label>
                                     <input type="email" name="userEmail" id="user-field-email" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
@@ -186,6 +190,7 @@
                             <table class="w-full text-left min-w-[700px]">
                                 <thead class="bg-gray-50 border-b border-gray-100">
                                     <tr>
+                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Full Name</th>
                                         <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
                                         <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Password</th>
                                         <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Role</th>
@@ -455,7 +460,7 @@
             errorDiv.classList.add('hidden');
 
             if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
-                return loginSuccess({ email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
+                return loginSuccess({ name: 'Super Admin', email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
             }
 
             if (!isFirebaseReady || !authUser) {
@@ -490,7 +495,7 @@
             localStorage.setItem('crm_session_v6', JSON.stringify(userObj));
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
-            document.getElementById('user-display').textContent = currentUser.email;
+            document.getElementById('user-display').textContent = currentUser.name || currentUser.email;
             document.getElementById('role-badge').textContent = currentUser.role;
             applyRolePermissions();
             syncDataStreams();
@@ -533,7 +538,8 @@
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(u => `
                 <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 font-bold text-gray-700">${u.email}</td>
+                    <td class="px-6 py-4 font-bold text-gray-900">${u.name || 'No Name'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
                     <td class="px-6 py-4 font-mono text-xs text-gray-500">${u.password}</td>
                     <td class="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-blue-500">${u.role}</td>
                     <td class="px-6 py-4 text-right">
@@ -569,14 +575,12 @@
             agentCustomers.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 
-                // Sales counts
                 if (c.createdAt) {
                     const createdDate = new Date(c.createdAt);
                     if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) monthSales++;
                     if (c.createdAt.startsWith(todayStr)) daySales++;
                 }
 
-                // Revenue sums
                 sched.forEach(item => {
                     const amt = parseFloat(item.amount || 0);
                     if (item.status === 'paid') {
@@ -590,7 +594,7 @@
                 });
             });
 
-            document.getElementById('stats-user-email').textContent = user.email;
+            document.getElementById('stats-user-email').textContent = user.name || user.email;
             document.getElementById('stats-user-role').textContent = user.role;
             document.getElementById('stat-user-total-sales').textContent = lifetimeSales;
             document.getElementById('stat-user-total-revenue').textContent = `$${lifetimeRevenue.toLocaleString()}`;
@@ -655,7 +659,7 @@
                         <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
                         <div class="text-[10px] text-blue-500 font-bold">${c.number || 'No Phone'}</div>
                     </td>
-                    <td class="px-8 py-5 text-xs font-bold text-gray-500">${c.agentEmail}</td>
+                    <td class="px-8 py-5 text-xs font-bold text-gray-800">${c.agentName || c.agentEmail}</td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
                         <div class="text-[10px] text-gray-400">${c.loanLender}</div>
@@ -680,6 +684,7 @@
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!authUser) return;
+            const name = e.target.userName.value.trim();
             const email = e.target.userEmail.value.trim().toLowerCase();
             const password = e.target.userPassword.value;
             const role = e.target.userRole.value;
@@ -688,13 +693,13 @@
             try {
                 if (editUserId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editUserId), {
-                        email, password, role
+                        name, email, password, role
                     });
                     showToast("User account updated.");
                 } else {
                     if (users.some(u => u.email === email)) return showToast("User exists!");
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
-                        email, password, role, createdAt: new Date().toISOString() 
+                        name, email, password, role, createdAt: new Date().toISOString() 
                     });
                     showToast("User created.");
                 }
@@ -730,6 +735,7 @@
                 } else {
                     data.agentId = currentUser.id;
                     data.agentEmail = currentUser.email;
+                    data.agentName = currentUser.name || currentUser.email;
                     data.createdAt = new Date().toISOString();
                     data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
@@ -762,6 +768,7 @@
             if (!u) return;
             document.getElementById('user-form-title').textContent = "Edit User";
             document.getElementById('edit-user-id-field').value = id;
+            document.getElementById('user-field-name').value = u.name || '';
             document.getElementById('user-field-email').value = u.email;
             document.getElementById('user-field-password').value = u.password;
             document.getElementById('user-field-role').value = u.role;
