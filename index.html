@@ -198,6 +198,8 @@
                         
                         <form id="customer-form" class="space-y-16">
                             <input type="hidden" id="edit-customer-id">
+                            <input type="hidden" id="original-agent-id" name="originalAgentId">
+                            <input type="hidden" id="original-agent-name" name="originalAgentName">
                             
                             <!-- Personal Info -->
                             <div class="space-y-8">
@@ -207,10 +209,24 @@
                                     </div>
                                     <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">1. Client Identification</h3>
                                 </div>
+                                
+                                <!-- Admin Only: Agent Assignment -->
+                                <div id="admin-agent-select-group" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-blue-500 uppercase ml-2 tracking-widest">Assigned Sales Agent</label>
+                                        <select id="assigned-agent-select" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
+                                            <option value="">-- No Agent Assigned --</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end pb-4">
+                                        <p class="text-[10px] text-slate-400 italic">Administrators can manually re-assign this file to any system user.</p>
+                                    </div>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Full Legal Name</label>
-                                        <input type="text" name="name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                        <input type="text" name="name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium uppercase">
                                     </div>
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Phone Number</label>
@@ -619,6 +635,9 @@
             
             // Dashboard sections
             document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent');
+            
+            // Admin only form groups
+            document.getElementById('admin-agent-select-group').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
@@ -635,6 +654,7 @@
                 snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                 renderUsers();
                 renderAgentPerformance();
+                populateAgentSelect();
             });
 
             // Stream Customers
@@ -645,6 +665,20 @@
                 renderPipelineStats();
                 renderAgentPerformance();
             });
+        }
+
+        function populateAgentSelect() {
+            const select = document.getElementById('assigned-agent-select');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- No Agent Assigned --</option>';
+            
+            // Add Admin as option
+            select.innerHTML += `<option value="ROOT">System Admin (System Root)</option>`;
+            
+            users.forEach(u => {
+                select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`;
+            });
+            select.value = currentVal;
         }
 
         function renderUsers() {
@@ -681,7 +715,9 @@
             
             customers.forEach(c => {
                 const id = c.agentId || 'system';
-                const name = c.agentName || 'System/Admin';
+                let name = c.agentName || 'Unassigned';
+                if (name === 'System Root') name = 'Admin';
+                
                 if (!performance[id]) performance[id] = { 
                     name, 
                     totalSales: 0, 
@@ -843,6 +879,9 @@
                 // Find next pending date
                 const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
                 const totalPaid = calculatePaidSum(c);
+                
+                let agentDisp = c.agentName || 'System';
+                if (agentDisp === 'System Root') agentDisp = 'Admin';
 
                 return `
                 <tr class="hover:bg-slate-50 transition group">
@@ -852,7 +891,7 @@
                         <div class="text-[10px] text-blue-500 font-black mt-1">${c.number}</div>
                     </td>
                     <td class="px-8 py-5">
-                        <div class="text-xs font-black text-slate-700">${c.agentName || 'System'}</div>
+                        <div class="text-xs font-black text-slate-700">${agentDisp}</div>
                         <div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div>
                     </td>
                     <td class="px-8 py-5">
@@ -873,7 +912,7 @@
                     <td class="px-8 py-5">
                         <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
                     </td>
-                    <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
+                    <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' && currentUser.role !== 'manager' ? 'hidden' : ''}">
                         <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2 rounded-xl hover:bg-blue-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
                             <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
@@ -979,6 +1018,36 @@
             const data = Object.fromEntries(formData.entries());
             const editId = document.getElementById('edit-customer-id').value;
 
+            // Handle Agent Info Safely
+            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+                const manualAgentId = document.getElementById('assigned-agent-select').value;
+                if (manualAgentId === 'ROOT') {
+                    data.agentId = 'ROOT';
+                    data.agentName = 'System Root';
+                } else if (manualAgentId) {
+                    const agentObj = users.find(u => u.id === manualAgentId);
+                    data.agentId = manualAgentId;
+                    data.agentName = agentObj?.name || 'Unknown Agent';
+                } else {
+                    // Preserve original or current
+                    data.agentId = editId ? data.originalAgentId : currentUser.id;
+                    data.agentName = editId ? data.originalAgentName : currentUser.name;
+                }
+            } else {
+                // If agent is editing, definitely don't change original agent fields unless it's new
+                if (editId) {
+                    data.agentId = data.originalAgentId;
+                    data.agentName = data.originalAgentName;
+                } else {
+                    data.agentId = currentUser.id;
+                    data.agentName = currentUser.name;
+                }
+            }
+
+            // Cleanup original info before saving
+            delete data.originalAgentId;
+            delete data.originalAgentName;
+
             // Collect schedule
             const schedule = [];
             document.querySelectorAll('.schedule-item').forEach((item, index) => {
@@ -994,8 +1063,6 @@
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
                     showToast("Cloud Record Updated Successfully");
                 } else {
-                    data.agentId = currentUser.id;
-                    data.agentName = currentUser.name;
                     data.createdAt = new Date().toISOString();
                     data.status = 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
@@ -1016,6 +1083,14 @@
             document.getElementById('submit-btn').textContent = "Update Records";
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
+            
+            // Set original fields for preservation
+            document.getElementById('original-agent-id').value = c.agentId || '';
+            document.getElementById('original-agent-name').value = c.agentName || '';
+            
+            // Set admin agent select if visible
+            const select = document.getElementById('assigned-agent-select');
+            if (select) select.value = c.agentId || '';
             
             Object.keys(c).forEach(key => {
                 const el = document.getElementsByName(key)[0];
@@ -1134,6 +1209,9 @@
         window.resetForm = () => {
             document.getElementById('customer-form').reset();
             document.getElementById('edit-customer-id').value = "";
+            document.getElementById('original-agent-id').value = "";
+            document.getElementById('original-agent-name').value = "";
+            document.getElementById('assigned-agent-select').value = "";
             document.getElementById('form-title').textContent = "Customer Enrollment";
             document.getElementById('submit-btn').textContent = "Finalize & Submit Enrollment";
             document.getElementById('cancel-edit').classList.add('hidden');
