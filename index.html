@@ -416,7 +416,7 @@
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due Date</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Collected</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Status</th>
-                                        <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right hidden">Manage</th>
+                                        <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Manage</th>
                                     </tr>
                                 </thead>
                                 <tbody id="customer-table-body" class="divide-y divide-slate-50">
@@ -630,7 +630,7 @@
             const role = currentUser.role;
             document.getElementById('nav-add-customer').classList.toggle('hidden', role === 'manager');
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
-            document.getElementById('th-actions').classList.toggle('hidden', role !== 'admin');
+            document.getElementById('th-actions').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
             document.getElementById('admin-status-section').classList.toggle('hidden', role !== 'admin');
             
             // Dashboard sections
@@ -655,7 +655,7 @@
                 renderUsers();
                 renderAgentPerformance();
                 populateAgentSelect();
-            });
+            }, (err) => console.error(err));
 
             // Stream Customers
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
@@ -664,7 +664,7 @@
                 renderCustomers();
                 renderPipelineStats();
                 renderAgentPerformance();
-            });
+            }, (err) => console.error(err));
         }
 
         function populateAgentSelect() {
@@ -785,7 +785,8 @@
             const counts = { 'Active': 0, 'Processing': 0, 'Approved': 0, 'Cancelled': 0 };
             
             customers.forEach(c => {
-                if (counts[c.status] !== undefined) counts[c.status]++;
+                const s = c.status || 'Active';
+                if (counts[s] !== undefined) counts[s]++;
             });
 
             const total = customers.length || 1;
@@ -832,7 +833,6 @@
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
                     } else if (item.date && c.status !== 'Cancelled') {
-                        // Skip cancelled files for upcoming details and upcoming revenue sum
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
                             metrics.upcomingMonth += amt;
@@ -846,18 +846,27 @@
 
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
-            const search = document.getElementById('search-input').value.toLowerCase();
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
             const filter = document.getElementById('filter-status').value;
 
             let filtered = customers;
+            
+            // Filter by Agent Access
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
-            if (filter !== 'All') filtered = filtered.filter(c => c.status === filter);
+            
+            // Filter by Status
+            if (filter !== 'All') {
+                filtered = filtered.filter(c => (c.status || 'Active') === filter);
+            }
+            
+            // Filter by Search Input
             if (search) {
-                filtered = filtered.filter(c => 
-                    c.name.toLowerCase().includes(search) || 
-                    (c.number || '').includes(search) ||
-                    (c.email || '').toLowerCase().includes(search)
-                );
+                filtered = filtered.filter(c => {
+                    const name = (c.name || '').toLowerCase();
+                    const phone = (c.number || '').toLowerCase();
+                    const email = (c.email || '').toLowerCase();
+                    return name.includes(search) || phone.includes(search) || email.includes(search);
+                });
             }
 
             const metrics = calculateMetrics(filtered);
@@ -886,17 +895,17 @@
                 return `
                 <tr class="hover:bg-slate-50 transition group">
                     <td class="px-8 py-5">
-                        <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase">${c.name}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email}</div>
-                        <div class="text-[10px] text-blue-500 font-black mt-1">${c.number}</div>
+                        <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div>
+                        <div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div>
                     </td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-slate-700">${agentDisp}</div>
                         <div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div>
                     </td>
                     <td class="px-8 py-5">
-                        <div class="text-xs font-black text-slate-800">${c.processor} / #${c.fileNumber}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender}</div>
+                        <div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div>
                     </td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div>
@@ -913,9 +922,13 @@
                         <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
                     </td>
                     <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' && currentUser.role !== 'manager' ? 'hidden' : ''}">
-                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2 rounded-xl hover:bg-blue-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
                         </div>
                     </td>
                 </tr>`;
@@ -965,7 +978,7 @@
             container.innerHTML = '';
             if (type === 'Single') {
                 group.classList.add('hidden');
-                const sched = existing && existing[0] ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
+                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
                 group.classList.remove('hidden');
@@ -973,7 +986,7 @@
                 const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
-                    const sched = existing && existing[i-1] ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
+                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
                     container.innerHTML += createScheduleItem(i, sched, false);
                 }
             }
@@ -1030,8 +1043,8 @@
                     data.agentName = agentObj?.name || 'Unknown Agent';
                 } else {
                     // Preserve original or current
-                    data.agentId = editId ? data.originalAgentId : currentUser.id;
-                    data.agentName = editId ? data.originalAgentName : currentUser.name;
+                    data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id;
+                    data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name;
                 }
             } else {
                 // If agent is editing, definitely don't change original agent fields unless it's new
@@ -1044,7 +1057,7 @@
                 }
             }
 
-            // Cleanup original info before saving
+            // Cleanup original info from data object before saving (avoid field pollution)
             delete data.originalAgentId;
             delete data.originalAgentName;
 
@@ -1064,7 +1077,7 @@
                     showToast("Cloud Record Updated Successfully");
                 } else {
                     data.createdAt = new Date().toISOString();
-                    data.status = 'Active';
+                    data.status = data.status || 'Active';
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
                     showToast("New Enrollment Deployed");
                 }
@@ -1094,7 +1107,7 @@
             
             Object.keys(c).forEach(key => {
                 const el = document.getElementsByName(key)[0];
-                if (el) el.value = c[key];
+                if (el) el.value = c[key] || '';
             });
             
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
@@ -1103,8 +1116,12 @@
 
         window.deleteCustomer = async (id) => {
             if (!confirm("Caution: Are you sure you want to remove this client from the database?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-            showToast("Record Purged");
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
+                showToast("Record Purged");
+            } catch (err) {
+                showToast("Delete Failed");
+            }
         };
 
         // User management
