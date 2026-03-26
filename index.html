@@ -170,6 +170,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Agent Performance Section (Admin/Manager Only) -->
+                    <div id="agent-performance-section" class="hidden bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                Agent Performance Leaderboard
+                            </h4>
+                        </div>
+                        <div id="agent-performance-container" class="overflow-hidden">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Enrollment Form Tab -->
@@ -377,10 +390,11 @@
 
                     <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                         <div class="overflow-x-auto custom-scroll">
-                            <table class="w-full text-left min-w-[1200px]">
+                            <table class="w-full text-left min-w-[1300px]">
                                 <thead class="bg-slate-50 border-b border-slate-100">
                                     <tr>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Identity</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sales Agent</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Details</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payments Done</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due Date</th>
@@ -602,6 +616,9 @@
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
             document.getElementById('th-actions').classList.toggle('hidden', role !== 'admin');
             document.getElementById('admin-status-section').classList.toggle('hidden', role !== 'admin');
+            
+            // Dashboard sections
+            document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent');
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
@@ -617,6 +634,7 @@
                 users = [];
                 snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                 renderUsers();
+                renderAgentPerformance();
             });
 
             // Stream Customers
@@ -625,6 +643,7 @@
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
                 renderPipelineStats();
+                renderAgentPerformance();
             });
         }
 
@@ -649,6 +668,80 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function renderAgentPerformance() {
+            if (!currentUser || currentUser.role === 'agent') return;
+            
+            const container = document.getElementById('agent-performance-container');
+            const performance = {};
+            const now = new Date();
+            const currM = now.getMonth();
+            const currY = now.getFullYear();
+            
+            customers.forEach(c => {
+                const id = c.agentId || 'system';
+                const name = c.agentName || 'System/Admin';
+                if (!performance[id]) performance[id] = { 
+                    name, 
+                    totalSales: 0, 
+                    monthlySales: 0, 
+                    totalRevenue: 0, 
+                    monthlyRevenue: 0 
+                };
+
+                // Total Sales
+                performance[id].totalSales++;
+                
+                // Monthly Sales Check
+                const createdDate = new Date(c.createdAt);
+                if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) {
+                    performance[id].monthlySales++;
+                }
+
+                // Revenue Calculations
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                sched.forEach(item => {
+                    if (item.status === 'paid') {
+                        const amt = parseFloat(item.amount || 0);
+                        performance[id].totalRevenue += amt;
+                        
+                        const payDate = new Date(item.date);
+                        if (payDate.getMonth() === currM && payDate.getFullYear() === currY) {
+                            performance[id].monthlyRevenue += amt;
+                        }
+                    }
+                });
+            });
+
+            const sorted = Object.values(performance).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+            container.innerHTML = `
+                <div class="overflow-x-auto custom-scroll">
+                    <table class="w-full text-left min-w-[800px]">
+                        <thead>
+                            <tr class="border-b border-slate-50">
+                                <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th>
+                                <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th>
+                                <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th>
+                                <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th>
+                                <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            ${sorted.map(a => `
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td>
+                                    <td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.totalSales}</td>
+                                    <td class="py-5 px-4 text-center font-bold text-blue-600 text-sm bg-blue-50/30">${a.monthlySales}</td>
+                                    <td class="py-5 px-4 text-right font-black text-green-600 text-sm">$${a.totalRevenue.toLocaleString()}</td>
+                                    <td class="py-5 px-4 text-right font-black text-blue-700 text-sm bg-blue-50/30">$${a.monthlyRevenue.toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function renderPipelineStats() {
@@ -754,9 +847,13 @@
                 return `
                 <tr class="hover:bg-slate-50 transition group">
                     <td class="px-8 py-5">
-                        <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">${c.name}</div>
+                        <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase">${c.name}</div>
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email}</div>
                         <div class="text-[10px] text-blue-500 font-black mt-1">${c.number}</div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="text-xs font-black text-slate-700">${c.agentName || 'System'}</div>
+                        <div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div>
                     </td>
                     <td class="px-8 py-5">
                         <div class="text-xs font-black text-slate-800">${c.processor} / #${c.fileNumber}</div>
@@ -1009,7 +1106,7 @@
             tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
                 <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromUpcoming('${item.id}')">
                     <td class="px-6 py-4">
-                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors">${item.name}</div>
+                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div>
                         <div class="text-[10px] text-blue-500 font-bold uppercase tracking-tighter">Click to View Profile</div>
                     </td>
                     <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
