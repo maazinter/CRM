@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Independent Multi-Role CRM</title>
+    <title>MAAZ CRM - Multi-Role Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
@@ -15,53 +14,62 @@
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobile Nav Toggle Overlay */
+        #mobile-overlay.active { display: block; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-900 custom-scroll">
+<body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
 
-    <!-- Auth Container -->
-    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
-        <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-10 border border-gray-100">
+    <!-- Auth Section -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-600 to-indigo-800">
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 border border-white/20 animate-fade-in">
             <div class="text-center mb-10">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl mb-4 shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-2xl mb-4 shadow-xl shadow-blue-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">CRM Login</h1>
-                <p class="text-gray-500 mt-2">Enter your database credentials</p>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">MAAZ CRM</h1>
+                <p class="text-slate-500 mt-2 font-medium">Enterprise Management Portal</p>
             </div>
-            <form id="login-form" class="space-y-6">
+            <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
-                    <input type="email" id="login-email" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="name@company.com">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                    <input type="email" id="login-email" required class="block w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="name@company.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Password</label>
-                    <input type="password" id="login-password" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="••••••••">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                    <input type="password" id="login-password" required class="block w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="••••••••">
                 </div>
-                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50">Sign In</button>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50">Sign In to Dashboard</button>
             </form>
-            <div id="auth-error" class="mt-4 p-4 bg-red-50 text-red-600 text-xs rounded-xl hidden border border-red-100"></div>
+            <div id="auth-error" class="mt-4 p-4 bg-red-50 text-red-600 text-xs rounded-2xl hidden border border-red-100 font-bold text-center"></div>
         </div>
     </div>
 
     <!-- Main CRM Container -->
-    <div id="app-section" class="hidden">
-        <nav class="bg-white border-b border-gray-100 fixed w-full z-30 shadow-sm">
-            <div class="px-4 py-3 lg:px-6">
+    <div id="app-section" class="hidden min-h-screen flex flex-col">
+        <!-- Top Navbar -->
+        <nav class="bg-white border-b border-slate-100 fixed w-full z-40 shadow-sm">
+            <div class="px-4 py-3 lg:px-8">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
+                    <div class="flex items-center gap-4">
+                        <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
                         <span class="text-2xl font-black text-blue-600 tracking-tighter">MAAZ CRM</span>
-                        <span id="role-badge" class="ml-4 px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100"></span>
+                        <span id="role-badge" class="px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100 hidden sm:inline-block"></span>
                     </div>
-                    <div class="flex items-center gap-6">
-                        <span id="user-display" class="hidden md:block text-sm font-black text-gray-800"></span>
-                        <button id="logout-btn" class="flex items-center gap-2 text-gray-400 hover:text-red-500 font-bold transition">
-                            <span class="text-sm">Logout</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="flex items-center gap-4">
+                        <div class="text-right hidden sm:block">
+                            <p id="user-display" class="text-sm font-black text-slate-800 leading-none"></p>
+                            <p id="user-role-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter"></p>
+                        </div>
+                        <button id="logout-btn" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
@@ -70,300 +78,267 @@
             </div>
         </nav>
 
-        <div class="flex pt-16">
-            <aside class="w-64 h-[calc(100vh-64px)] fixed bg-white border-r border-gray-100 hidden md:block overflow-y-auto">
+        <div class="flex flex-1 pt-16">
+            <!-- Sidebar Navigation -->
+            <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto custom-scroll pt-16">
                 <div class="p-6 space-y-2">
-                    <button onclick="switchTab('dashboard')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition font-bold" id="nav-dashboard">
+                    <button onclick="switchTab('dashboard')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                         Dashboard
                     </button>
-                    <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition font-bold hidden" id="nav-add-customer">
+                    <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-add-customer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Add Customer
+                        Enroll Customer
                     </button>
-                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition font-bold" id="nav-customer-list">
+                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-customer-list">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                        Customers
+                        Enrollment Database
                     </button>
-                    <button onclick="switchTab('manage-users')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition font-bold hidden" id="nav-manage-users">
+                    <button onclick="switchTab('manage-users')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-manage-users">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                        Manage Users
+                        System Users
                     </button>
                 </div>
             </aside>
 
-            <main class="flex-1 md:ml-64 p-8 bg-gray-50 min-h-[calc(100vh-64px)] relative">
+            <!-- Mobile Overlay -->
+            <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden" onclick="toggleMobileMenu()"></div>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 md:ml-72 p-4 md:p-8 bg-slate-50 relative">
                 
-                <!-- Modals -->
-                <!-- User Stats Modal -->
-                <div id="user-stats-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-                    <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
-                        <div class="p-8 border-b border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h2 id="stats-user-email" class="text-xl font-black text-gray-900">User Performance</h2>
-                                <p id="stats-user-role" class="text-xs font-bold text-blue-500 uppercase tracking-widest mt-1"></p>
-                            </div>
-                            <button onclick="closeStats()" class="text-gray-400 hover:text-gray-900 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
+                <!-- Dashboard Tab -->
+                <section id="tab-dashboard" class="tab-content animate-fade-in space-y-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Performance Overview</h2>
+                            <p class="text-slate-500 font-medium">Real-time statistics across all channels</p>
                         </div>
-                        <div id="user-stats-content" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Payments Detail Modal -->
-                <div id="upcoming-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-                    <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-                        <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-blue-600 text-white">
-                            <div>
-                                <h2 class="text-2xl font-black">Upcoming Payments Detail</h2>
-                                <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Scheduled for Current Month</p>
-                            </div>
-                            <button onclick="closeUpcomingModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                        <div class="flex-1 overflow-y-auto p-6 custom-scroll">
-                            <table class="w-full text-left">
-                                <thead class="sticky top-0 bg-white border-b border-gray-100 z-10">
-                                    <tr>
-                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer</th>
-                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</th>
-                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
-                                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="upcoming-details-table" class="divide-y divide-gray-50"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manage Users Section -->
-                <section id="tab-manage-users" class="tab-content hidden animate-fade-in">
-                    <h2 class="text-2xl font-black text-gray-900 mb-8">System User Management</h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 id="user-form-title" class="text-lg font-bold text-gray-900">Create New User</h3>
-                                <button id="cancel-user-edit" class="hidden text-xs font-bold text-red-500" onclick="resetUserForm()">Cancel</button>
-                            </div>
-                            <form id="add-user-form" class="space-y-4">
-                                <input type="hidden" id="edit-user-id-field">
-                                <div>
-                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Full Name</label>
-                                    <input type="text" name="userName" id="user-field-name" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Email</label>
-                                    <input type="email" name="userEmail" id="user-field-email" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Password</label>
-                                    <input type="text" name="userPassword" id="user-field-password" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Role</label>
-                                    <select name="userRole" id="user-field-role" required class="w-full mt-1 px-4 py-2 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="agent">Agent</option>
-                                        <option value="manager">Manager</option>
-                                    </select>
-                                </div>
-                                <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100">Add User Account</button>
-                            </form>
-                        </div>
-                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
-                            <table class="w-full text-left min-w-[700px]">
-                                <thead class="bg-gray-50 border-b border-gray-100">
-                                    <tr>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Full Name</th>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Password</th>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Role</th>
-                                        <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="user-management-table" class="divide-y divide-gray-50"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Dashboard Section -->
-                <section id="tab-dashboard" class="tab-content animate-fade-in space-y-12">
-                    <!-- Lifetime Section -->
-                    <div>
-                        <h2 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Lifetime Summary</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total System Enrollments</p>
-                                <h3 id="stat-total-customers" class="text-4xl font-black text-gray-900">0</h3>
-                            </div>
-                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                                <p class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Total Paid Collected</p>
-                                <h3 id="stat-total-fees" class="text-4xl font-black text-green-600">$0</h3>
-                            </div>
+                        <div class="bg-white p-2 rounded-2xl border border-slate-100 flex items-center gap-2 shadow-sm">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-2"></span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">System Live</span>
                         </div>
                     </div>
 
-                    <!-- Daily & Monthly Reports -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        <!-- Full Day Report -->
-                        <div class="bg-amber-50 p-8 rounded-[2rem] border border-amber-100">
-                            <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest mb-6">Today's Activity Report</h3>
+                    <!-- Metric Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrollments</p>
+                            <h3 id="stat-total-customers" class="text-3xl font-black text-slate-900">0</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
+                            <h3 id="stat-total-fees" class="text-3xl font-black text-green-600">$0</h3>
+                        </div>
+                        <div class="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-100 text-white">
+                            <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Today's Revenue</p>
+                            <h3 id="stat-day-revenue" class="text-3xl font-black">$0</h3>
+                        </div>
+                        <div id="card-upcoming" onclick="openUpcomingModal()" class="bg-white p-6 rounded-3xl border-2 border-transparent hover:border-blue-500 shadow-sm cursor-pointer transition-all active:scale-[0.98]">
+                            <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Upcoming (MTD)</p>
+                            <h3 id="stat-upcoming" class="text-3xl font-black text-slate-900">$0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Report Sections -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Current Period Activity
+                            </h4>
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">New Sales</p>
-                                    <h4 id="stat-day-sales" class="text-2xl font-black text-gray-900">0</h4>
+                                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Sales</p>
+                                    <h4 id="stat-month-sales" class="text-2xl font-black">0</h4>
                                 </div>
-                                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Revenue</p>
-                                    <h4 id="stat-day-revenue" class="text-2xl font-black text-amber-600">$0</h4>
+                                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Collected</p>
+                                    <h4 id="stat-month-revenue" class="text-2xl font-black">$0</h4>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Monthly Report -->
-                        <div class="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
-                            <h3 class="text-sm font-black text-blue-700 uppercase tracking-widest mb-6">Current Month Report</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Total Sales</p>
-                                    <h4 id="stat-month-sales" class="text-2xl font-black text-gray-900">0</h4>
-                                </div>
-                                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Collected</p>
-                                    <h4 id="stat-month-revenue" class="text-2xl font-black text-blue-600">$0</h4>
-                                </div>
-                                <div id="card-upcoming" onclick="openUpcomingModal()" class="col-span-2 bg-white p-6 rounded-2xl shadow-sm border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all active:scale-[0.98]">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="text-[10px] font-black text-blue-400 uppercase mb-1">Upcoming Payments (Click for Detail)</p>
-                                            <h4 id="stat-upcoming" class="text-3xl font-black text-blue-600">$0</h4>
-                                            <p id="stat-upcoming-count" class="text-[10px] font-bold text-gray-400 mt-2">0 records found</p>
-                                        </div>
-                                        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                Pipeline Distribution
+                            </h4>
+                            <div id="pipeline-stats" class="space-y-4">
+                                <!-- Generated by JS -->
+                                <p class="text-slate-400 text-sm font-medium italic">Calculating distribution...</p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Enrollment Form Section -->
+                <!-- Enrollment Form Tab -->
                 <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
-                    <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-10">
-                        <div class="flex justify-between items-center mb-10">
-                            <h2 id="form-title" class="text-3xl font-black text-gray-900 tracking-tight">Customer Enrollment</h2>
-                            <button id="cancel-edit" class="hidden text-sm font-bold text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl transition" onclick="resetForm()">Cancel Edit</button>
+                    <div class="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-12">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
+                            <div>
+                                <h2 id="form-title" class="text-3xl font-black text-slate-900 tracking-tight">Customer Enrollment</h2>
+                                <p class="text-slate-500 font-medium mt-1">Fill out all sections to initiate processing</p>
+                            </div>
+                            <button id="cancel-edit" class="hidden text-sm font-black text-red-500 hover:bg-red-50 px-6 py-3 rounded-2xl transition-all border border-red-100" onclick="resetForm()">Cancel Editing</button>
                         </div>
                         
-                        <form id="customer-form" class="space-y-12">
+                        <form id="customer-form" class="space-y-16">
                             <input type="hidden" id="edit-customer-id">
                             
-                            <!-- Fields... (Mailing Address, Personal Info, FSA, Loan, etc.) -->
-                            <div class="space-y-6">
-                                <div class="flex items-center gap-3 text-blue-600 border-b border-gray-50 pb-4">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                            <!-- Personal Info -->
+                            <div class="space-y-8">
+                                <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
                                     </div>
-                                    <h3 class="text-lg font-black uppercase tracking-widest">Personal Identification</h3>
+                                    <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">1. Client Identification</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <input type="text" name="name" placeholder="Full Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="tel" name="number" placeholder="Phone Number" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="date" name="dob" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="text" name="ssn" placeholder="SSN Number" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="text" name="drivingLicense" placeholder="Driving License" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Full Legal Name</label>
+                                        <input type="text" name="name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Phone Number</label>
+                                        <input type="tel" name="number" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Email Address</label>
+                                        <input type="email" name="email" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Date of Birth</label>
+                                        <input type="date" name="dob" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Social Security Number</label>
+                                        <input type="text" name="ssn" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="XXX-XX-XXXX">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Driver's License</label>
+                                        <input type="text" name="drivingLicense" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <input type="number" name="annualIncome" placeholder="Annual Gross Income ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <select name="taxStatus" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="Single">Single</option>
-                                        <option value="Married-Joint">Married Filing Jointly</option>
-                                        <option value="Head-of-Household">Head of Household</option>
-                                    </select>
-                                    <input type="number" name="familySize" placeholder="Family Size" min="1" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <textarea name="mailingAddress" id="mailingAddress" placeholder="Mailing Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24"></textarea>
-                            </div>
-
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                <div class="space-y-6">
-                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">FSA Account</h3>
-                                    <input type="text" name="fsaUserId" placeholder="User ID" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="password" name="fsaPassword" placeholder="Password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <input type="text" name="fsaBackupCode" placeholder="Backup Code" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div class="space-y-6">
-                                    <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">Loan & Processing</h3>
-                                    <input type="text" name="loanLender" placeholder="Lender Name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <input type="number" name="loanAmount" placeholder="Loan Amount ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Fee ($)" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" oninput="updatePaymentSchedule()">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Annual Gross Income ($)</label>
+                                        <input type="number" name="annualIncome" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <select name="processor" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                            <option value="P1">Processor P1</option>
-                                            <option value="P2">Processor P2</option>
-                                            <option value="P3">Processor P3</option>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Tax Status</label>
+                                        <select name="taxStatus" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                            <option value="Single">Single</option>
+                                            <option value="Married-Joint">Married Filing Jointly</option>
+                                            <option value="Head-of-Household">Head of Household</option>
                                         </select>
-                                        <input type="text" name="fileNumber" placeholder="File #" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                     </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Family Size</label>
+                                        <input type="number" name="familySize" min="1" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Full Mailing Address</label>
+                                    <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium h-24"></textarea>
                                 </div>
                             </div>
 
-                            <div class="space-y-6">
-                                <h3 class="text-lg font-black uppercase tracking-widest text-blue-600 border-b border-gray-50 pb-4">Billing & Payment</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <select name="paymentMode" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="Card">Credit/Debit Card</option>
-                                        <option value="ACH">ACH Transfer</option>
-                                        <option value="Wire">Wire Transfer</option>
-                                    </select>
-                                    <select name="paymentType" id="paymentType" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" onchange="updatePaymentSchedule()">
-                                        <option value="Single">Single Shot</option>
-                                        <option value="Installments">Monthly Installments</option>
-                                    </select>
-                                </div>
-                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
-                                    <input type="text" name="cardNumber" placeholder="Card Number" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <input type="text" name="cardExpiry" placeholder="MM/YY" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
-                                        <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none">
+                            <!-- Financial details -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                <div class="space-y-8">
+                                    <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
+                                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+                                        </div>
+                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">2. FSA Credentials</h3>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <input type="text" name="fsaUserId" placeholder="FSA User ID" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="password" name="fsaPassword" placeholder="FSA Password" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="text" name="fsaBackupCode" placeholder="Backup Code / Secret Answer" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()" class="w-5 h-5 rounded text-blue-600">
-                                    <label for="sameAddress" class="text-sm font-bold text-gray-500 uppercase tracking-wider">Same as Mailing Address</label>
-                                </div>
-                                <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-20"></textarea>
-                                
-                                <div class="bg-gray-50 p-8 rounded-3xl border border-gray-100">
-                                    <div class="flex items-center justify-between mb-8 text-blue-600">
-                                        <h4 class="font-black uppercase tracking-widest">Payment Schedule & Status</h4>
-                                        <div class="flex items-center gap-3">
-                                            <input type="checkbox" id="payToday" onchange="updatePaymentSchedule()" class="w-5 h-5 rounded text-blue-600">
-                                            <label for="payToday" class="text-sm font-black text-gray-900">1st Payment is Today</label>
+                                <div class="space-y-8">
+                                    <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
+                                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">3. Loan Details</h3>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <input type="text" name="loanLender" placeholder="Current Lender Name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <input type="number" name="loanAmount" placeholder="Total Loan ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                            <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Total Fee ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-black text-blue-600" oninput="updatePaymentSchedule()">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <select name="processor" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                                <option value="Processor A">Processor A</option>
+                                                <option value="Processor B">Processor B</option>
+                                                <option value="Processor C">Processor C</option>
+                                            </select>
+                                            <input type="text" name="fileNumber" placeholder="Internal File #" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
                                         </div>
                                     </div>
-                                    <div id="tenure-input-group" class="hidden mb-6 flex items-center gap-4">
-                                        <span class="text-sm font-bold text-gray-500">Duration (Months):</span>
-                                        <input type="number" id="tenureCount" value="6" min="2" max="24" class="w-20 px-3 py-2 border rounded-xl outline-none" oninput="updatePaymentSchedule()">
-                                    </div>
-                                    <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                                 </div>
                             </div>
 
-                            <div id="admin-status-section" class="hidden p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
-                                <h3 class="text-sm font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
-                                <select name="status" id="field-status" class="w-full px-4 py-3 bg-white border border-amber-100 rounded-xl outline-none">
+                            <!-- Payment & Billing -->
+                            <div class="space-y-8">
+                                <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                                    </div>
+                                    <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">4. Payment Processing</h3>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <select name="paymentMode" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <option value="Card">Credit/Debit Card</option>
+                                        <option value="ACH">ACH Transfer</option>
+                                    </select>
+                                    <select name="paymentType" id="paymentType" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium" onchange="updatePaymentSchedule()">
+                                        <option value="Single">One-Time Payment</option>
+                                        <option value="Installments">Installment Plan</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                    <input type="text" name="cardNumber" placeholder="Card / Account Number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <input type="text" name="cardExpiry" placeholder="MM/YY" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                        <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 ml-2">
+                                    <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()" class="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500">
+                                    <label for="sameAddress" class="text-xs font-black text-slate-400 uppercase tracking-wider">Same as Mailing Address</label>
+                                </div>
+                                <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none h-20"></textarea>
+
+                                <div class="bg-slate-50 p-6 md:p-10 rounded-[2rem] border border-slate-100">
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                        <h4 class="font-black uppercase tracking-widest text-blue-600">Payment Breakdown</h4>
+                                        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
+                                            <input type="checkbox" id="payToday" onchange="updatePaymentSchedule()" class="w-5 h-5 rounded text-blue-600">
+                                            <label for="payToday" class="text-xs font-black text-slate-800 uppercase tracking-tighter">Initial Payment is Today</label>
+                                        </div>
+                                    </div>
+                                    <div id="tenure-input-group" class="hidden mb-8 flex items-center gap-4">
+                                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Duration (Months):</span>
+                                        <input type="number" id="tenureCount" value="6" min="2" max="24" class="w-24 px-4 py-2 border rounded-xl outline-none font-bold" oninput="updatePaymentSchedule()">
+                                    </div>
+                                    <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <!-- Schedule items populate here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="admin-status-section" class="hidden p-8 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                                <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
+                                <select name="status" id="field-status" class="w-full px-5 py-4 bg-white border border-amber-100 rounded-2xl outline-none font-bold">
                                     <option value="Active">Active</option>
                                     <option value="Processing">Processing</option>
                                     <option value="Approved">Approved</option>
@@ -372,55 +347,143 @@
                             </div>
 
                             <div class="flex justify-end pt-6">
-                                <button type="submit" id="submit-btn" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95">Complete Enrollment</button>
+                                <button type="submit" id="submit-btn" class="w-full md:w-auto bg-blue-600 text-white px-16 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all active:scale-95">Finalize & Submit Enrollment</button>
                             </div>
                         </form>
                     </div>
                 </section>
 
-                <!-- Customer Database View -->
-                <section id="tab-customer-list" class="tab-content hidden animate-fade-in">
-                    <h2 class="text-2xl font-black text-gray-900 mb-8">Enrollment Database</h2>
-                    
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-                        <div class="bg-blue-600 text-white px-10 py-4 rounded-3xl shadow-xl shadow-blue-100 flex items-center gap-6">
-                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Total System Sales</p>
-                                <h3 id="stat-list-total" class="text-2xl font-black">0</h3>
-                            </div>
+                <!-- Customer Database Tab -->
+                <section id="tab-customer-list" class="tab-content hidden animate-fade-in space-y-8">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Enrollment Database</h2>
+                            <p class="text-slate-500 font-medium">Manage and track all customer pipelines</p>
                         </div>
-
-                        <div class="relative w-full md:w-80">
-                            <input type="tel" id="search-phone" oninput="renderCustomers()" placeholder="Search by phone..." class="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-3xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-bold">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-4 top-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                            <select id="filter-status" onchange="renderCustomers()" class="px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="All">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <div class="relative flex-1 sm:w-80">
+                                <input type="text" id="search-input" oninput="renderCustomers()" placeholder="Search name or phone..." class="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-bold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-4 top-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-x-auto">
-                        <table class="w-full text-left min-w-[1000px]">
-                            <thead class="bg-gray-50 border-b border-gray-100">
-                                <tr>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Customer</th>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Agent</th>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Details</th>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Paid Collected</th>
-                                    <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                    <th id="th-actions" class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right hidden">Manage</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customer-table-body" class="divide-y divide-gray-50"></tbody>
-                        </table>
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto custom-scroll">
+                            <table class="w-full text-left min-w-[1000px]">
+                                <thead class="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Identity</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Agent</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Details</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Collected</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Status</th>
+                                        <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right hidden">Manage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customer-table-body" class="divide-y divide-slate-50">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Manage Users Tab -->
+                <section id="tab-manage-users" class="tab-content hidden animate-fade-in space-y-8">
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">System User Management</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 h-fit">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 id="user-form-title" class="text-lg font-black text-slate-900">Create Account</h3>
+                                <button id="cancel-user-edit" class="hidden text-[10px] font-black text-red-500 uppercase tracking-widest" onclick="resetUserForm()">Cancel</button>
+                            </div>
+                            <form id="add-user-form" class="space-y-4">
+                                <input type="hidden" id="edit-user-id-field">
+                                <input type="text" name="userName" id="user-field-name" placeholder="Full Name" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <input type="email" name="userEmail" id="user-field-email" placeholder="Email Address" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <input type="text" name="userPassword" id="user-field-password" placeholder="System Password" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <select name="userRole" id="user-field-role" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                                    <option value="agent">Agent</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                                <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Deploy Account</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="overflow-x-auto custom-scroll">
+                                <table class="w-full text-left min-w-[700px]">
+                                    <thead class="bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user-management-table" class="divide-y divide-slate-50"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </main>
         </div>
     </div>
 
+    <!-- User Stats Modal -->
+    <div id="user-stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h2 id="stats-user-email" class="text-xl font-black text-slate-900">User Performance</h2>
+                    <p id="stats-user-role" class="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1"></p>
+                </div>
+                <button onclick="closeStats()" class="bg-white p-2 rounded-xl text-slate-400 hover:text-slate-900 shadow-sm border border-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="user-stats-content" class="p-10 grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+        </div>
+    </div>
+
+    <!-- Upcoming Payments Modal -->
+    <div id="upcoming-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
+                <div>
+                    <h2 class="text-2xl font-black">Upcoming Pipeline Revenue</h2>
+                    <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Due for current month</p>
+                </div>
+                <button onclick="closeUpcomingModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 custom-scroll">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcoming-details-table" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast UI -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 font-bold text-center min-w-[200px]"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-slate-900 text-white px-10 py-5 rounded-3xl shadow-2xl z-[200] font-black text-sm tracking-tight text-center"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -434,8 +497,7 @@
             projectId: "maaz-crm",
             storageBucket: "maaz-crm.firebasestorage.app",
             messagingSenderId: "90365984370",
-            appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb",
-            measurementId: "G-LYLH7JHK16"
+            appId: "1:90365984370:web:e4dc468bc0f0f1005e0ceb"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -448,7 +510,6 @@
         let customers = [];
         let currentUser = null;
         let authUser = null;
-        let isFirebaseReady = false;
         let upcomingPaymentList = [];
 
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
@@ -458,8 +519,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authUser = user;
-                isFirebaseReady = true;
-                const saved = localStorage.getItem('crm_session_v6');
+                const saved = localStorage.getItem('crm_session_maaz_v2');
                 if (saved) {
                     const data = JSON.parse(saved);
                     if (data.email === ADMIN_EMAIL) loginSuccess(data);
@@ -467,20 +527,12 @@
                 }
             } else {
                 authUser = null;
-                isFirebaseReady = false;
-                signInAnonymously(auth).catch(handleCloudFailure);
+                signInAnonymously(auth).catch(err => {
+                    document.getElementById('auth-error').textContent = "Database Offline. Check Firewall.";
+                    document.getElementById('auth-error').classList.remove('hidden');
+                });
             }
         });
-
-        function handleCloudFailure(err) {
-            const errorDiv = document.getElementById('auth-error');
-            errorDiv.classList.remove('hidden');
-            errorDiv.innerHTML = `
-                <div class="font-bold mb-2 uppercase tracking-wide text-red-600">Database Access Denied</div>
-                <p class="mb-4 text-xs text-red-500">Firebase Error: ${err.code}</p>
-                <p class="text-xs">Update your Firestore Rules in the console to allow access.</p>
-            `;
-        }
 
         async function verifyCloudCredentials(data) {
             if (!authUser) return;
@@ -492,7 +544,7 @@
                     if (u.email === data.email && u.password === data.password) found = { ...u, id: d.id };
                 });
                 if (found) loginSuccess(found);
-                else localStorage.removeItem('crm_session_v6');
+                else localStorage.removeItem('crm_session_maaz_v2');
             } catch(e) {}
         }
 
@@ -508,14 +560,7 @@
             errorDiv.classList.add('hidden');
 
             if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
-                return loginSuccess({ name: 'Super Admin', email: ADMIN_EMAIL, role: 'admin', id: 'SUPER', password: ADMIN_PASS });
-            }
-
-            if (!isFirebaseReady || !authUser) {
-                errorDiv.textContent = "Connecting to database... try again in 5 seconds.";
-                errorDiv.classList.remove('hidden');
-                btn.disabled = false;
-                return;
+                return loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS });
             }
 
             try {
@@ -526,11 +571,8 @@
                     if (data.email === email && data.password === pass) matchedUser = { ...data, id: d.id };
                 });
 
-                if (matchedUser) {
-                    loginSuccess(matchedUser);
-                } else {
-                    throw new Error("Invalid username or password.");
-                }
+                if (matchedUser) loginSuccess(matchedUser);
+                else throw new Error("Security check failed. Invalid Credentials.");
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
@@ -540,14 +582,17 @@
 
         function loginSuccess(userObj) {
             currentUser = userObj;
-            localStorage.setItem('crm_session_v6', JSON.stringify(userObj));
+            localStorage.setItem('crm_session_maaz_v2', JSON.stringify(userObj));
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
             document.getElementById('user-display').textContent = currentUser.name || currentUser.email;
+            document.getElementById('user-role-display').textContent = currentUser.role;
             document.getElementById('role-badge').textContent = currentUser.role;
+            
             applyRolePermissions();
             syncDataStreams();
             switchTab('dashboard');
+            showToast(`Welcome back, ${currentUser.name.split(' ')[0]}`);
         }
 
         function applyRolePermissions() {
@@ -559,364 +604,207 @@
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
-            currentUser = null;
-            localStorage.removeItem('crm_session_v6');
+            localStorage.removeItem('crm_session_maaz_v2');
             location.reload();
         });
 
         function syncDataStreams() {
             if (!authUser) return;
 
-            if (currentUser.role === 'admin') {
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
-                    users = [];
-                    snap.forEach(d => users.push({ ...d.data(), id: d.id }));
-                    renderUsers();
-                }, (err) => console.error("User list failed:", err));
-            }
+            // Stream Users
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
+                users = [];
+                snap.forEach(d => users.push({ ...d.data(), id: d.id }));
+                renderUsers();
+            });
 
+            // Stream Customers
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
-            }, (err) => console.error("Customer list failed:", err));
+                renderPipelineStats();
+            });
         }
 
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
-            tbody.innerHTML = users.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(u => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 font-bold text-gray-900">${u.name || 'No Name'}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
-                    <td class="px-6 py-4 font-mono text-xs text-gray-500">${u.password}</td>
-                    <td class="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-blue-500">${u.role}</td>
+            tbody.innerHTML = users.map(u => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-black text-slate-900">${u.name}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
+                        <div class="text-[10px] font-bold text-blue-500 mt-1">${u.password}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200">${u.role}</span>
+                    </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-3">
-                            <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:underline transition font-black text-xs uppercase">Stats</button>
-                            <button onclick="editUserAccount('${u.id}')" class="text-blue-600 hover:underline transition font-black text-xs uppercase">Edit</button>
-                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:underline transition font-black text-xs uppercase">Remove</button>
+                            <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:text-blue-800 transition font-black text-[10px] uppercase">Stats</button>
+                            <button onclick="editUserAccount('${u.id}')" class="text-slate-400 hover:text-slate-900 transition font-black text-[10px] uppercase">Edit</button>
+                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-[10px] uppercase">Del</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
 
-        window.viewUserStats = (userId) => {
-            const user = users.find(u => u.id === userId);
-            if (!user) return;
+        function renderPipelineStats() {
+            const container = document.getElementById('pipeline-stats');
+            const counts = { 'Active': 0, 'Processing': 0, 'Approved': 0, 'Cancelled': 0 };
             
-            const agentCustomers = customers.filter(c => c.agentId === userId);
-            const stats = calculateStats(agentCustomers);
+            customers.forEach(c => {
+                if (counts[c.status] !== undefined) counts[c.status]++;
+            });
 
-            document.getElementById('stats-user-email').textContent = user.name || user.email;
-            document.getElementById('stats-user-role').textContent = user.role;
+            const total = customers.length || 1;
             
-            document.getElementById('user-stats-content').innerHTML = `
-                <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lifetime Performance</p>
-                    <div class="space-y-4">
-                        <div><p class="text-xs font-bold text-gray-500">Total Sales</p><h3 class="text-2xl font-black text-gray-900">${stats.lifetimeSales}</h3></div>
-                        <div><p class="text-xs font-bold text-gray-500">Total Revenue</p><h3 class="text-2xl font-black text-green-600">$${stats.lifetimeRevenue.toLocaleString()}</h3></div>
+            container.innerHTML = Object.entries(counts).map(([status, count]) => {
+                const percent = (count / total) * 100;
+                const color = status === 'Approved' ? 'bg-green-500' : (status === 'Cancelled' ? 'bg-red-500' : 'bg-blue-500');
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-end">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${status}</span>
+                            <span class="text-xs font-black text-slate-900">${count}</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="${color} h-full" style="width: ${percent}%"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Current Month</p>
-                    <div class="space-y-4">
-                        <div><p class="text-xs font-bold text-blue-600">Sales this Month</p><h3 class="text-2xl font-black text-gray-900">${stats.monthSalesCount}</h3></div>
-                        <div><p class="text-xs font-bold text-blue-600">Revenue this Month</p><h3 class="text-2xl font-black text-blue-700">$${stats.monthRevenueSum.toLocaleString()}</h3></div>
-                    </div>
-                </div>
-                <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 md:col-span-2">
-                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Today's Activity</p>
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <div class="flex-1"><p class="text-xs font-bold text-amber-600">Enrollments Today</p><h3 class="text-2xl font-black text-gray-900">${stats.todaySalesCount}</h3></div>
-                        <div class="flex-1"><p class="text-xs font-bold text-amber-600">Collected Today</p><h3 class="text-2xl font-black text-amber-700">$${stats.todayRevenueSum.toLocaleString()}</h3></div>
-                    </div>
-                </div>
-            `;
+                `;
+            }).join('');
+        }
 
-            document.getElementById('user-stats-modal').classList.remove('hidden');
-            document.getElementById('user-stats-modal').classList.add('flex');
-        };
-
-        window.closeStats = () => {
-            document.getElementById('user-stats-modal').classList.add('hidden');
-            document.getElementById('user-stats-modal').classList.remove('flex');
-        };
-
-        function calculateStats(targetData) {
+        function calculateMetrics(dataList) {
             const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            const currM = now.getMonth();
+            const currY = now.getFullYear();
             const todayStr = now.toISOString().split('T')[0];
 
-            let res = {
-                lifetimeSales: targetData.length,
-                lifetimeRevenue: 0,
-                todaySalesCount: 0,
-                todayRevenueSum: 0,
-                monthSalesCount: 0,
-                monthRevenueSum: 0,
-                upcomingAmount: 0,
-                upcomingCount: 0,
-                upcomingDetails: []
+            let metrics = {
+                lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0,
+                upcomingMonth: 0, upcomingDetails: []
             };
 
-            targetData.forEach(c => {
+            dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 
-                if (c.createdAt) {
-                    if (c.createdAt.startsWith(todayStr)) res.todaySalesCount++;
-                    const d = new Date(c.createdAt);
-                    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) res.monthSalesCount++;
-                }
+                if (c.createdAt?.startsWith(todayStr)) {} // Track count if needed
 
-                let hasUpcomingThisMonth = false;
+                const d = new Date(c.createdAt);
+                if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
+
                 sched.forEach(item => {
                     const amt = parseFloat(item.amount || 0);
                     if (item.status === 'paid') {
-                        res.lifetimeRevenue += amt;
-                        if (item.date) {
-                            if (item.date === todayStr) res.todayRevenueSum += amt;
-                            const d = new Date(item.date);
-                            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) res.monthRevenueSum += amt;
-                        }
+                        metrics.lifetimeRev += amt;
+                        if (item.date === todayStr) metrics.todayRev += amt;
+                        const pd = new Date(item.date);
+                        if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
                     } else if (item.date) {
-                        const d = new Date(item.date);
-                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                            res.upcomingAmount += amt;
-                            hasUpcomingThisMonth = true;
-                            res.upcomingDetails.push({
-                                name: c.name,
-                                phone: c.number || 'N/A',
-                                date: item.date,
-                                amount: amt
-                            });
+                        const pd = new Date(item.date);
+                        if (pd.getMonth() === currM && pd.getFullYear() === currY) {
+                            metrics.upcomingMonth += amt;
+                            metrics.upcomingDetails.push({ name: c.name, date: item.date, amount: amt });
                         }
                     }
                 });
-                if (hasUpcomingThisMonth) res.upcomingCount++;
             });
-            return res;
+            return metrics;
         }
 
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
-            const searchTerm = document.getElementById('search-phone').value.trim();
-            
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filter = document.getElementById('filter-status').value;
+
             let filtered = customers;
-            if (currentUser.role === 'agent') {
-                filtered = customers.filter(c => c.agentId === currentUser.id);
+            if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
+            if (filter !== 'All') filtered = filtered.filter(c => c.status === filter);
+            if (search) {
+                filtered = filtered.filter(c => 
+                    c.name.toLowerCase().includes(search) || 
+                    (c.number || '').includes(search) ||
+                    (c.email || '').toLowerCase().includes(search)
+                );
             }
-            if (searchTerm) filtered = filtered.filter(c => (c.number || '').includes(searchTerm));
 
-            filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const metrics = calculateMetrics(filtered);
+            upcomingPaymentList = metrics.upcomingDetails;
 
-            // Dashboard & Upcoming Logic
-            const stats = calculateStats(filtered);
-            upcomingPaymentList = stats.upcomingDetails;
+            // Update UI Stats
+            document.getElementById('stat-total-customers').textContent = filtered.length;
+            document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
+            document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
+            document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
+            document.getElementById('stat-month-sales').textContent = metrics.monthCount;
+            document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
 
-            document.getElementById('stat-total-customers').textContent = stats.lifetimeSales;
-            document.getElementById('stat-list-total').textContent = stats.lifetimeSales;
-            document.getElementById('stat-total-fees').textContent = `$${stats.lifetimeRevenue.toLocaleString()}`;
-            
-            // Today Report
-            document.getElementById('stat-day-sales').textContent = stats.todaySalesCount;
-            document.getElementById('stat-day-revenue').textContent = `$${stats.todayRevenueSum.toLocaleString()}`;
-            
-            // Month Report
-            document.getElementById('stat-month-sales').textContent = stats.monthSalesCount;
-            document.getElementById('stat-month-revenue').textContent = `$${stats.monthRevenueSum.toLocaleString()}`;
-            document.getElementById('stat-upcoming').textContent = `$${stats.upcomingAmount.toLocaleString()}`;
-            document.getElementById('stat-upcoming-count').textContent = `${stats.upcomingCount} Customer(s) scheduled`;
-
-            tbody.innerHTML = filtered.map(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                let paidSum = sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
-
-                let displayedAgentName = c.agentName;
-                if (!displayedAgentName || displayedAgentName.includes('@')) {
-                    const foundUser = users.find(u => u.id === c.agentId);
-                    displayedAgentName = foundUser ? foundUser.name : (c.agentName || c.agentEmail);
-                }
-
-                return `
-                <tr class="hover:bg-gray-50 transition animate-fade-in">
+            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => `
+                <tr class="hover:bg-slate-50 transition group">
                     <td class="px-8 py-5">
-                        <div class="font-black text-gray-900">${c.name}</div>
-                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${c.email}</div>
-                        <div class="text-[10px] text-blue-500 font-bold">${c.number || 'No Phone'}</div>
+                        <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">${c.name}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email}</div>
+                        <div class="text-[10px] text-blue-500 font-black mt-1">${c.number}</div>
                     </td>
-                    <td class="px-8 py-5 text-xs font-bold text-gray-800">${displayedAgentName}</td>
                     <td class="px-8 py-5">
-                        <div class="text-xs font-black text-gray-700">${c.processor} / #${c.fileNumber}</div>
-                        <div class="text-[10px] text-gray-400">${c.loanLender}</div>
+                        <div class="text-xs font-black text-slate-700">${c.agentName || 'Unknown'}</div>
+                        <div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div>
                     </td>
-                    <td class="px-8 py-5 font-black text-green-600">$${paidSum.toLocaleString()}</td>
-                    <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusStyle(c.status)}">${c.status || 'Active'}</span></td>
+                    <td class="px-8 py-5">
+                        <div class="text-xs font-black text-slate-800">${c.processor} / #${c.fileNumber}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender}</div>
+                    </td>
+                    <td class="px-8 py-5 font-black text-green-600">
+                        $${calculatePaidSum(c).toLocaleString()}
+                    </td>
+                    <td class="px-8 py-5">
+                        <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
+                    </td>
                     <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' ? 'hidden' : ''}">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="editCustomer('${c.id}')" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Edit</button>
-                            <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 px-3 py-1 rounded-lg font-black text-xs uppercase">Delete</button>
+                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2 rounded-xl hover:bg-blue-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-
-        window.openUpcomingModal = () => {
-            const tbody = document.getElementById('upcoming-details-table');
-            // Sort by date
-            upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            
-            tbody.innerHTML = upcomingPaymentList.map(item => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4">
-                        <div class="font-black text-gray-900 text-sm">${item.name}</div>
-                    </td>
-                    <td class="px-6 py-4 text-xs font-bold text-blue-600">${item.phone}</td>
-                    <td class="px-6 py-4 text-xs font-black text-gray-500 uppercase">${item.date}</td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="font-black text-gray-900">$${item.amount.toLocaleString()}</div>
                     </td>
                 </tr>
             `).join('');
-            
-            if (upcomingPaymentList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-gray-400 font-bold">No payments scheduled for the remainder of this month.</td></tr>';
-            }
+        }
 
-            document.getElementById('upcoming-modal').classList.remove('hidden');
-            document.getElementById('upcoming-modal').classList.add('flex');
-        };
-
-        window.closeUpcomingModal = () => {
-            document.getElementById('upcoming-modal').classList.add('hidden');
-            document.getElementById('upcoming-modal').classList.remove('flex');
-        };
-
-        // CRUD, FORM, and UI Helpers...
-        document.getElementById('add-user-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!authUser) return;
-            const name = e.target.userName.value.trim();
-            const email = e.target.userEmail.value.trim().toLowerCase();
-            const password = e.target.userPassword.value;
-            const role = e.target.userRole.value;
-            const editUserId = document.getElementById('edit-user-id-field').value;
-            try {
-                if (editUserId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editUserId), { name, email, password, role });
-                    showToast("User updated.");
-                } else {
-                    if (users.some(u => u.email === email)) return showToast("User exists!");
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { name, email, password, role, createdAt: new Date().toISOString() });
-                    showToast("User created.");
-                }
-                resetUserForm();
-            } catch(e) { showToast("Save failed."); }
-        });
-
-        document.getElementById('customer-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!authUser) return;
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            const editId = document.getElementById('edit-customer-id').value;
-
-            if (!editId) {
-                const phone = data.number.trim();
-                if (customers.some(c => c.number && c.number.trim() === phone)) {
-                    showToast("Error: Phone number already exists!");
-                    return;
-                }
-            }
-
-            const schedule = [];
-            document.querySelectorAll('.schedule-item').forEach((item, index) => {
-                const amount = item.querySelector('.tenure-amount-input').value;
-                const dateInput = item.querySelector('input[type="date"]');
-                const statusInput = item.querySelector('.tenure-status-select');
-                schedule.push({ month: index + 1, amount: parseFloat(amount), date: dateInput ? dateInput.value : "", status: statusInput ? statusInput.value : 'pending' });
-            });
-            data.paymentSchedule = JSON.stringify(schedule);
-
-            try {
-                if (editId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("Record updated.");
-                } else {
-                    data.agentId = currentUser.id;
-                    data.agentEmail = currentUser.email;
-                    data.agentName = currentUser.name || currentUser.email;
-                    data.createdAt = new Date().toISOString();
-                    data.status = data.status || 'Active';
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("Enrollment saved.");
-                }
-                resetForm();
-                switchTab('customer-list');
-            } catch(e) { showToast("Cloud save error."); }
-        });
-
-        window.deleteUser = async (id) => {
-            if (!authUser || !confirm("Delete user?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
-            showToast("Removed.");
-        };
-
-        window.deleteCustomer = async (id) => {
-            if (!authUser || !confirm("Permanently delete customer?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-            showToast("Deleted.");
-        };
-
-        window.editUserAccount = (id) => {
-            const u = users.find(x => x.id === id);
-            if (!u) return;
-            document.getElementById('user-form-title').textContent = "Edit User";
-            document.getElementById('edit-user-id-field').value = id;
-            document.getElementById('user-field-name').value = u.name || '';
-            document.getElementById('user-field-email').value = u.email;
-            document.getElementById('user-field-password').value = u.password;
-            document.getElementById('user-field-role').value = u.role;
-            document.getElementById('user-submit-btn').textContent = "Update Account";
-            document.getElementById('cancel-user-edit').classList.remove('hidden');
-        };
-
-        window.resetUserForm = () => {
-            document.getElementById('add-user-form').reset();
-            document.getElementById('edit-user-id-field').value = "";
-            document.getElementById('user-form-title').textContent = "Create New User";
-            document.getElementById('user-submit-btn').textContent = "Add User Account";
-            document.getElementById('cancel-user-edit').classList.add('hidden');
-        };
-
-        window.editCustomer = (id) => {
-            const c = customers.find(x => x.id === id);
-            switchTab('add-customer');
-            document.getElementById('form-title').textContent = "Modify Enrollment";
-            document.getElementById('submit-btn').textContent = "Update Cloud Record";
-            document.getElementById('edit-customer-id').value = id;
-            document.getElementById('cancel-edit').classList.remove('hidden');
-            Object.keys(c).forEach(key => {
-                const el = document.getElementsByName(key)[0];
-                if (el) el.value = c[key];
-            });
+        function calculatePaidSum(c) {
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-            updatePaymentSchedule(sched);
-        };
+            return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
+        }
 
+        function getStatusClass(s) {
+            if (s === 'Approved') return 'bg-green-100 text-green-700 border border-green-200';
+            if (s === 'Cancelled') return 'bg-red-100 text-red-700 border border-red-200';
+            if (s === 'Processing') return 'bg-amber-100 text-amber-700 border border-amber-200';
+            return 'bg-blue-100 text-blue-700 border border-blue-200';
+        }
+
+        // GLOBAL ACTIONS
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('.nav-link').forEach(n => {
-                n.classList.remove('bg-blue-50', 'text-blue-600');
-                n.classList.add('text-gray-600');
-            });
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200'));
+            
             document.getElementById(`tab-${id}`).classList.remove('hidden');
             const nav = document.getElementById(`nav-${id}`);
-            if (nav) nav.classList.add('bg-blue-50', 'text-blue-600');
+            if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200');
+            
+            if (window.innerWidth < 768) toggleMobileMenu();
         };
+
+        window.toggleMobileMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        };
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
 
         window.updatePaymentSchedule = (existing = null) => {
             const type = document.getElementById('paymentType').value;
@@ -928,44 +816,194 @@
             container.innerHTML = '';
             if (type === 'Single') {
                 group.classList.add('hidden');
-                const amt = (existing && existing[0]) ? existing[0].amount : fee;
-                const currentStatus = (existing && existing[0]) ? existing[0].status : (payToday ? 'paid' : 'pending');
-                container.innerHTML = `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-3"><span class="text-[10px] font-black text-gray-400 uppercase">Single Total</span><select class="tenure-status-select text-[10px] font-bold border rounded p-1"><option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${amt}"></div><input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${(existing && existing[0]) ? existing[0].date : (payToday ? new Date().toISOString().split('T')[0] : '')}"></div>`;
+                const sched = existing && existing[0] ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
+                container.innerHTML = createScheduleItem(1, sched, true);
             } else {
                 group.classList.remove('hidden');
                 const count = parseInt(document.getElementById('tenureCount').value);
                 const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
-                    const sched = existing && existing[i-1] ? existing[i-1] : null;
-                    const currentStatus = sched ? sched.status : (isFirstToday ? 'paid' : 'pending');
-                    container.innerHTML += `<div class="schedule-item bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-3"><span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Inst. #${i}</span><select class="tenure-status-select text-[10px] font-bold border rounded p-1"><option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${currentStatus === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 mb-3"><span class="font-bold">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none" value="${sched ? sched.amount : perMonth.toFixed(2)}"></div><input type="date" class="w-full bg-gray-50 p-2 rounded-xl text-xs font-bold outline-none" value="${sched ? sched.date : (isFirstToday ? new Date().toISOString().split('T')[0] : '')}"></div>`;
+                    const sched = existing && existing[i-1] ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
+                    container.innerHTML += createScheduleItem(i, sched, false);
                 }
             }
         };
 
+        function createScheduleItem(index, data, isSingle) {
+            return `
+                <div class="schedule-item bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Total' : 'Inst. #' + index}</span>
+                        <select class="tenure-status-select text-[10px] font-black border border-slate-200 rounded-lg p-1 outline-none">
+                            <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="paid" ${data.status === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value="decline" ${data.status === 'decline' ? 'selected' : ''}>Decline</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2 border-b border-slate-50 pb-2">
+                        <span class="font-black text-slate-400">$</span>
+                        <input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none bg-transparent" value="${data.amount}">
+                    </div>
+                    <input type="date" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-black outline-none border border-slate-100" value="${data.date}">
+                </div>
+            `;
+        }
+
         window.toggleBillingAddress = () => {
             const same = document.getElementById('sameAddress').checked;
             const billing = document.getElementById('billingAddress');
-            if (same) { billing.value = document.getElementById('mailingAddress').value; billing.readOnly = true; billing.classList.add('bg-gray-100'); }
-            else { billing.readOnly = false; billing.classList.remove('bg-gray-100'); }
+            if (same) {
+                billing.value = document.getElementById('mailingAddress').value;
+                billing.readOnly = true;
+                billing.classList.add('bg-slate-100', 'text-slate-400');
+            } else {
+                billing.readOnly = false;
+                billing.classList.remove('bg-slate-100', 'text-slate-400');
+            }
         };
 
-        window.resetForm = () => {
-            document.getElementById('customer-form').reset();
-            document.getElementById('edit-customer-id').value = "";
-            document.getElementById('form-title').textContent = "Customer Enrollment";
-            document.getElementById('submit-btn').textContent = "Complete Enrollment";
-            document.getElementById('cancel-edit').classList.add('hidden');
-            updatePaymentSchedule();
+        document.getElementById('customer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const editId = document.getElementById('edit-customer-id').value;
+
+            // Collect schedule
+            const schedule = [];
+            document.querySelectorAll('.schedule-item').forEach((item, index) => {
+                const amount = item.querySelector('.tenure-amount-input').value;
+                const date = item.querySelector('input[type="date"]').value;
+                const status = item.querySelector('.tenure-status-select').value;
+                schedule.push({ month: index + 1, amount: parseFloat(amount), date, status });
+            });
+            data.paymentSchedule = JSON.stringify(schedule);
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
+                    showToast("Cloud Record Updated Successfully");
+                } else {
+                    data.agentId = currentUser.id;
+                    data.agentName = currentUser.name;
+                    data.createdAt = new Date().toISOString();
+                    data.status = 'Active';
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
+                    showToast("New Enrollment Deployed");
+                }
+                resetForm();
+                switchTab('customer-list');
+            } catch(e) {
+                showToast("System Error: Save Interrupted");
+            }
+        });
+
+        window.editCustomer = (id) => {
+            const c = customers.find(x => x.id === id);
+            switchTab('add-customer');
+            document.getElementById('form-title').textContent = "Modify Enrollment Pipeline";
+            document.getElementById('submit-btn').textContent = "Update Records";
+            document.getElementById('edit-customer-id').value = id;
+            document.getElementById('cancel-edit').classList.remove('hidden');
+            
+            Object.keys(c).forEach(key => {
+                const el = document.getElementsByName(key)[0];
+                if (el) el.value = c[key];
+            });
+            
+            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+            updatePaymentSchedule(sched);
         };
 
-        function getStatusStyle(s) {
-            if (s === 'Approved') return 'bg-green-50 text-green-600 border border-green-100';
-            if (s === 'Cancelled') return 'bg-red-50 text-red-600 border border-red-100';
-            if (s === 'Processing') return 'bg-blue-50 text-blue-600 border border-blue-100';
-            return 'bg-gray-50 text-gray-600 border border-gray-100';
-        }
+        window.deleteCustomer = async (id) => {
+            if (!confirm("Caution: Are you sure you want to remove this client from the database?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
+            showToast("Record Purged");
+        };
+
+        // User management
+        document.getElementById('add-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-user-id-field').value;
+            const payload = {
+                name: e.target.userName.value,
+                email: e.target.userEmail.value.toLowerCase(),
+                password: e.target.userPassword.value,
+                role: e.target.userRole.value
+            };
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload);
+                    showToast("User Permission Updated");
+                } else {
+                    payload.createdAt = new Date().toISOString();
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload);
+                    showToast("New User Provisioned");
+                }
+                resetUserForm();
+            } catch(e) { showToast("Provisioning Failed"); }
+        });
+
+        window.editUserAccount = (id) => {
+            const u = users.find(x => x.id === id);
+            document.getElementById('user-form-title').textContent = "Modify Identity";
+            document.getElementById('edit-user-id-field').value = id;
+            document.getElementById('user-field-name').value = u.name;
+            document.getElementById('user-field-email').value = u.email;
+            document.getElementById('user-field-password').value = u.password;
+            document.getElementById('user-field-role').value = u.role;
+            document.getElementById('cancel-user-edit').classList.remove('hidden');
+            document.getElementById('user-submit-btn').textContent = "Save Identity";
+        };
+
+        window.deleteUser = async (id) => {
+            if (!confirm("Deactivate and remove user access?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
+            showToast("Identity Terminated");
+        };
+
+        window.viewUserStats = (userId) => {
+            const user = users.find(u => u.id === userId);
+            const uCustomers = customers.filter(c => c.agentId === userId);
+            const m = calculateMetrics(uCustomers);
+
+            document.getElementById('stats-user-email').textContent = user.name;
+            document.getElementById('stats-user-role').textContent = user.role;
+            document.getElementById('user-stats-content').innerHTML = `
+                <div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p>
+                    <div class="space-y-4">
+                        <div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div>
+                        <div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p>
+                    <div class="space-y-4">
+                        <div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div>
+                        <div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openUpcomingModal = () => {
+            const tbody = document.getElementById('upcoming-details-table');
+            upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-black text-slate-900 text-sm">${item.name}</td>
+                    <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
+                    <td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found for this window.</td></tr>';
+            document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
+        window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
 
         function showToast(m) {
             const t = document.getElementById('toast');
@@ -974,21 +1012,25 @@
             setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
+        window.resetForm = () => {
+            document.getElementById('customer-form').reset();
+            document.getElementById('edit-customer-id').value = "";
+            document.getElementById('form-title').textContent = "Customer Enrollment";
+            document.getElementById('submit-btn').textContent = "Finalize & Submit Enrollment";
+            document.getElementById('cancel-edit').classList.add('hidden');
+            updatePaymentSchedule();
+        };
+
+        window.resetUserForm = () => {
+            document.getElementById('add-user-form').reset();
+            document.getElementById('edit-user-id-field').value = "";
+            document.getElementById('user-form-title').textContent = "Create Account";
+            document.getElementById('user-submit-btn').textContent = "Deploy Account";
+            document.getElementById('cancel-user-edit').classList.add('hidden');
+        };
+
+        // Init
         updatePaymentSchedule();
-        window.updatePaymentSchedule = updatePaymentSchedule;
-        window.switchTab = switchTab;
-        window.toggleBillingAddress = toggleBillingAddress;
-        window.resetForm = resetForm;
-        window.deleteUser = deleteUser;
-        window.editCustomer = editCustomer;
-        window.deleteCustomer = deleteCustomer;
-        window.editUserAccount = editUserAccount;
-        window.resetUserForm = resetUserForm;
-        window.viewUserStats = viewUserStats;
-        window.closeStats = closeStats;
-        window.renderCustomers = renderCustomers;
-        window.openUpcomingModal = openUpcomingModal;
-        window.closeUpcomingModal = closeUpcomingModal;
     </script>
 </body>
 </html>
