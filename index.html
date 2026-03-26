@@ -377,12 +377,13 @@
 
                     <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                         <div class="overflow-x-auto custom-scroll">
-                            <table class="w-full text-left min-w-[1000px]">
+                            <table class="w-full text-left min-w-[1200px]">
                                 <thead class="bg-slate-50 border-b border-slate-100">
                                     <tr>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Identity</th>
-                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Agent</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Details</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payments Done</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due Date</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Collected</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Status</th>
                                         <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right hidden">Manage</th>
@@ -691,8 +692,6 @@
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 
-                if (c.createdAt?.startsWith(todayStr)) {} // Track count if needed
-
                 const d = new Date(c.createdAt);
                 if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
 
@@ -703,11 +702,12 @@
                         if (item.date === todayStr) metrics.todayRev += amt;
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
-                    } else if (item.date) {
+                    } else if (item.date && c.status !== 'Cancelled') {
+                        // Skip cancelled files for upcoming details and upcoming revenue sum
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
                             metrics.upcomingMonth += amt;
-                            metrics.upcomingDetails.push({ name: c.name, date: item.date, amount: amt });
+                            metrics.upcomingDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt });
                         }
                     }
                 });
@@ -742,7 +742,16 @@
             document.getElementById('stat-month-sales').textContent = metrics.monthCount;
             document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
 
-            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => `
+            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const totalCount = sched.length;
+                
+                // Find next pending date
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+
+                return `
                 <tr class="hover:bg-slate-50 transition group">
                     <td class="px-8 py-5">
                         <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">${c.name}</div>
@@ -750,15 +759,19 @@
                         <div class="text-[10px] text-blue-500 font-black mt-1">${c.number}</div>
                     </td>
                     <td class="px-8 py-5">
-                        <div class="text-xs font-black text-slate-700">${c.agentName || 'Unknown'}</div>
-                        <div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div>
-                    </td>
-                    <td class="px-8 py-5">
                         <div class="text-xs font-black text-slate-800">${c.processor} / #${c.fileNumber}</div>
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender}</div>
                     </td>
+                    <td class="px-8 py-5">
+                        <div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="text-xs font-black text-blue-600">${nextDue}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div>
+                    </td>
                     <td class="px-8 py-5 font-black text-green-600">
-                        $${calculatePaidSum(c).toLocaleString()}
+                        $${totalPaid.toLocaleString()}
                     </td>
                     <td class="px-8 py-5">
                         <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
@@ -769,8 +782,8 @@
                             <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         function calculatePaidSum(c) {
@@ -900,6 +913,7 @@
 
         window.editCustomer = (id) => {
             const c = customers.find(x => x.id === id);
+            if (!c) return;
             switchTab('add-customer');
             document.getElementById('form-title').textContent = "Modify Enrollment Pipeline";
             document.getElementById('submit-btn').textContent = "Update Records";
@@ -993,13 +1007,21 @@
             const tbody = document.getElementById('upcoming-details-table');
             upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
             tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="px-6 py-4 font-black text-slate-900 text-sm">${item.name}</td>
+                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromUpcoming('${item.id}')">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors">${item.name}</div>
+                        <div class="text-[10px] text-blue-500 font-bold uppercase tracking-tighter">Click to View Profile</div>
+                    </td>
                     <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
                     <td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td>
                 </tr>
             `).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found for this window.</td></tr>';
             document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.viewCustomerFromUpcoming = (id) => {
+            closeUpcomingModal();
+            editCustomer(id);
         };
 
         window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
