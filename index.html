@@ -121,7 +121,7 @@
                     </div>
 
                     <!-- Metric Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-3xl font-black text-slate-900">0</h3>
@@ -137,6 +137,11 @@
                         <div id="card-upcoming" onclick="openUpcomingModal()" class="bg-white p-6 rounded-3xl border-2 border-transparent hover:border-blue-500 shadow-sm cursor-pointer transition-all active:scale-[0.98]">
                             <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Upcoming (MTD)</p>
                             <h3 id="stat-upcoming" class="text-3xl font-black text-slate-900">$0</h3>
+                        </div>
+                        <!-- NSF Sales Section Card -->
+                        <div id="card-nsf" class="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
+                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">NSF Sales (Overdue)</p>
+                            <h3 id="stat-nsf-count" class="text-3xl font-black text-red-600">0</h3>
                         </div>
                     </div>
 
@@ -369,9 +374,8 @@
                                 <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
                                 <select name="status" id="field-status" class="w-full px-5 py-4 bg-white border border-amber-100 rounded-2xl outline-none font-bold">
                                     <option value="Active">Active</option>
-                                    <option value="Processing">Processing</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="Cancelled">Cancelled</option>
+                                    <option value="Cancel">Cancel</option>
+                                    <option value="NSF">NSF</option>
                                 </select>
                             </div>
 
@@ -393,9 +397,8 @@
                             <select id="filter-status" onchange="renderCustomers()" class="px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="All">All Statuses</option>
                                 <option value="Active">Active</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Cancelled">Cancelled</option>
+                                <option value="Cancel">Cancel</option>
+                                <option value="NSF">NSF</option>
                             </select>
                             <div class="relative flex-1 sm:w-80">
                                 <input type="text" id="search-input" oninput="renderCustomers()" placeholder="Search name or phone..." class="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-bold">
@@ -726,16 +729,13 @@
                     monthlyRevenue: 0 
                 };
 
-                // Total Sales
                 performance[id].totalSales++;
                 
-                // Monthly Sales Check
                 const createdDate = new Date(c.createdAt);
                 if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) {
                     performance[id].monthlySales++;
                 }
 
-                // Revenue Calculations
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 sched.forEach(item => {
                     if (item.status === 'paid') {
@@ -782,7 +782,7 @@
 
         function renderPipelineStats() {
             const container = document.getElementById('pipeline-stats');
-            const counts = { 'Active': 0, 'Processing': 0, 'Approved': 0, 'Cancelled': 0 };
+            const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
             
             customers.forEach(c => {
                 const s = c.status || 'Active';
@@ -793,7 +793,10 @@
             
             container.innerHTML = Object.entries(counts).map(([status, count]) => {
                 const percent = (count / total) * 100;
-                const color = status === 'Approved' ? 'bg-green-500' : (status === 'Cancelled' ? 'bg-red-500' : 'bg-blue-500');
+                let color = 'bg-blue-500';
+                if (status === 'Cancel') color = 'bg-red-500';
+                if (status === 'NSF') color = 'bg-amber-500';
+
                 return `
                     <div class="space-y-1">
                         <div class="flex justify-between items-end">
@@ -810,20 +813,21 @@
 
         function calculateMetrics(dataList) {
             const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
             const currM = now.getMonth();
             const currY = now.getFullYear();
-            const todayStr = now.toISOString().split('T')[0];
 
             let metrics = {
                 lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0,
-                upcomingMonth: 0, upcomingDetails: []
+                upcomingMonth: 0, upcomingDetails: [], nsfCount: 0
             };
 
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                
                 const d = new Date(c.createdAt);
                 if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
+
+                let hasCurrentMonthNSF = false;
 
                 sched.forEach(item => {
                     const amt = parseFloat(item.amount || 0);
@@ -832,14 +836,23 @@
                         if (item.date === todayStr) metrics.todayRev += amt;
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
-                    } else if (item.date && c.status !== 'Cancelled') {
+                    } else if (item.date && c.status !== 'Cancel') {
                         const pd = new Date(item.date);
+                        // Is the payment due in the current month?
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
-                            metrics.upcomingMonth += amt;
-                            metrics.upcomingDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt });
+                            // If payment date is before today and not paid -> NSF logic
+                            if (item.date < todayStr) {
+                                hasCurrentMonthNSF = true;
+                            } else {
+                                // Due in the future this month
+                                metrics.upcomingMonth += amt;
+                                metrics.upcomingDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt });
+                            }
                         }
                     }
                 });
+
+                if (hasCurrentMonthNSF) metrics.nsfCount++;
             });
             return metrics;
         }
@@ -851,10 +864,8 @@
 
             let filtered = customers;
             
-            // Filter by Agent Access
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
             
-            // Filter by Status (Case-Insensitive)
             if (filter !== 'All') {
                 filtered = filtered.filter(c => {
                     const s = (c.status || 'Active').toLowerCase();
@@ -862,7 +873,6 @@
                 });
             }
             
-            // Filter by Search Input (Robust Null Checking)
             if (search) {
                 filtered = filtered.filter(c => {
                     const name = (c.name || '').toLowerCase();
@@ -876,20 +886,18 @@
             const metrics = calculateMetrics(filtered);
             upcomingPaymentList = metrics.upcomingDetails;
 
-            // Update UI Stats
             document.getElementById('stat-total-customers').textContent = filtered.length;
             document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
             document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
             document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
             document.getElementById('stat-month-sales').textContent = metrics.monthCount;
             document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
+            document.getElementById('stat-nsf-count').textContent = metrics.nsfCount;
 
             tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const paidCount = sched.filter(i => i.status === 'paid').length;
                 const totalCount = sched.length;
-                
-                // Find next pending date
                 const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
                 const totalPaid = calculatePaidSum(c);
                 
@@ -945,9 +953,8 @@
         }
 
         function getStatusClass(s) {
-            if (s === 'Approved') return 'bg-green-100 text-green-700 border border-green-200';
-            if (s === 'Cancelled') return 'bg-red-100 text-red-700 border border-red-200';
-            if (s === 'Processing') return 'bg-amber-100 text-amber-700 border border-amber-200';
+            if (s === 'Cancel') return 'bg-red-100 text-red-700 border border-red-200';
+            if (s === 'NSF') return 'bg-amber-100 text-amber-700 border border-amber-200';
             return 'bg-blue-100 text-blue-700 border border-blue-200';
         }
 
@@ -1035,7 +1042,6 @@
             const data = Object.fromEntries(formData.entries());
             const editId = document.getElementById('edit-customer-id').value;
 
-            // Handle Agent Info Safely
             if (currentUser.role === 'admin' || currentUser.role === 'manager') {
                 const manualAgentId = document.getElementById('assigned-agent-select').value;
                 if (manualAgentId === 'ROOT') {
@@ -1046,12 +1052,10 @@
                     data.agentId = manualAgentId;
                     data.agentName = agentObj?.name || 'Unknown Agent';
                 } else {
-                    // Preserve original or current
                     data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id;
                     data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name;
                 }
             } else {
-                // If agent is editing, definitely don't change original agent fields unless it's new
                 if (editId) {
                     data.agentId = data.originalAgentId;
                     data.agentName = data.originalAgentName;
@@ -1061,11 +1065,9 @@
                 }
             }
 
-            // Cleanup original info from data object before saving (avoid field pollution)
             delete data.originalAgentId;
             delete data.originalAgentName;
 
-            // Collect schedule
             const schedule = [];
             document.querySelectorAll('.schedule-item').forEach((item, index) => {
                 const amount = item.querySelector('.tenure-amount-input').value;
@@ -1101,11 +1103,9 @@
             document.getElementById('edit-customer-id').value = id;
             document.getElementById('cancel-edit').classList.remove('hidden');
             
-            // Set original fields for preservation
             document.getElementById('original-agent-id').value = c.agentId || '';
             document.getElementById('original-agent-name').value = c.agentName || '';
             
-            // Set admin agent select if visible
             const select = document.getElementById('assigned-agent-select');
             if (select) select.value = c.agentId || '';
             
@@ -1128,7 +1128,6 @@
             }
         };
 
-        // User management
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit-user-id-field').value;
@@ -1247,7 +1246,6 @@
             document.getElementById('cancel-user-edit').classList.add('hidden');
         };
 
-        // Init
         updatePaymentSchedule();
     </script>
 </body>
