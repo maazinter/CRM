@@ -416,7 +416,7 @@
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due Date</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Collected</th>
                                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Status</th>
-                                        <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Manage</th>
+                                        <th id="th-actions" class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right hidden">Manage</th>
                                     </tr>
                                 </thead>
                                 <tbody id="customer-table-body" class="divide-y divide-slate-50">
@@ -854,18 +854,22 @@
             // Filter by Agent Access
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
             
-            // Filter by Status
+            // Filter by Status (Case-Insensitive)
             if (filter !== 'All') {
-                filtered = filtered.filter(c => (c.status || 'Active') === filter);
+                filtered = filtered.filter(c => {
+                    const s = (c.status || 'Active').toLowerCase();
+                    return s === filter.toLowerCase();
+                });
             }
             
-            // Filter by Search Input
+            // Filter by Search Input (Robust Null Checking)
             if (search) {
                 filtered = filtered.filter(c => {
                     const name = (c.name || '').toLowerCase();
                     const phone = (c.number || '').toLowerCase();
                     const email = (c.email || '').toLowerCase();
-                    return name.includes(search) || phone.includes(search) || email.includes(search);
+                    const fileNum = (c.fileNumber || '').toLowerCase();
+                    return name.includes(search) || phone.includes(search) || email.includes(search) || fileNum.includes(search);
                 });
             }
 
@@ -922,11 +926,11 @@
                         <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
                     </td>
                     <td class="px-8 py-5 text-right ${currentUser.role !== 'admin' && currentUser.role !== 'manager' ? 'hidden' : ''}">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead">
+                        <div class="flex justify-end gap-3">
+                            <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100 shrink-0" title="Edit Lead">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             </button>
-                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead">
+                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0" title="Delete Lead">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
