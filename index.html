@@ -430,6 +430,7 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         <div class="lg:col-span-4 space-y-8">
+                            <!-- Leave Application Section -->
                             <div id="leave-application-section" class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-6">
                                 <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -722,7 +723,7 @@
         });
 
         async function verifyCloudCredentials(data) {
-            if (!authUser) return;
+            if (!auth.currentUser) return;
             try {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
                 let found = null;
@@ -816,25 +817,30 @@
         });
 
         function syncDataStreams() {
-            if (!authUser) return;
+            if (!auth.currentUser) {
+                setTimeout(syncDataStreams, 500);
+                return;
+            }
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                 users = [];
                 snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                 renderUsers();
                 renderAgentPerformance();
                 populateAgentSelect();
-            });
+            }, (err) => console.error("Users sync failed:", err));
+
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
                 renderAgentPerformance();
-            });
+            }, (err) => console.error("Customers sync failed:", err));
+
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
                 attendance = [];
                 snap.forEach(d => attendance.push({ ...d.data(), id: d.id }));
                 renderAttendance();
-            });
+            }, (err) => console.error("Attendance sync failed:", err));
         }
 
         function populateAgentSelect() {
@@ -846,7 +852,16 @@
             select.value = currentVal;
         }
 
-        // DATABASE RENDERING
+        // DATABASE RENDERING helpers
+        function getSafeSchedule(c) {
+            try {
+                if (typeof c.paymentSchedule === 'string') return JSON.parse(c.paymentSchedule);
+                return c.paymentSchedule || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.map(u => `
@@ -883,7 +898,7 @@
                 performance[id].totalSales++;
                 const createdDate = new Date(c.createdAt);
                 if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) performance[id].monthlySales++;
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const sched = getSafeSchedule(c);
                 sched.forEach(item => {
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
@@ -908,7 +923,7 @@
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
-                    const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                    const sched = getSafeSchedule(c);
                     const isNsfDue = sched.some(item => {
                         if (item.status === 'pending' && item.date) {
                             const pd = new Date(item.date);
@@ -931,6 +946,7 @@
 
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
+            if (!tbody) return;
             const search = document.getElementById('search-input').value.toLowerCase().trim();
             const filter = document.getElementById('filter-status').value;
             let filtered = customers;
@@ -952,8 +968,8 @@
             
             renderPipelineStats(filtered);
 
-            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map(c => {
+                const sched = getSafeSchedule(c);
                 const paidCount = sched.filter(i => i.status === 'paid').length;
                 const totalCount = sched.length;
                 const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
@@ -1149,7 +1165,7 @@
             const currY = now.getFullYear();
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             dataList.forEach(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const sched = getSafeSchedule(c);
                 const d = new Date(c.createdAt);
                 if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
                 let addedToNsf = false;
@@ -1177,7 +1193,7 @@
         }
 
         function calculatePaidSum(c) {
-            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+            const sched = getSafeSchedule(c);
             return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
         }
 
