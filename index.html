@@ -18,6 +18,14 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         #mobile-overlay.active { display: block; }
+
+        /* Calendar Styles */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; }
+        .calendar-day-header { background-color: #f8fafc; padding: 10px; text-align: center; font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
+        .calendar-day { background-color: #fff; min-height: 100px; padding: 8px; transition: background-color 0.2s; position: relative; }
+        .calendar-day:hover { background-color: #f8fafc; }
+        .calendar-day.other-month { background-color: #fcfcfc; color: #cbd5e1; }
+        .calendar-event { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -90,6 +98,10 @@
                     <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-customer-list">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                         Enrollment Database
+                    </button>
+                    <button onclick="switchTab('attendance')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-attendance">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Attendance
                     </button>
                     <button onclick="switchTab('manage-users')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-manage-users">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -407,6 +419,86 @@
                     </div>
                 </section>
 
+                <!-- Attendance Tab -->
+                <section id="tab-attendance" class="tab-content hidden animate-fade-in space-y-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Attendance & Leaves</h2>
+                            <p class="text-slate-500 font-medium">Manage schedules and leave applications</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div class="lg:col-span-4 space-y-8">
+                            <div id="leave-application-section" class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-6">
+                                <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    Apply for Leave
+                                </h3>
+                                <form id="apply-leave-form" class="space-y-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Date</label>
+                                        <input type="date" name="leaveDate" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Type</label>
+                                        <select name="leaveType" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                                            <option value="CL">CL - Casual Leave</option>
+                                            <option value="SL">SL - Sick Leave</option>
+                                            <option value="WO">WO - Work Off</option>
+                                            <option value="HD">HD - Half Day</option>
+                                            <option value="UL">UL - Unscheduled Leave</option>
+                                            <option value="Festival">Festival / Holiday</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Note</label>
+                                        <textarea name="leaveReason" placeholder="Reason for leave..." class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium h-24"></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Submit Request</button>
+                                </form>
+                            </div>
+
+                            <div id="leave-approval-section" class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                                <div class="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Requests</h3>
+                                    <span id="pending-count" class="bg-amber-100 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black">0</span>
+                                </div>
+                                <div class="max-h-[300px] overflow-y-auto custom-scroll">
+                                    <table class="w-full text-left">
+                                        <tbody id="attendance-approval-table" class="divide-y divide-slate-50"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-8 space-y-6">
+                            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+                                    <div class="flex items-center gap-4">
+                                        <h3 id="calendar-month-year" class="text-xl font-black text-slate-900 tracking-tight">Month 202X</h3>
+                                        <div class="flex gap-2">
+                                            <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-slate-50 rounded-xl border border-slate-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                                            <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-slate-50 rounded-xl border border-slate-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                                        </div>
+                                    </div>
+                                    <button id="add-holiday-btn" class="hidden text-[10px] font-black text-blue-600 border-2 border-blue-100 bg-blue-50/50 px-6 py-3 rounded-2xl hover:bg-blue-100 transition uppercase tracking-widest" onclick="openAddHolidayModal()">+ Add Org Holiday</button>
+                                </div>
+
+                                <div class="calendar-grid" id="attendance-calendar-grid">
+                                    <div class="calendar-day-header">Sun</div>
+                                    <div class="calendar-day-header">Mon</div>
+                                    <div class="calendar-day-header">Tue</div>
+                                    <div class="calendar-day-header">Wed</div>
+                                    <div class="calendar-day-header">Thu</div>
+                                    <div class="calendar-day-header">Fri</div>
+                                    <div class="calendar-day-header">Sat</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- System Users -->
                 <section id="tab-manage-users" class="tab-content hidden animate-fade-in space-y-8">
                     <h2 class="text-3xl font-black text-slate-900 tracking-tight">System User Management</h2>
@@ -450,7 +542,33 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Holiday Modal (Add/Edit) -->
+    <div id="holiday-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-fade-in">
+            <div id="holiday-modal-header" class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
+                <h2 id="holiday-modal-title" class="text-xl font-black">Org Holiday</h2>
+                <button onclick="closeHolidayModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <form id="holiday-form" class="p-8 space-y-4">
+                <input type="hidden" id="edit-holiday-id">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Date</label>
+                    <input type="date" id="holiday-date" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Event Name</label>
+                    <input type="text" id="holiday-reason" placeholder="e.g. Eid, Sunday, New Year" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" id="holiday-submit-btn" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Save</button>
+                    <button type="button" id="holiday-delete-btn" onclick="deleteOrgHoliday()" class="hidden bg-red-50 text-red-600 px-6 rounded-2xl font-black hover:bg-red-100 transition border border-red-100">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="user-stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -555,6 +673,9 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // CONFIG & CORE CONSTANTS
+        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
+        const ADMIN_PASS = "Maaz@2026";
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
@@ -571,27 +692,30 @@
 
         let users = [];
         let customers = [];
+        let attendance = [];
         let currentUser = null;
         let authUser = null;
         let upcomingPaymentList = [];
         let nsfPaymentList = [];
+        let calendarDate = new Date();
 
-        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
-        const ADMIN_PASS = "Maaz@2026";
-
+        // AUTH LISTENERS
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authUser = user;
                 const saved = localStorage.getItem('crm_session_maaz_v2');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    if (data.email === ADMIN_EMAIL) loginSuccess(data);
-                    else verifyCloudCredentials(data);
+                    if (data.email === ADMIN_EMAIL && data.password === ADMIN_PASS) {
+                        loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS });
+                    } else {
+                        verifyCloudCredentials(data);
+                    }
                 }
             } else {
                 authUser = null;
                 signInAnonymously(auth).catch(err => {
-                    document.getElementById('auth-error').textContent = "Database Offline. Check Firewall.";
+                    document.getElementById('auth-error').textContent = "Database Connection Error.";
                     document.getElementById('auth-error').classList.remove('hidden');
                 });
             }
@@ -611,6 +735,23 @@
             } catch(e) {}
         }
 
+        // UI ACTIONS
+        window.switchTab = (id) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200'));
+            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            const nav = document.getElementById(`nav-${id}`); if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200');
+            if (window.innerWidth < 768) toggleMobileMenu();
+        };
+
+        window.toggleMobileMenu = () => {
+            const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');
+        };
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
+
+        // LOGIN SUBMISSION
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -619,9 +760,11 @@
             const errorDiv = document.getElementById('auth-error');
             btn.disabled = true;
             errorDiv.classList.add('hidden');
+
             if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
                 return loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS });
             }
+
             try {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
                 let matchedUser = null;
@@ -630,7 +773,7 @@
                     if (data.email === email && data.password === pass) matchedUser = { ...data, id: d.id };
                 });
                 if (matchedUser) loginSuccess(matchedUser);
-                else throw new Error("Security check failed. Invalid Credentials.");
+                else throw new Error("Authentication failed. Invalid email or password.");
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
@@ -659,6 +802,12 @@
             document.getElementById('admin-status-section').classList.toggle('hidden', role !== 'admin');
             document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent');
             document.getElementById('admin-agent-select-group').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
+            
+            // Attendance Permissions
+            document.getElementById('add-holiday-btn').classList.toggle('hidden', role === 'agent');
+            document.getElementById('leave-approval-section').classList.toggle('hidden', role === 'agent');
+            // Remove Apply for Leaves from Admin Panel
+            document.getElementById('leave-application-section').classList.toggle('hidden', role === 'admin');
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
@@ -681,6 +830,11 @@
                 renderCustomers();
                 renderAgentPerformance();
             });
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
+                attendance = [];
+                snap.forEach(d => attendance.push({ ...d.data(), id: d.id }));
+                renderAttendance();
+            });
         }
 
         function populateAgentSelect() {
@@ -692,6 +846,7 @@
             select.value = currentVal;
         }
 
+        // DATABASE RENDERING
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.map(u => `
@@ -745,7 +900,6 @@
         function renderPipelineStats(dataList = customers) {
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
-            
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const currM = now.getMonth();
@@ -753,8 +907,6 @@
 
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
-                
-                // Dynamically check for NSF state (overdue payment in current month)
                 if (s === 'Active') {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
@@ -766,7 +918,6 @@
                     });
                     if (isNsfDue) s = 'NSF';
                 }
-
                 if (counts[s] !== undefined) counts[s]++; 
             });
 
@@ -778,6 +929,219 @@
             }).join('');
         }
 
+        function renderCustomers() {
+            const tbody = document.getElementById('customer-table-body');
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const filter = document.getElementById('filter-status').value;
+            let filtered = customers;
+            if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
+            if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
+            if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').toLowerCase().includes(search));
+            
+            const metrics = calculateMetrics(filtered);
+            upcomingPaymentList = metrics.upcomingDetails;
+            nsfPaymentList = metrics.nsfDetails;
+            
+            document.getElementById('stat-total-customers').textContent = filtered.length;
+            document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
+            document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
+            document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
+            document.getElementById('stat-month-sales').textContent = metrics.monthCount;
+            document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
+            document.getElementById('stat-nsf-count').textContent = metrics.nsfDetails.length;
+            
+            renderPipelineStats(filtered);
+
+            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const totalCount = sched.length;
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+                let agentDisp = c.agentName || 'System';
+                if (agentDisp === 'System Root') agentDisp = 'Admin';
+                const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
+                return `<tr class="hover:bg-slate-50 transition group"><td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div><div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${agentDisp}</div><div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div></td><td class="px-8 py-5"><div class="text-xs font-black text-blue-600">${nextDue}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div></td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3 ${!canManage ? 'hidden' : ''}"><button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button><button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></td></tr>`; }).join('');
+        }
+
+        // ATTENDANCE & CALENDAR LOGIC
+        window.changeCalendarMonth = (offset) => {
+            calendarDate.setMonth(calendarDate.getMonth() + offset);
+            renderAttendance();
+        };
+
+        window.renderAttendance = () => {
+            const approvalTable = document.getElementById('attendance-approval-table');
+            const calendarGrid = document.getElementById('attendance-calendar-grid');
+            const monthYearLabel = document.getElementById('calendar-month-year');
+            
+            let pending = attendance.filter(a => a.status === 'pending' && a.type !== 'Holiday');
+            if (currentUser.role === 'manager') {
+                pending = pending.filter(a => a.userRole === 'agent');
+            } else if (currentUser.role === 'agent') {
+                pending = [];
+            }
+
+            document.getElementById('pending-count').textContent = pending.length;
+            
+            approvalTable.innerHTML = pending.map(a => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-[11px] leading-tight">${a.userName}</div>
+                        <div class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">${a.userRole}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                         <div class="text-[10px] font-bold text-slate-600">${a.date}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase">${a.type}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-1">
+                            <button onclick="updateLeaveStatus('${a.id}', 'approved')" class="bg-green-500 text-white p-1.5 rounded-lg hover:bg-green-600 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg></button>
+                            <button onclick="updateLeaveStatus('${a.id}', 'rejected')" class="bg-red-50 text-white p-1.5 rounded-lg hover:bg-red-600 transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            if(pending.length === 0) approvalTable.innerHTML = '<tr><td class="p-8 text-center text-[10px] font-bold text-slate-300 italic uppercase tracking-widest">No pending requests</td></tr>';
+
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            monthYearLabel.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(calendarDate);
+
+            const headers = Array.from(calendarGrid.querySelectorAll('.calendar-day-header'));
+            calendarGrid.innerHTML = '';
+            headers.forEach(h => calendarGrid.appendChild(h));
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day other-month';
+                dayDiv.innerHTML = `<span class="text-[10px] font-black">${daysInPrevMonth - i}</span>`;
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day border-t border-slate-100';
+                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                dayDiv.innerHTML = `<span class="text-[10px] font-black ${isToday ? 'bg-blue-600 text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg shadow-blue-200' : 'text-slate-400'}">${day}</span>`;
+
+                const dayEvents = attendance.filter(a => a.date === dateStr && (a.status === 'approved' || a.type === 'Holiday' || a.type === 'Festival'));
+                dayEvents.forEach(evt => {
+                    const eventEl = document.createElement('div');
+                    let colorClass = "bg-blue-50 text-blue-600 border border-blue-100";
+                    if(evt.type === 'Holiday' || evt.type === 'Festival') colorClass = "bg-red-50 text-red-600 border border-red-100";
+                    if(evt.type === 'SL') colorClass = "bg-amber-50 text-amber-600 border border-amber-100";
+                    if(evt.type === 'WO') colorClass = "bg-slate-100 text-slate-600 border border-slate-200";
+                    
+                    const isOrgHoliday = evt.type === 'Holiday' || evt.type === 'Festival';
+                    const canEdit = isOrgHoliday && (currentUser.role === 'admin' || currentUser.role === 'manager');
+                    
+                    eventEl.className = `calendar-event ${colorClass} mt-1 truncate ${canEdit ? 'cursor-pointer hover:brightness-95' : ''}`;
+                    eventEl.textContent = evt.type === 'Holiday' ? evt.reason : `${evt.userName.split(' ')[0]}: ${evt.type}`;
+                    
+                    if (canEdit) {
+                        eventEl.onclick = (e) => {
+                            e.stopPropagation();
+                            openEditHolidayModal(evt);
+                        };
+                    }
+                    
+                    dayDiv.appendChild(eventEl);
+                });
+                calendarGrid.appendChild(dayDiv);
+            }
+        };
+
+        // HOLIDAY MODAL LOGIC
+        window.openAddHolidayModal = () => {
+            document.getElementById('holiday-modal-title').textContent = "Add Org Holiday";
+            document.getElementById('holiday-modal-header').classList.replace('bg-amber-600', 'bg-blue-600');
+            document.getElementById('edit-holiday-id').value = "";
+            document.getElementById('holiday-form').reset();
+            document.getElementById('holiday-delete-btn').classList.add('hidden');
+            document.getElementById('holiday-submit-btn').textContent = "Add to Calendar";
+            document.getElementById('holiday-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openEditHolidayModal = (evt) => {
+            document.getElementById('holiday-modal-title').textContent = "Edit Org Holiday";
+            document.getElementById('holiday-modal-header').classList.replace('bg-blue-600', 'bg-amber-600');
+            document.getElementById('edit-holiday-id').value = evt.id;
+            document.getElementById('holiday-date').value = evt.date;
+            document.getElementById('holiday-reason').value = evt.reason;
+            document.getElementById('holiday-delete-btn').classList.remove('hidden');
+            document.getElementById('holiday-submit-btn').textContent = "Update Event";
+            document.getElementById('holiday-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.closeHolidayModal = () => {
+            document.getElementById('holiday-modal').classList.replace('flex', 'hidden');
+        };
+
+        document.getElementById('holiday-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-holiday-id').value;
+            const payload = {
+                type: 'Holiday',
+                date: document.getElementById('holiday-date').value,
+                reason: document.getElementById('holiday-reason').value,
+                status: 'approved',
+                userId: 'SYSTEM',
+                userName: 'Organization'
+            };
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', editId), payload);
+                    showToast("Holiday updated");
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
+                    showToast("Holiday added");
+                }
+                closeHolidayModal();
+            } catch(e) { showToast("Save failed"); }
+        });
+
+        window.deleteOrgHoliday = async () => {
+            const id = document.getElementById('edit-holiday-id').value;
+            if (!id || !confirm("Remove this holiday from the organizational calendar?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id));
+                showToast("Holiday removed");
+                closeHolidayModal();
+            } catch(e) { showToast("Delete failed"); }
+        };
+
+        // LEAVE APPLICATION SUBMIT
+        document.getElementById('apply-leave-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const payload = {
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userRole: currentUser.role,
+                date: formData.get('leaveDate'),
+                type: formData.get('leaveType'),
+                reason: formData.get('leaveReason'),
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
+                showToast("Application submitted successfully");
+                e.target.reset();
+            } catch(err) { showToast("Submission failed"); }
+        });
+
+        // UTILITY FUNCTIONS
         function calculateMetrics(dataList) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
@@ -812,216 +1176,27 @@
             return metrics;
         }
 
-        function renderCustomers() {
-            const tbody = document.getElementById('customer-table-body');
-            const search = document.getElementById('search-input').value.toLowerCase().trim();
-            const filter = document.getElementById('filter-status').value;
-            let filtered = customers;
-            if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
-            if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
-            if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').toLowerCase().includes(search));
-            
-            const metrics = calculateMetrics(filtered);
-            upcomingPaymentList = metrics.upcomingDetails;
-            nsfPaymentList = metrics.nsfDetails;
-            
-            document.getElementById('stat-total-customers').textContent = filtered.length;
-            document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
-            document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
-            document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
-            document.getElementById('stat-month-sales').textContent = metrics.monthCount;
-            document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
-            document.getElementById('stat-nsf-count').textContent = metrics.nsfDetails.length;
-            
-            // Re-render Distribution Chart based on filtered list
-            renderPipelineStats(filtered);
-
-            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const paidCount = sched.filter(i => i.status === 'paid').length;
-                const totalCount = sched.length;
-                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
-                const totalPaid = calculatePaidSum(c);
-                let agentDisp = c.agentName || 'System';
-                if (agentDisp === 'System Root') agentDisp = 'Admin';
-                const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
-                return `<tr class="hover:bg-slate-50 transition group"><td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div><div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${agentDisp}</div><div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div></td><td class="px-8 py-5"><div class="text-xs font-black text-blue-600">${nextDue}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div></td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3 ${!canManage ? 'hidden' : ''}"><button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button><button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></td></tr>`; }).join('');
-        }
-
         function calculatePaidSum(c) {
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
             return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
         }
 
-        function getStatusClass(s) {
-            if (s === 'Cancel') return 'bg-red-100 text-red-700 border border-red-200';
-            if (s === 'NSF') return 'bg-amber-100 text-amber-700 border border-amber-200';
-            return 'bg-blue-100 text-blue-700 border border-blue-200';
+        function showToast(m) {
+            const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
-        window.switchTab = (id) => {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200'));
-            document.getElementById(`tab-${id}`).classList.remove('hidden');
-            const nav = document.getElementById(`nav-${id}`); if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200');
-            if (window.innerWidth < 768) toggleMobileMenu();
-        };
-
-        window.toggleMobileMenu = () => {
-            const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');
-        };
-
-        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
-
-        window.updatePaymentSchedule = (existing = null) => {
-            const type = document.getElementById('paymentType').value; const payToday = document.getElementById('payToday').checked; const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); const container = document.getElementById('schedule-container'); const group = document.getElementById('tenure-input-group');
-            container.innerHTML = '';
-            if (type === 'Single') {
-                group.classList.add('hidden'); const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
-                container.innerHTML = createScheduleItem(1, sched, true);
-            } else {
-                group.classList.remove('hidden'); const count = parseInt(document.getElementById('tenureCount').value); const perMonth = fee / count;
-                for (let i = 1; i <= count; i++) {
-                    const isFirstToday = (i === 1 && payToday);
-                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
-                    container.innerHTML += createScheduleItem(i, sched, false);
-                }
-            }
-        };
-
-        function createScheduleItem(index, data, isSingle) {
-            return `<div class="schedule-item bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3"><div class="flex justify-between items-center"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Total' : 'Inst. #' + index}</span><select class="tenure-status-select text-[10px] font-black border border-slate-200 rounded-lg p-1 outline-none"><option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${data.status === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${data.status === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 border-b border-slate-50 pb-2"><span class="font-black text-slate-400">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none bg-transparent" value="${data.amount}"></div><input type="date" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-black outline-none border border-slate-100" value="${data.date}"></div>`;
-        }
-
-        window.toggleBillingAddress = () => {
-            const same = document.getElementById('sameAddress').checked; const billing = document.getElementById('billingAddress');
-            if (same) { billing.value = document.getElementById('mailingAddress').value; billing.readOnly = true; billing.classList.add('bg-slate-100', 'text-slate-400'); }
-            else { billing.readOnly = false; billing.classList.remove('bg-slate-100', 'text-slate-400'); }
-        };
-
-        document.getElementById('customer-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const editId = document.getElementById('edit-customer-id').value;
-            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-                const manualAgentId = document.getElementById('assigned-agent-select').value;
-                if (manualAgentId === 'ROOT') { data.agentId = 'ROOT'; data.agentName = 'System Root'; }
-                else if (manualAgentId) { const agentObj = users.find(u => u.id === manualAgentId); data.agentId = manualAgentId; data.agentName = agentObj?.name || 'Unknown Agent'; }
-                else { data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id; data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name; }
-            } else { if (editId) { data.agentId = data.originalAgentId; data.agentName = data.originalAgentName; } else { data.agentId = currentUser.id; data.agentName = currentUser.name; } }
-            delete data.originalAgentId; delete data.originalAgentName;
-            const schedule = []; document.querySelectorAll('.schedule-item').forEach((item, index) => { schedule.push({ month: index + 1, amount: parseFloat(item.querySelector('.tenure-amount-input').value), date: item.querySelector('input[type="date"]').value, status: item.querySelector('.tenure-status-select').value }); });
-            data.paymentSchedule = JSON.stringify(schedule);
+        window.updateLeaveStatus = async (id, status) => {
             try {
-                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data); showToast("Cloud Record Updated Successfully"); }
-                else { data.createdAt = new Date().toISOString(); data.status = data.status || 'Active'; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data); showToast("New Enrollment Deployed"); }
-                resetForm(); switchTab('customer-list');
-            } catch(e) { showToast("System Error: Save Interrupted"); }
-        });
-
-        window.editCustomer = (id) => {
-            const c = customers.find(x => x.id === id); if (!c) return;
-            switchTab('add-customer'); document.getElementById('form-title').textContent = "Modify Enrollment Pipeline"; document.getElementById('submit-btn').textContent = "Update Records"; document.getElementById('edit-customer-id').value = id; document.getElementById('cancel-edit').classList.remove('hidden');
-            document.getElementById('original-agent-id').value = c.agentId || ''; document.getElementById('original-agent-name').value = c.agentName || '';
-            const select = document.getElementById('assigned-agent-select'); if (select) select.value = c.agentId || '';
-            Object.keys(c).forEach(key => { const el = document.getElementsByName(key)[0]; if (el) el.value = c[key] || ''; });
-            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []); updatePaymentSchedule(sched);
-        };
-
-        window.deleteCustomer = async (id) => {
-            if (!confirm("Caution: Are you sure you want to remove this client from the database?")) return;
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id)); showToast("Record Purged"); } catch (err) { showToast("Delete Failed"); }
-        };
-
-        document.getElementById('add-user-form').addEventListener('submit', async (e) => {
-            e.preventDefault(); const editId = document.getElementById('edit-user-id-field').value;
-            const payload = { name: e.target.userName.value, email: e.target.userEmail.value.toLowerCase(), password: e.target.userPassword.value, role: e.target.userRole.value };
-            try {
-                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload); showToast("User Permission Updated"); }
-                else { payload.createdAt = new Date().toISOString(); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload); showToast("New User Provisioned"); }
-                resetUserForm();
-            } catch(e) { showToast("Provisioning Failed"); }
-        });
-
-        window.editUserAccount = (id) => {
-            const u = users.find(x => x.id === id); document.getElementById('user-form-title').textContent = "Modify Identity"; document.getElementById('edit-user-id-field').value = id;
-            document.getElementById('user-field-name').value = u.name; document.getElementById('user-field-email').value = u.email; document.getElementById('user-field-password').value = u.password; document.getElementById('user-field-role').value = u.role;
-            document.getElementById('cancel-user-edit').classList.remove('hidden'); document.getElementById('user-submit-btn').textContent = "Save Identity";
-        };
-
-        window.deleteUser = async (id) => {
-            if (!confirm("Deactivate and remove user access?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id)); showToast("Identity Terminated");
-        };
-
-        window.viewUserStats = (userId) => {
-            const user = users.find(u => u.id === userId); const uCustomers = customers.filter(c => c.agentId === userId); const m = calculateMetrics(uCustomers);
-            document.getElementById('stats-user-email').textContent = user.name; document.getElementById('stats-user-role').textContent = user.role;
-            document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
-            document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
-        };
-
-        window.openUpcomingModal = () => {
-            const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div><div class="text-[10px] text-blue-500 font-bold uppercase tracking-tighter">Click to View Profile</div></td><td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
-            document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
-        };
-
-        window.openNsfModal = () => {
-            const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[10px] text-red-500 font-bold uppercase tracking-tighter">Click to View Profile</div></td><td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
-            document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
-        };
-
-        window.openAgentLeadsModal = (agentId) => {
-            const agent = agentId === 'ROOT' ? { name: 'System Admin' } : users.find(u => u.id === agentId);
-            const agentName = agent ? agent.name : 'Unknown Agent';
-            const agentLeads = customers.filter(c => c.agentId === agentId);
-            
-            document.getElementById('agent-leads-title').textContent = `${agentName}'s Sales Detail`;
-            document.getElementById('agent-leads-subtitle').textContent = `Tracking ${agentLeads.length} leads in pipeline`;
-            
-            const tbody = document.getElementById('agent-leads-table');
-            tbody.innerHTML = agentLeads.length ? agentLeads.map(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const paidCount = sched.filter(i => i.status === 'paid').length;
-                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
-                const totalPaid = calculatePaidSum(c);
-                
-                return `
-                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')">
-                    <td class="px-6 py-4">
-                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div>
-                    </td>
-                    <td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td>
-                    <td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td>
-                    <td class="px-8 py-5">
-                        <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">No leads assigned to this agent yet.</td></tr>';
-            
-            document.getElementById('agent-leads-modal').classList.replace('hidden', 'flex');
-        };
-
-        window.viewCustomerFromModal = (id, type) => {
-            if(type === 'nsf') closeNsfModal(); 
-            else if(type === 'upcoming') closeUpcomingModal();
-            else if(type === 'agent') closeAgentLeadsModal();
-            editCustomer(id);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status });
+                showToast(`Request ${status}`);
+            } catch(e) { showToast("Action failed"); }
         };
 
         window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
         window.closeNsfModal = () => document.getElementById('nsf-modal').classList.replace('flex', 'hidden');
         window.closeAgentLeadsModal = () => document.getElementById('agent-leads-modal').classList.replace('flex', 'hidden');
         window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
-
-        function showToast(m) {
-            const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
-            setTimeout(() => t.classList.add('translate-y-32'), 3000);
-        }
 
         window.resetForm = () => {
             document.getElementById('customer-form').reset(); document.getElementById('edit-customer-id').value = ""; document.getElementById('original-agent-id').value = "";
