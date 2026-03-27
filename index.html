@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAAZ CRM - Multi-Role Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
     <style>
         .tab-content.hidden { display: none; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -13,58 +16,49 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        #mobile-overlay.active { display: block; }
         
-        /* Glassmorphism effects */
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
+        #mobile-overlay.active { display: block; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
 
     <!-- Auth Section -->
-    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-700 via-indigo-800 to-slate-900">
-        <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 animate-fade-in border border-white/20">
+    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-600 to-indigo-800">
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 border border-white/20 animate-fade-in">
             <div class="text-center mb-10">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-3xl mb-4 shadow-2xl shadow-blue-500/30">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-2xl mb-4 shadow-xl shadow-blue-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight">MAAZ CRM</h1>
-                <p class="text-slate-500 mt-2 font-medium">Enterprise Access Portal</p>
+                <p class="text-slate-500 mt-2 font-medium">Enterprise Management Portal</p>
             </div>
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
-                    <input type="email" id="login-email" required class="block w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="admin@company.com">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                    <input type="email" id="login-email" required class="block w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="name@company.com">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-                    <input type="password" id="login-password" required class="block w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="••••••••">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                    <input type="password" id="login-password" required class="block w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="••••••••">
                 </div>
-                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50 mt-4">Sign In to Dashboard</button>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50">Sign In to Dashboard</button>
             </form>
-            <div id="auth-error" class="mt-6 p-4 bg-red-50 text-red-600 text-xs rounded-2xl hidden border border-red-100 font-bold text-center"></div>
-            
-            <p class="mt-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Secure Cloud Environment v2.5</p>
+            <div id="auth-error" class="mt-4 p-4 bg-red-50 text-red-600 text-xs rounded-2xl hidden border border-red-100 font-bold text-center"></div>
         </div>
     </div>
 
     <!-- Main CRM Container -->
     <div id="app-section" class="hidden min-h-screen flex flex-col">
-        <nav class="bg-white/80 backdrop-blur-md border-b border-slate-100 fixed w-full z-40 shadow-sm">
+        <nav class="bg-white border-b border-slate-100 fixed w-full z-40 shadow-sm">
             <div class="px-4 py-3 lg:px-8">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
-                        <span class="text-2xl font-black text-blue-600 tracking-tighter">MAAZ</span>
+                        <span class="text-2xl font-black text-blue-600 tracking-tighter">MAAZ CRM</span>
                         <span id="role-badge" class="px-3 py-1 text-[10px] font-black uppercase rounded-full bg-blue-50 text-blue-600 border border-blue-100 hidden sm:inline-block"></span>
                     </div>
                     <div class="flex items-center gap-4">
@@ -72,8 +66,8 @@
                             <p id="user-display" class="text-sm font-black text-slate-800 leading-none"></p>
                             <p id="user-role-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter"></p>
                         </div>
-                        <button id="logout-btn" class="p-2.5 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-slate-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button id="logout-btn" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
@@ -83,22 +77,21 @@
         </nav>
 
         <div class="flex flex-1 pt-16">
-            <!-- Sidebar Navigation -->
             <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto custom-scroll pt-16">
                 <div class="p-6 space-y-2">
-                    <button onclick="switchTab('dashboard')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 transition font-black text-sm" id="nav-dashboard">
+                    <button onclick="switchTab('dashboard')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
                         Dashboard
                     </button>
-                    <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-add-customer">
+                    <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-add-customer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Enroll Customer
                     </button>
-                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 transition font-black text-sm" id="nav-customer-list">
+                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-customer-list">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                         Enrollment Database
                     </button>
-                    <button onclick="switchTab('manage-users')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-manage-users">
+                    <button onclick="switchTab('manage-users')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-manage-users">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                         System Users
                     </button>
@@ -113,72 +106,72 @@
                 <section id="tab-dashboard" class="tab-content animate-fade-in space-y-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">System Performance</h2>
-                            <p class="text-slate-500 font-medium">Real-time statistics across all business units</p>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Performance Overview</h2>
+                            <p class="text-slate-500 font-medium">Real-time statistics across all channels</p>
                         </div>
-                        <div class="bg-white p-2 px-4 rounded-2xl border border-slate-100 flex items-center gap-2 shadow-sm">
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Stream Live</span>
+                        <div class="bg-white p-2 rounded-2xl border border-slate-100 flex items-center gap-2 shadow-sm">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-2"></span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">System Live</span>
                         </div>
                     </div>
 
                     <!-- Metric Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Leads</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-3xl font-black text-slate-900">0</h3>
                         </div>
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
                             <h3 id="stat-total-fees" class="text-3xl font-black text-green-600">$0</h3>
                         </div>
-                        <div class="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-500/20 text-white">
-                            <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Daily Flow</p>
+                        <div class="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-100 text-white">
+                            <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Today's Revenue</p>
                             <h3 id="stat-day-revenue" class="text-3xl font-black">$0</h3>
                         </div>
                         <div onclick="openUpcomingModal()" class="bg-white p-6 rounded-3xl border-2 border-transparent hover:border-blue-500 shadow-sm cursor-pointer transition-all active:scale-[0.98]">
-                            <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Monthly Goal</p>
+                            <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Upcoming (MTD)</p>
                             <h3 id="stat-upcoming" class="text-3xl font-black text-slate-900">$0</h3>
                         </div>
                         <div id="card-nsf" onclick="openNsfModal()" class="bg-white p-6 rounded-3xl border-2 border-transparent hover:border-red-500 shadow-sm cursor-pointer transition-all active:scale-[0.98]">
-                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">NSF Missed</p>
+                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">NSF Sales (Overdue)</p>
                             <h3 id="stat-nsf-count" class="text-3xl font-black text-red-600">0</h3>
                         </div>
                     </div>
 
                     <!-- Distribution -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
                             <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Activity Log
+                                Current Period Activity
                             </h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">MTD Sales</p>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Sales</p>
                                     <h4 id="stat-month-sales" class="text-2xl font-black">0</h4>
                                 </div>
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">MTD Revenue</p>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Collected</p>
                                     <h4 id="stat-month-revenue" class="text-2xl font-black">$0</h4>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
                             <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                                Lead Breakdown
+                                Pipeline Distribution
                             </h4>
                             <div id="pipeline-stats" class="space-y-4"></div>
                         </div>
                     </div>
 
-                    <!-- Leaderboard -->
-                    <div id="agent-performance-section" class="hidden bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+                    <!-- Agent performance leaderboard -->
+                    <div id="agent-performance-section" class="hidden bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
                         <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                            Agent Leaderboard
+                            Agent Performance Leaderboard
                         </h4>
                         <div id="agent-performance-container" class="overflow-hidden"></div>
                     </div>
@@ -186,21 +179,20 @@
 
                 <!-- Enrollment Form Tab -->
                 <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
-                    <div class="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-12">
+                    <div class="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-12">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
                             <div>
-                                <h2 id="form-title" class="text-3xl font-black text-slate-900 tracking-tight">Lead Processing</h2>
-                                <p class="text-slate-500 font-medium mt-1">Enroll new customer into the system pipeline</p>
+                                <h2 id="form-title" class="text-3xl font-black text-slate-900 tracking-tight">Customer Enrollment</h2>
+                                <p class="text-slate-500 font-medium mt-1">Fill out all sections to initiate processing</p>
                             </div>
-                            <button id="cancel-edit" class="hidden text-sm font-black text-red-500 hover:bg-red-50 px-6 py-3 rounded-2xl transition-all border border-red-100" onclick="resetForm()">Discard Changes</button>
+                            <button id="cancel-edit" class="hidden text-sm font-black text-red-500 hover:bg-red-50 px-6 py-3 rounded-2xl transition-all border border-red-100" onclick="resetForm()">Cancel Editing</button>
                         </div>
                         
                         <form id="customer-form" class="space-y-16">
                             <input type="hidden" id="edit-customer-id">
-                            <input type="hidden" id="original-agent-id">
-                            <input type="hidden" id="original-agent-name">
+                            <input type="hidden" id="original-agent-id" name="originalAgentId">
+                            <input type="hidden" id="original-agent-name" name="originalAgentName">
                             
-                            <!-- 1. Identity -->
                             <div class="space-y-8">
                                 <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                     <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -211,47 +203,47 @@
                                 
                                 <div id="admin-agent-select-group" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-blue-500 uppercase ml-2 tracking-widest">Assign to Agent</label>
+                                        <label class="text-[10px] font-black text-blue-500 uppercase ml-2 tracking-widest">Assigned Sales Agent</label>
                                         <select id="assigned-agent-select" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
-                                            <option value="">-- Auto Assign to Current --</option>
+                                            <option value="">-- No Agent Assigned --</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Client Full Name</label>
-                                        <input type="text" name="name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-medium uppercase focus:bg-white focus:border-blue-500">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Full Legal Name</label>
+                                        <input type="text" name="name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium uppercase">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Primary Phone</label>
-                                        <input type="tel" name="number" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Phone Number</label>
+                                        <input type="tel" name="number" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Email Identity</label>
-                                        <input type="email" name="email" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Email Address</label>
+                                        <input type="email" name="email" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Date of Birth</label>
-                                        <input type="date" name="dob" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <input type="date" name="dob" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">SSN Security</label>
-                                        <input type="text" name="ssn" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500" placeholder="XXX-XX-XXXX">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Social Security Number</label>
+                                        <input type="text" name="ssn" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium" placeholder="XXX-XX-XXXX">
                                     </div>
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Driver's License</label>
-                                        <input type="text" name="drivingLicense" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <input type="text" name="drivingLicense" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Gross Income ($)</label>
-                                        <input type="number" name="annualIncome" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Annual Gross Income ($)</label>
+                                        <input type="number" name="annualIncome" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Tax Logic</label>
-                                        <select name="taxStatus" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold focus:bg-white focus:border-blue-500">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Tax Status</label>
+                                        <select name="taxStatus" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                             <option value="Single">Single</option>
                                             <option value="Married-Joint">Married Filing Jointly</option>
                                             <option value="Head-of-Household">Head of Household</option>
@@ -259,28 +251,27 @@
                                     </div>
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Family Size</label>
-                                        <input type="number" name="familySize" min="1" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium focus:bg-white focus:border-blue-500">
+                                        <input type="number" name="familySize" min="1" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
                                     </div>
                                 </div>
                                 <div class="space-y-1">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Legal Mailing Address</label>
-                                    <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium h-24 focus:bg-white focus:border-blue-500"></textarea>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Full Mailing Address</label>
+                                    <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium h-24"></textarea>
                                 </div>
                             </div>
 
-                            <!-- 2. Financials -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                 <div class="space-y-8">
                                     <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                                         </div>
-                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">2. Cloud Credentials</h3>
+                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">2. FSA Credentials</h3>
                                     </div>
                                     <div class="space-y-4">
-                                        <input type="text" name="fsaUserId" placeholder="Portal User ID" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
-                                        <input type="password" name="fsaPassword" placeholder="Secure Password" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
-                                        <input type="text" name="fsaBackupCode" placeholder="Recovery / PIN" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="text" name="fsaUserId" placeholder="FSA User ID" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="password" name="fsaPassword" placeholder="FSA Password" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="text" name="fsaBackupCode" placeholder="Backup Code / Secret Answer" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
                                     </div>
                                 </div>
                                 <div class="space-y-8">
@@ -288,87 +279,87 @@
                                         <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
                                         </div>
-                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">3. Pipeline Details</h3>
+                                        <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">3. Loan Details</h3>
                                     </div>
                                     <div class="space-y-4">
-                                        <input type="text" name="loanLender" placeholder="Current Service Partner" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <input type="text" name="loanLender" placeholder="Current Lender Name" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
                                         <div class="grid grid-cols-2 gap-4">
-                                            <input type="number" name="loanAmount" placeholder="Total Value ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
-                                            <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="System Fee ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-black text-blue-600" oninput="updatePaymentSchedule()">
+                                            <input type="number" name="loanAmount" placeholder="Total Loan ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                            <input type="number" name="enrollmentFee" id="enrollmentFee" placeholder="Total Fee ($)" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-black text-blue-600" oninput="updatePaymentSchedule()">
                                         </div>
                                         <div class="grid grid-cols-2 gap-4">
-                                            <select name="processor" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold">
-                                                <option value="Unit Alpha">Unit Alpha</option>
-                                                <option value="Unit Beta">Unit Beta</option>
-                                                <option value="Unit Gamma">Unit Gamma</option>
+                                            <select name="processor" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                                <option value="Processor A">Processor A</option>
+                                                <option value="Processor B">Processor B</option>
+                                                <option value="Processor C">Processor C</option>
                                             </select>
-                                            <input type="text" name="fileNumber" placeholder="Cloud File #" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                            <input type="text" name="fileNumber" placeholder="Internal File #" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 3. Billing -->
+                            <!-- Billing -->
                             <div class="space-y-8">
                                 <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                     <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
                                     </div>
-                                    <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">4. Revenue Structure</h3>
+                                    <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">4. Payment Processing</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <select name="paymentMode" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold">
-                                        <option value="Card">Merchant Card</option>
-                                        <option value="ACH">Cloud Bank Transfer</option>
+                                    <select name="paymentMode" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                        <option value="Card">Credit/Debit Card</option>
+                                        <option value="ACH">ACH Transfer</option>
                                     </select>
-                                    <select name="paymentType" id="paymentType" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold" onchange="updatePaymentSchedule()">
-                                        <option value="Single">Settled - One Time</option>
-                                        <option value="Installments">Structured - Plan</option>
+                                    <select name="paymentType" id="paymentType" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium" onchange="updatePaymentSchedule()">
+                                        <option value="Single">One-Time Payment</option>
+                                        <option value="Installments">Installment Plan</option>
                                     </select>
                                 </div>
                                 
                                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <input type="text" name="cardHolderName" placeholder="Account Holder" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
-                                    <input type="text" name="cardNumber" placeholder="Security Number / Routing" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium">
+                                    <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                    <input type="text" name="cardNumber" placeholder="Card / Account Number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
                                     <div class="grid grid-cols-2 gap-4">
-                                        <input type="text" name="cardExpiry" placeholder="MM/YY" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-center">
-                                        <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-center">
+                                        <input type="text" name="cardExpiry" placeholder="MM/YY" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
+                                        <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
                                     </div>
                                 </div>
 
                                 <div class="flex items-center gap-3 ml-2">
                                     <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()" class="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500">
-                                    <label for="sameAddress" class="text-xs font-black text-slate-400 uppercase tracking-widest">Inherit Mailing Address</label>
+                                    <label for="sameAddress" class="text-xs font-black text-slate-400 uppercase tracking-wider">Same as Mailing Address</label>
                                 </div>
-                                <textarea name="billingAddress" id="billingAddress" placeholder="Legal Billing Address" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none h-20 focus:bg-white focus:border-blue-500"></textarea>
+                                <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none h-20"></textarea>
 
-                                <div class="bg-slate-50 p-6 md:p-10 rounded-[2.5rem] border border-slate-100">
+                                <div class="bg-slate-50 p-6 md:p-10 rounded-[2rem] border border-slate-100">
                                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                                        <h4 class="font-black uppercase tracking-widest text-blue-600">Installment Roadmap</h4>
-                                        <div class="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100">
+                                        <h4 class="font-black uppercase tracking-widest text-blue-600">Payment Breakdown</h4>
+                                        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
                                             <input type="checkbox" id="payToday" onchange="updatePaymentSchedule()" class="w-5 h-5 rounded text-blue-600">
-                                            <label for="payToday" class="text-[10px] font-black text-slate-800 uppercase tracking-widest">Execute Day 0</label>
+                                            <label for="payToday" class="text-xs font-black text-slate-800 uppercase tracking-tighter">Initial Payment is Today</label>
                                         </div>
                                     </div>
                                     <div id="tenure-input-group" class="hidden mb-8 flex items-center gap-4">
-                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cycle Count:</span>
-                                        <input type="number" id="tenureCount" value="6" min="1" max="60" class="w-24 px-4 py-2 border rounded-xl outline-none font-black text-center" oninput="updatePaymentSchedule()">
+                                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Duration (Months):</span>
+                                        <input type="number" id="tenureCount" value="6" min="2" max="24" class="w-24 px-4 py-2 border rounded-xl outline-none font-bold" oninput="updatePaymentSchedule()">
                                     </div>
                                     <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                                 </div>
                             </div>
 
-                            <div id="admin-status-section" class="hidden p-8 bg-slate-900 rounded-[2.5rem] border border-slate-800 space-y-4">
-                                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Management Override</h3>
-                                <select name="status" id="field-status" class="w-full px-5 py-4 bg-slate-800 text-white border border-slate-700 rounded-2xl outline-none font-black">
-                                    <option value="Active">Operational - Active</option>
-                                    <option value="Cancel">Terminated - Cancelled</option>
-                                    <option value="NSF">Overdue - NSF</option>
+                            <div id="admin-status-section" class="hidden p-8 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
+                                <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
+                                <select name="status" id="field-status" class="w-full px-5 py-4 bg-white border border-amber-100 rounded-2xl outline-none font-bold">
+                                    <option value="Active">Active</option>
+                                    <option value="Cancel">Cancel</option>
+                                    <option value="NSF">NSF</option>
                                 </select>
                             </div>
 
                             <div class="flex justify-end pt-6">
-                                <button type="submit" id="submit-btn" class="w-full md:w-auto bg-blue-600 text-white px-20 py-6 rounded-[2.5rem] font-black text-lg hover:bg-blue-700 shadow-2xl shadow-blue-500/30 transition-all active:scale-95">Deploy Record</button>
+                                <button type="submit" id="submit-btn" class="w-full md:w-auto bg-blue-600 text-white px-16 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all active:scale-95">Finalize & Submit Enrollment</button>
                             </div>
                         </form>
                     </div>
@@ -378,36 +369,36 @@
                 <section id="tab-customer-list" class="tab-content hidden animate-fade-in space-y-8">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div>
-                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Lead Database</h2>
-                            <p class="text-slate-500 font-medium">Global master registry of all enrolled pipelines</p>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Enrollment Database</h2>
+                            <p class="text-slate-500 font-medium">Manage and track all customer pipelines</p>
                         </div>
                         <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                            <select id="filter-status" onchange="renderCustomers()" class="px-6 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm text-[10px] font-black uppercase tracking-widest outline-none">
+                            <select id="filter-status" onchange="renderCustomers()" class="px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="All">All Statuses</option>
-                                <option value="Active">Active Only</option>
-                                <option value="Cancel">Cancelled Only</option>
-                                <option value="NSF">NSF Risk Only</option>
+                                <option value="Active">Active</option>
+                                <option value="Cancel">Cancel</option>
+                                <option value="NSF">NSF</option>
                             </select>
                             <div class="relative flex-1 sm:w-80">
-                                <input type="text" id="search-input" oninput="renderCustomers()" placeholder="Query Identity or #..." class="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm outline-none text-sm font-bold tracking-tight">
+                                <input type="text" id="search-input" oninput="renderCustomers()" placeholder="Search name, phone or file..." class="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-bold">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-4 top-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                         <div class="overflow-x-auto custom-scroll">
                             <table class="w-full text-left min-w-[1300px]">
                                 <thead class="bg-slate-50 border-b border-slate-100">
                                     <tr>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Identity</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ownership</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Flow</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Window</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline</th>
-                                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Identity</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sales Agent</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Details</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payments Done</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due Date</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Collected</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Status</th>
+                                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Manage</th>
                                     </tr>
                                 </thead>
                                 <tbody id="customer-table-body" class="divide-y divide-slate-50"></tbody>
@@ -418,34 +409,35 @@
 
                 <!-- System Users -->
                 <section id="tab-manage-users" class="tab-content hidden animate-fade-in space-y-8">
-                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">Access Control</h2>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 h-fit">
-                            <div class="flex justify-between items-center mb-8">
-                                <h3 id="user-form-title" class="text-lg font-black text-slate-900 uppercase tracking-tighter">Provision Identity</h3>
-                                <button id="cancel-user-edit" class="hidden text-[10px] font-black text-red-500 uppercase tracking-widest" onclick="resetUserForm()">Discard</button>
+                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 h-fit">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 id="user-form-title" class="text-lg font-black text-slate-900">Create Account</h3>
+                                <button id="cancel-user-edit" class="hidden text-[10px] font-black text-red-500 uppercase tracking-widest" onclick="resetUserForm()">Cancel</button>
                             </div>
                             <form id="add-user-form" class="space-y-4">
                                 <input type="hidden" id="edit-user-id-field">
-                                <input type="text" name="userName" id="user-field-name" placeholder="Full Identity Name" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl outline-none font-bold">
-                                <input type="email" name="userEmail" id="user-field-email" placeholder="Cloud Email" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl outline-none font-bold">
-                                <input type="text" name="userPassword" id="user-field-password" placeholder="Passcode Override" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl outline-none font-bold">
-                                <select name="userRole" id="user-field-role" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl outline-none font-black text-[10px] uppercase tracking-widest">
-                                    <option value="agent">Standard Agent</option>
-                                    <option value="manager">Unit Manager</option>
-                                    <option value="admin">System Root</option>
+                                <input type="text" name="userName" id="user-field-name" placeholder="Full Name" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <input type="email" name="userEmail" id="user-field-email" placeholder="Email Address" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <input type="text" name="userPassword" id="user-field-password" placeholder="System Password" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                                <select name="userRole" id="user-field-role" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                                    <option value="agent">Agent</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="admin">Administrator</option>
                                 </select>
-                                <button type="submit" id="user-submit-btn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black hover:bg-slate-800 transition shadow-xl shadow-slate-900/10 uppercase text-xs tracking-widest">Commit to Cloud</button>
+                                <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Deploy Account</button>
                             </form>
                         </div>
-                        <div class="lg:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                             <div class="overflow-x-auto custom-scroll">
                                 <table class="w-full text-left min-w-[700px]">
                                     <thead class="bg-slate-50 border-b border-slate-100">
                                         <tr>
-                                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity</th>
-                                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Control</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="user-management-table" class="divide-y divide-slate-50"></tbody>
@@ -460,13 +452,13 @@
 
     <!-- Modals -->
     <div id="user-stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <div>
                     <h2 id="stats-user-email" class="text-xl font-black text-slate-900">User Performance</h2>
                     <p id="stats-user-role" class="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1"></p>
                 </div>
-                <button onclick="closeStats()" class="bg-white p-3 rounded-2xl text-slate-400 hover:text-slate-900 shadow-sm border border-slate-100 transition">
+                <button onclick="closeStats()" class="bg-white p-2 rounded-xl text-slate-400 hover:text-slate-900 shadow-sm border border-slate-100 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -474,14 +466,14 @@
         </div>
     </div>
 
-    <div id="common-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-            <div id="modal-header" class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
+    <div id="upcoming-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
                 <div>
-                    <h2 id="modal-title" class="text-2xl font-black">Modal Title</h2>
-                    <p id="modal-subtitle" class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Subtitle</p>
+                    <h2 class="text-2xl font-black">Upcoming Pipeline Revenue</h2>
+                    <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Due for current month</p>
                 </div>
-                <button onclick="closeCommonModal()" class="bg-white/20 hover:bg-white/40 p-3 rounded-2xl transition">
+                <button onclick="closeUpcomingModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -489,31 +481,82 @@
                 <table class="w-full text-left">
                     <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
                         <tr>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Window</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Value</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
                         </tr>
                     </thead>
-                    <tbody id="modal-table-body" class="divide-y divide-slate-50"></tbody>
+                    <tbody id="upcoming-details-table" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="nsf-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-red-600 text-white">
+                <div>
+                    <h2 class="text-2xl font-black">NSF Sales List (Overdue)</h2>
+                    <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Payments missed in current month</p>
+                </div>
+                <button onclick="closeNsfModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 custom-scroll">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Overdue Date</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nsf-details-table" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Leads Modal -->
+    <div id="agent-leads-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-5xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
+                <div>
+                    <h2 id="agent-leads-title" class="text-2xl font-black">Agent Sales Detail</h2>
+                    <p id="agent-leads-subtitle" class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Listing all leads for this agent</p>
+                </div>
+                <button onclick="closeAgentLeadsModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 custom-scroll">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Installments</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Due</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agent-leads-table" class="divide-y divide-slate-50"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <!-- Toast UI -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-slate-900 text-white px-10 py-5 rounded-[2rem] shadow-2xl z-[200] font-black text-xs tracking-widest uppercase text-center border border-white/10"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 transform translate-y-32 transition-all duration-500 bg-slate-900 text-white px-10 py-5 rounded-3xl shadow-2xl z-[200] font-black text-sm tracking-tight text-center"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // APP CONFIG & INITIALIZATION
-        const ADMIN_EMAIL = "admin@maazcrm.com";
-        const ADMIN_PASS = "maaz2024";
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "",
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
             projectId: "maaz-crm",
             storageBucket: "maaz-crm.firebasestorage.app",
@@ -524,37 +567,49 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm-app-default';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maaz-crm-app';
 
         let users = [];
         let customers = [];
         let currentUser = null;
         let authUser = null;
-        let currentMonthMetrics = {};
+        let upcomingPaymentList = [];
+        let nsfPaymentList = [];
 
-        // AUTH LOGIC
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        initAuth();
+        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
+        const ADMIN_PASS = "Maaz@2026";
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authUser = user;
-                const saved = localStorage.getItem('maaz_crm_session');
+                const saved = localStorage.getItem('crm_session_maaz_v2');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    loginSuccess(data);
+                    if (data.email === ADMIN_EMAIL) loginSuccess(data);
+                    else verifyCloudCredentials(data);
                 }
             } else {
                 authUser = null;
+                signInAnonymously(auth).catch(err => {
+                    document.getElementById('auth-error').textContent = "Database Offline. Check Firewall.";
+                    document.getElementById('auth-error').classList.remove('hidden');
+                });
             }
         });
+
+        async function verifyCloudCredentials(data) {
+            if (!authUser) return;
+            try {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
+                let found = null;
+                snap.forEach(d => {
+                    const u = d.data();
+                    if (u.email === data.email && u.password === data.password) found = { ...u, id: d.id };
+                });
+                if (found) loginSuccess(found);
+                else localStorage.removeItem('crm_session_maaz_v2');
+            } catch(e) {}
+        }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -562,26 +617,22 @@
             const pass = document.getElementById('login-password').value;
             const btn = document.getElementById('login-btn');
             const errorDiv = document.getElementById('auth-error');
-            
             btn.disabled = true;
             errorDiv.classList.add('hidden');
-
-            if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+            if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
                 return loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS });
             }
-
             try {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
-                let matched = null;
+                let matchedUser = null;
                 snap.forEach(d => {
                     const data = d.data();
-                    if (data.email === email && data.password === pass) matched = { ...data, id: d.id };
+                    if (data.email === email && data.password === pass) matchedUser = { ...data, id: d.id };
                 });
-
-                if (matched) loginSuccess(matched);
-                else throw new Error("Cloud Identity Check Failed");
-            } catch (err) {
-                errorDiv.textContent = err.message;
+                if (matchedUser) loginSuccess(matchedUser);
+                else throw new Error("Security check failed. Invalid Credentials.");
+            } catch (error) {
+                errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
             }
@@ -589,17 +640,16 @@
 
         function loginSuccess(userObj) {
             currentUser = userObj;
-            localStorage.setItem('maaz_crm_session', JSON.stringify(userObj));
+            localStorage.setItem('crm_session_maaz_v2', JSON.stringify(userObj));
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
-            document.getElementById('user-display').textContent = currentUser.name;
+            document.getElementById('user-display').textContent = currentUser.name || currentUser.email;
             document.getElementById('user-role-display').textContent = currentUser.role;
             document.getElementById('role-badge').textContent = currentUser.role;
-            
             applyRolePermissions();
-            syncData();
+            syncDataStreams();
             switchTab('dashboard');
-            showToast(`ACCESS GRANTED: ${currentUser.role.toUpperCase()}`);
+            showToast(`Welcome back, ${currentUser.name.split(' ')[0]}`);
         }
 
         function applyRolePermissions() {
@@ -612,301 +662,226 @@
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.removeItem('maaz_crm_session');
+            localStorage.removeItem('crm_session_maaz_v2');
             location.reload();
         });
 
-        // DATA SYNC
-        function syncData() {
+        function syncDataStreams() {
             if (!authUser) return;
-            
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                 users = [];
                 snap.forEach(d => users.push({ ...d.data(), id: d.id }));
                 renderUsers();
+                renderAgentPerformance();
                 populateAgentSelect();
-            }, (err) => console.error(err));
-
+            });
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
-                renderDashboard();
                 renderCustomers();
-            }, (err) => console.error(err));
+                renderAgentPerformance();
+            });
         }
 
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
-            select.innerHTML = '<option value="">-- Auto Assign to Current --</option>';
-            select.innerHTML += `<option value="ROOT">System Root (Admin)</option>`;
-            users.forEach(u => { 
-                select.innerHTML += `<option value="${u.id}">${u.name} [${u.role.toUpperCase()}]</option>`; 
-            });
+            select.innerHTML = '<option value="">-- No Agent Assigned --</option>';
+            select.innerHTML += `<option value="ROOT">System Admin (System Root)</option>`;
+            users.forEach(u => { select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; });
             select.value = currentVal;
-        }
-
-        // RENDER LOGIC
-        function renderDashboard() {
-            const list = currentUser.role === 'agent' ? customers.filter(c => c.agentId === currentUser.id) : customers;
-            const metrics = calculateGlobalMetrics(list);
-            currentMonthMetrics = metrics;
-
-            document.getElementById('stat-total-customers').textContent = list.length;
-            document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
-            document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
-            document.getElementById('stat-upcoming').textContent = `$${metrics.monthUpcoming.toLocaleString()}`;
-            document.getElementById('stat-nsf-count').textContent = metrics.nsfCount;
-            document.getElementById('stat-month-sales').textContent = metrics.monthSales;
-            document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
-
-            renderPipelineBreakdown(metrics.distribution);
-            renderLeaderboard();
-        }
-
-        function calculateGlobalMetrics(dataList) {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
-
-            let m = { 
-                lifetimeRev: 0, todayRev: 0, monthRev: 0, monthSales: 0, monthUpcoming: 0, 
-                nsfCount: 0, nsfList: [], upcomingList: [], 
-                distribution: { 'Active': 0, 'Cancel': 0, 'NSF': 0 } 
-            };
-
-            dataList.forEach(c => {
-                const sched = JSON.parse(c.paymentSchedule || '[]');
-                const created = new Date(c.createdAt);
-                
-                if (created.getMonth() === currM && created.getFullYear() === currY) m.monthSales++;
-
-                let isOverdue = false;
-                sched.forEach(item => {
-                    const amt = parseFloat(item.amount || 0);
-                    if (item.status === 'paid') {
-                        m.lifetimeRev += amt;
-                        if (item.date === todayStr) m.todayRev += amt;
-                        const pd = new Date(item.date);
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) m.monthRev += amt;
-                    } else if (item.status !== 'paid' && item.date && c.status !== 'Cancel') {
-                        const pd = new Date(item.date);
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) {
-                            if (item.date < todayStr) {
-                                if (!isOverdue) {
-                                    m.nsfList.push({ id: c.id, name: c.name, date: item.date, amount: amt });
-                                    isOverdue = true;
-                                }
-                            } else {
-                                m.monthUpcoming += amt;
-                                m.upcomingList.push({ id: c.id, name: c.name, date: item.date, amount: amt });
-                            }
-                        }
-                    }
-                });
-
-                const status = isOverdue ? 'NSF' : (c.status || 'Active');
-                if (m.distribution[status] !== undefined) m.distribution[status]++;
-                if (status === 'NSF') m.nsfCount++;
-            });
-
-            return m;
-        }
-
-        function renderPipelineBreakdown(dist) {
-            const container = document.getElementById('pipeline-stats');
-            const total = customers.length || 1;
-            container.innerHTML = Object.entries(dist).map(([status, count]) => {
-                const percent = (count / total) * 100;
-                let color = 'bg-blue-600'; if (status === 'Cancel') color = 'bg-slate-400'; if (status === 'NSF') color = 'bg-red-500';
-                return `
-                    <div class="space-y-1">
-                        <div class="flex justify-between items-end">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${status}</span>
-                            <span class="text-[10px] font-black text-slate-900">${count} Leads</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="${color} h-full transition-all duration-1000" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderLeaderboard() {
-            if (currentUser.role === 'agent') return;
-            const container = document.getElementById('agent-performance-container');
-            const perfMap = {};
-            
-            customers.forEach(c => {
-                const id = c.agentId || 'ROOT';
-                const name = c.agentName || 'System Root';
-                if (!perfMap[id]) perfMap[id] = { id, name, sales: 0, revenue: 0 };
-                perfMap[id].sales++;
-                const sched = JSON.parse(c.paymentSchedule || '[]');
-                perfMap[id].revenue += sched.reduce((sum, i) => i.status === 'paid' ? sum + parseFloat(i.amount) : sum, 0);
-            });
-
-            const sorted = Object.values(perfMap).sort((a,b) => b.revenue - a.revenue);
-            container.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left min-w-[600px]">
-                        <thead class="border-b border-slate-50">
-                            <tr>
-                                <th class="pb-4 px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th>
-                                <th class="pb-4 px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Volume</th>
-                                <th class="pb-4 px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Production</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            ${sorted.map(a => `
-                                <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="openAgentLeadsModal('${a.id}')">
-                                    <td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td>
-                                    <td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.sales}</td>
-                                    <td class="py-5 px-4 text-right font-black text-blue-600 text-sm">$${a.revenue.toLocaleString()}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        function renderCustomers() {
-            const tbody = document.getElementById('customer-table-body');
-            const search = document.getElementById('search-input').value.toLowerCase();
-            const filter = document.getElementById('filter-status').value;
-            
-            let filtered = customers;
-            if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
-
-            const nsfIds = currentMonthMetrics.nsfList.map(l => l.id);
-
-            if (filter !== 'All') {
-                filtered = filtered.filter(c => {
-                    const isNsf = nsfIds.includes(c.id);
-                    if (filter === 'NSF') return isNsf;
-                    if (isNsf) return false;
-                    return (c.status || 'Active') === filter;
-                });
-            }
-
-            if (search) {
-                filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').includes(search));
-            }
-
-            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
-                const sched = JSON.parse(c.paymentSchedule || '[]');
-                const totalPaid = sched.reduce((sum, i) => i.status === 'paid' ? sum + parseFloat(i.amount) : sum, 0);
-                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
-                const isNsf = nsfIds.includes(c.id);
-                const displayStatus = isNsf ? 'NSF' : (c.status || 'Active');
-
-                return `
-                    <tr class="hover:bg-slate-50 transition group">
-                        <td class="px-8 py-6">
-                            <div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name}</div>
-                            <div class="text-[10px] text-slate-400 font-bold tracking-tighter mt-0.5">${c.email}</div>
-                        </td>
-                        <td class="px-8 py-6">
-                            <div class="text-[10px] font-black text-slate-700">${c.agentName || 'Root'}</div>
-                        </td>
-                        <td class="px-8 py-6">
-                            <div class="text-[10px] font-black text-slate-800">${c.processor || 'Unit A'}</div>
-                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">#${c.fileNumber || '000'}</div>
-                        </td>
-                        <td class="px-8 py-6 text-center">
-                            <div class="text-[10px] font-black text-slate-900">${sched.filter(i => i.status === 'paid').length}/${sched.length}</div>
-                        </td>
-                        <td class="px-8 py-6">
-                            <div class="text-[10px] font-black text-blue-600">${nextDue}</div>
-                        </td>
-                        <td class="px-8 py-6 font-black text-green-600">$${totalPaid.toLocaleString()}</td>
-                        <td class="px-8 py-6">
-                            <span class="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${getStatusClass(displayStatus)}">${displayStatus}</span>
-                        </td>
-                        <td class="px-8 py-6 text-right">
-                            <div class="flex justify-end gap-2">
-                                <button onclick="editCustomer('${c.id}')" class="p-2 bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl transition border border-slate-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                </button>
-                                ${currentUser.role === 'admin' ? `
-                                <button onclick="deleteCustomer('${c.id}')" class="p-2 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition border border-slate-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                </button>
-                                ` : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
         }
 
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.map(u => `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="px-6 py-5">
-                        <div class="font-black text-slate-900">${u.name}</div>
-                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${u.email}</div>
+                    <td class="px-6 py-4 font-black text-slate-900">${u.name}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
+                        <div class="text-[10px] font-bold text-blue-500 mt-1">${u.password}</div>
                     </td>
-                    <td class="px-6 py-5">
-                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black uppercase text-slate-500 border border-slate-200">${u.role}</span>
-                    </td>
-                    <td class="px-6 py-5 text-right">
+                    <td class="px-6 py-4"><span class="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200">${u.role}</span></td>
+                    <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-3">
-                            <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:text-blue-800 transition font-black text-[9px] uppercase tracking-widest">Stats</button>
-                            <button onclick="editUserAccount('${u.id}')" class="text-slate-400 hover:text-slate-900 transition font-black text-[9px] uppercase tracking-widest">Edit</button>
-                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-[9px] uppercase tracking-widest">Wipe</button>
+                            <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:text-blue-800 transition font-black text-[10px] uppercase">Stats</button>
+                            <button onclick="editUserAccount('${u.id}')" class="text-slate-400 hover:text-slate-900 transition font-black text-[10px] uppercase">Edit</button>
+                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-[10px] uppercase">Del</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function getStatusClass(s) {
-            if (s === 'Cancel') return 'bg-slate-100 text-slate-700 border border-slate-200';
-            if (s === 'NSF') return 'bg-red-50 text-red-700 border border-red-200';
-            return 'bg-blue-50 text-blue-700 border border-blue-200';
+        function renderAgentPerformance() {
+            if (!currentUser || currentUser.role === 'agent') return;
+            const container = document.getElementById('agent-performance-container');
+            const performance = {};
+            const now = new Date();
+            const currM = now.getMonth();
+            const currY = now.getFullYear();
+            customers.forEach(c => {
+                const id = c.agentId || 'system';
+                let name = c.agentName || 'Unassigned';
+                if (name === 'System Root') name = 'Admin';
+                if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
+                performance[id].totalSales++;
+                const createdDate = new Date(c.createdAt);
+                if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) performance[id].monthlySales++;
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                sched.forEach(item => {
+                    if (item.status === 'paid') {
+                        const amt = parseFloat(item.amount || 0);
+                        performance[id].totalRevenue += amt;
+                        const payDate = new Date(item.date);
+                        if (payDate.getMonth() === currM && payDate.getFullYear() === currY) performance[id].monthlyRevenue += amt;
+                    }
+                });
+            });
+            const sorted = Object.values(performance).sort((a, b) => b.totalRevenue - a.totalRevenue);
+            container.innerHTML = `<div class="overflow-x-auto custom-scroll"><table class="w-full text-left min-w-[800px]"><thead><tr class="border-b border-slate-50"><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th></tr></thead><tbody class="divide-y divide-slate-50">${sorted.map(a => `<tr class="hover:bg-slate-100 transition-colors cursor-pointer" onclick="openAgentLeadsModal('${a.id}')"><td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td><td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.totalSales}</td><td class="py-5 px-4 text-center font-bold text-blue-600 text-sm bg-blue-50/30">${a.monthlySales}</td><td class="py-5 px-4 text-right font-black text-green-600 text-sm">$${a.totalRevenue.toLocaleString()}</td><td class="py-5 px-4 text-right font-black text-blue-700 text-sm bg-blue-50/30">$${a.monthlyRevenue.toLocaleString()}</td></tr>`).join('')}</tbody></table></div>`;
         }
 
-        // TAB & UI NAVIGATION
+        function renderPipelineStats(dataList = customers) {
+            const container = document.getElementById('pipeline-stats');
+            const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
+            
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currM = now.getMonth();
+            const currY = now.getFullYear();
+
+            dataList.forEach(c => { 
+                let s = c.status || 'Active'; 
+                
+                // Dynamically check for NSF state (overdue payment in current month)
+                if (s === 'Active') {
+                    const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                    const isNsfDue = sched.some(item => {
+                        if (item.status === 'pending' && item.date) {
+                            const pd = new Date(item.date);
+                            return pd.getMonth() === currM && pd.getFullYear() === currY && item.date < todayStr;
+                        }
+                        return false;
+                    });
+                    if (isNsfDue) s = 'NSF';
+                }
+
+                if (counts[s] !== undefined) counts[s]++; 
+            });
+
+            const total = dataList.length || 1;
+            container.innerHTML = Object.entries(counts).map(([status, count]) => {
+                const percent = (count / total) * 100;
+                let color = 'bg-blue-500'; if (status === 'Cancel') color = 'bg-red-500'; if (status === 'NSF') color = 'bg-amber-500';
+                return `<div class="space-y-1"><div class="flex justify-between items-end"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${status}</span><span class="text-xs font-black text-slate-900">${count}</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${color} h-full" style="width: ${percent}%"></div></div></div>`;
+            }).join('');
+        }
+
+        function calculateMetrics(dataList) {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currM = now.getMonth();
+            const currY = now.getFullYear();
+            let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
+            dataList.forEach(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const d = new Date(c.createdAt);
+                if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
+                let addedToNsf = false;
+                sched.forEach(item => {
+                    const amt = parseFloat(item.amount || 0);
+                    if (item.status === 'paid') {
+                        metrics.lifetimeRev += amt;
+                        if (item.date === todayStr) metrics.todayRev += amt;
+                        const pd = new Date(item.date);
+                        if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
+                    } else if (item.date && c.status !== 'Cancel') {
+                        const pd = new Date(item.date);
+                        if (pd.getMonth() === currM && pd.getFullYear() === currY) {
+                            if (item.date < todayStr) {
+                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt }); addedToNsf = true; }
+                            } else {
+                                metrics.upcomingMonth += amt;
+                                metrics.upcomingDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt });
+                            }
+                        }
+                    }
+                });
+            });
+            return metrics;
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customer-table-body');
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const filter = document.getElementById('filter-status').value;
+            let filtered = customers;
+            if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
+            if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
+            if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').toLowerCase().includes(search));
+            
+            const metrics = calculateMetrics(filtered);
+            upcomingPaymentList = metrics.upcomingDetails;
+            nsfPaymentList = metrics.nsfDetails;
+            
+            document.getElementById('stat-total-customers').textContent = filtered.length;
+            document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
+            document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
+            document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
+            document.getElementById('stat-month-sales').textContent = metrics.monthCount;
+            document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
+            document.getElementById('stat-nsf-count').textContent = metrics.nsfDetails.length;
+            
+            // Re-render Distribution Chart based on filtered list
+            renderPipelineStats(filtered);
+
+            tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const totalCount = sched.length;
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+                let agentDisp = c.agentName || 'System';
+                if (agentDisp === 'System Root') agentDisp = 'Admin';
+                const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
+                return `<tr class="hover:bg-slate-50 transition group"><td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div><div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${agentDisp}</div><div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div></td><td class="px-8 py-5"><div class="text-xs font-black text-blue-600">${nextDue}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div></td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3 ${!canManage ? 'hidden' : ''}"><button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button><button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></td></tr>`; }).join('');
+        }
+
+        function calculatePaidSum(c) {
+            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+            return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
+        }
+
+        function getStatusClass(s) {
+            if (s === 'Cancel') return 'bg-red-100 text-red-700 border border-red-200';
+            if (s === 'NSF') return 'bg-amber-100 text-amber-700 border border-amber-200';
+            return 'bg-blue-100 text-blue-700 border border-blue-200';
+        }
+
         window.switchTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-2xl', 'shadow-blue-500/30'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200'));
             document.getElementById(`tab-${id}`).classList.remove('hidden');
-            const nav = document.getElementById(`nav-${id}`); 
-            if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-2xl', 'shadow-blue-500/30');
+            const nav = document.getElementById(`nav-${id}`); if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200');
             if (window.innerWidth < 768) toggleMobileMenu();
         };
 
         window.toggleMobileMenu = () => {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');
         };
 
         document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
 
-        // FORM LOGIC
         window.updatePaymentSchedule = (existing = null) => {
-            const type = document.getElementById('paymentType').value;
-            const payToday = document.getElementById('payToday').checked;
-            const fee = parseFloat(document.getElementById('enrollmentFee').value || 0);
-            const container = document.getElementById('schedule-container');
-            const group = document.getElementById('tenure-input-group');
-            
+            const type = document.getElementById('paymentType').value; const payToday = document.getElementById('payToday').checked; const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); const container = document.getElementById('schedule-container'); const group = document.getElementById('tenure-input-group');
             container.innerHTML = '';
             if (type === 'Single') {
-                group.classList.add('hidden');
-                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
+                group.classList.add('hidden'); const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
-                group.classList.remove('hidden');
-                const count = parseInt(document.getElementById('tenureCount').value);
-                const perMonth = fee / count;
+                group.classList.remove('hidden'); const count = parseInt(document.getElementById('tenureCount').value); const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
                     const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
@@ -916,285 +891,149 @@
         };
 
         function createScheduleItem(index, data, isSingle) {
-            return `
-                <div class="schedule-item bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Lump Sum' : 'Payment #' + index}</span>
-                        <select class="tenure-status-select text-[9px] font-black border border-slate-100 rounded-lg p-1 outline-none uppercase tracking-tighter">
-                            <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="paid" ${data.status === 'paid' ? 'selected' : ''}>Paid</option>
-                            <option value="decline" ${data.status === 'decline' ? 'selected' : ''}>Decline</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-2 border-b border-slate-50 pb-2">
-                        <span class="font-black text-slate-400">$</span>
-                        <input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none bg-transparent" value="${data.amount}">
-                    </div>
-                    <input type="date" class="w-full bg-slate-50 p-3 rounded-xl text-[10px] font-black outline-none border border-slate-100" value="${data.date}">
-                </div>
-            `;
+            return `<div class="schedule-item bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3"><div class="flex justify-between items-center"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Total' : 'Inst. #' + index}</span><select class="tenure-status-select text-[10px] font-black border border-slate-200 rounded-lg p-1 outline-none"><option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="paid" ${data.status === 'paid' ? 'selected' : ''}>Paid</option><option value="decline" ${data.status === 'decline' ? 'selected' : ''}>Decline</option></select></div><div class="flex items-center gap-2 border-b border-slate-50 pb-2"><span class="font-black text-slate-400">$</span><input type="number" step="0.01" class="tenure-amount-input font-black text-lg w-full outline-none bg-transparent" value="${data.amount}"></div><input type="date" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-black outline-none border border-slate-100" value="${data.date}"></div>`;
         }
 
         window.toggleBillingAddress = () => {
-            const same = document.getElementById('sameAddress').checked;
-            const billing = document.getElementById('billingAddress');
-            if (same) {
-                billing.value = document.getElementById('mailingAddress').value;
-                billing.readOnly = true;
-                billing.classList.add('bg-slate-100', 'text-slate-400');
-            } else {
-                billing.readOnly = false;
-                billing.classList.remove('bg-slate-100', 'text-slate-400');
-            }
+            const same = document.getElementById('sameAddress').checked; const billing = document.getElementById('billingAddress');
+            if (same) { billing.value = document.getElementById('mailingAddress').value; billing.readOnly = true; billing.classList.add('bg-slate-100', 'text-slate-400'); }
+            else { billing.readOnly = false; billing.classList.remove('bg-slate-100', 'text-slate-400'); }
         };
 
         document.getElementById('customer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            const editId = document.getElementById('edit-customer-id').value;
-            
-            // Handle Agent Attribution
+            const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const editId = document.getElementById('edit-customer-id').value;
             if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-                const manualId = document.getElementById('assigned-agent-select').value;
-                if (manualId === 'ROOT') {
-                    data.agentId = 'ROOT';
-                    data.agentName = 'System Root';
-                } else if (manualId) {
-                    const agentObj = users.find(u => u.id === manualId);
-                    data.agentId = manualId;
-                    data.agentName = agentObj?.name || 'Unknown';
-                } else {
-                    data.agentId = editId ? document.getElementById('original-agent-id').value : currentUser.id;
-                    data.agentName = editId ? document.getElementById('original-agent-name').value : currentUser.name;
-                }
-            } else {
-                data.agentId = editId ? document.getElementById('original-agent-id').value : currentUser.id;
-                data.agentName = editId ? document.getElementById('original-agent-name').value : currentUser.name;
-            }
-
-            const schedule = [];
-            document.querySelectorAll('.schedule-item').forEach((item, index) => {
-                schedule.push({
-                    month: index + 1,
-                    amount: parseFloat(item.querySelector('.tenure-amount-input').value),
-                    date: item.querySelector('input[type="date"]').value,
-                    status: item.querySelector('.tenure-status-select').value
-                });
-            });
+                const manualAgentId = document.getElementById('assigned-agent-select').value;
+                if (manualAgentId === 'ROOT') { data.agentId = 'ROOT'; data.agentName = 'System Root'; }
+                else if (manualAgentId) { const agentObj = users.find(u => u.id === manualAgentId); data.agentId = manualAgentId; data.agentName = agentObj?.name || 'Unknown Agent'; }
+                else { data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id; data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name; }
+            } else { if (editId) { data.agentId = data.originalAgentId; data.agentName = data.originalAgentName; } else { data.agentId = currentUser.id; data.agentName = currentUser.name; } }
+            delete data.originalAgentId; delete data.originalAgentName;
+            const schedule = []; document.querySelectorAll('.schedule-item').forEach((item, index) => { schedule.push({ month: index + 1, amount: parseFloat(item.querySelector('.tenure-amount-input').value), date: item.querySelector('input[type="date"]').value, status: item.querySelector('.tenure-status-select').value }); });
             data.paymentSchedule = JSON.stringify(schedule);
-
             try {
-                if (editId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
-                    showToast("RECORD UPDATE COMMITTED");
-                } else {
-                    data.createdAt = new Date().toISOString();
-                    data.status = data.status || 'Active';
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
-                    showToast("NEW LEAD DEPLOYED TO CLOUD");
-                }
-                resetForm();
-                switchTab('customer-list');
-            } catch (err) {
-                showToast("DEPLOYMENT ERROR: SYNC FAILED");
-            }
+                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data); showToast("Cloud Record Updated Successfully"); }
+                else { data.createdAt = new Date().toISOString(); data.status = data.status || 'Active'; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data); showToast("New Enrollment Deployed"); }
+                resetForm(); switchTab('customer-list');
+            } catch(e) { showToast("System Error: Save Interrupted"); }
         });
 
-        // MODAL & ACTION HANDLERS
         window.editCustomer = (id) => {
-            const c = customers.find(x => x.id === id);
-            if (!c) return;
-            switchTab('add-customer');
-            document.getElementById('form-title').textContent = "Modify Lead Record";
-            document.getElementById('submit-btn').textContent = "Commit Changes";
-            document.getElementById('edit-customer-id').value = id;
-            document.getElementById('cancel-edit').classList.remove('hidden');
-            
-            document.getElementById('original-agent-id').value = c.agentId || '';
-            document.getElementById('original-agent-name').value = c.agentName || '';
-            
-            if (document.getElementById('assigned-agent-select')) {
-                document.getElementById('assigned-agent-select').value = c.agentId || '';
-            }
-
-            Object.keys(c).forEach(key => {
-                const el = document.getElementsByName(key)[0];
-                if (el) el.value = c[key] || '';
-            });
-
-            const sched = JSON.parse(c.paymentSchedule || '[]');
-            updatePaymentSchedule(sched);
+            const c = customers.find(x => x.id === id); if (!c) return;
+            switchTab('add-customer'); document.getElementById('form-title').textContent = "Modify Enrollment Pipeline"; document.getElementById('submit-btn').textContent = "Update Records"; document.getElementById('edit-customer-id').value = id; document.getElementById('cancel-edit').classList.remove('hidden');
+            document.getElementById('original-agent-id').value = c.agentId || ''; document.getElementById('original-agent-name').value = c.agentName || '';
+            const select = document.getElementById('assigned-agent-select'); if (select) select.value = c.agentId || '';
+            Object.keys(c).forEach(key => { const el = document.getElementsByName(key)[0]; if (el) el.value = c[key] || ''; });
+            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []); updatePaymentSchedule(sched);
         };
 
         window.deleteCustomer = async (id) => {
-            if (!confirm("CRITICAL: Wipe this record from the cloud database?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-                showToast("RECORD PURGED");
-            } catch (err) {
-                showToast("PURGE FAILED");
-            }
+            if (!confirm("Caution: Are you sure you want to remove this client from the database?")) return;
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id)); showToast("Record Purged"); } catch (err) { showToast("Delete Failed"); }
         };
 
-        // User Management actions
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const editId = document.getElementById('edit-user-id-field').value;
-            const payload = {
-                name: e.target.userName.value,
-                email: e.target.userEmail.value.toLowerCase(),
-                password: e.target.userPassword.value,
-                role: e.target.userRole.value
-            };
+            e.preventDefault(); const editId = document.getElementById('edit-user-id-field').value;
+            const payload = { name: e.target.userName.value, email: e.target.userEmail.value.toLowerCase(), password: e.target.userPassword.value, role: e.target.userRole.value };
             try {
-                if (editId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload);
-                    showToast("IDENTITY UPDATED");
-                } else {
-                    payload.createdAt = new Date().toISOString();
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload);
-                    showToast("NEW USER PROVISIONED");
-                }
+                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload); showToast("User Permission Updated"); }
+                else { payload.createdAt = new Date().toISOString(); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload); showToast("New User Provisioned"); }
                 resetUserForm();
-            } catch (err) {
-                showToast("PROVISIONING ERROR");
-            }
+            } catch(e) { showToast("Provisioning Failed"); }
         });
 
         window.editUserAccount = (id) => {
-            const u = users.find(x => x.id === id);
-            document.getElementById('user-form-title').textContent = "Modify Access";
-            document.getElementById('edit-user-id-field').value = id;
-            document.getElementById('user-field-name').value = u.name;
-            document.getElementById('user-field-email').value = u.email;
-            document.getElementById('user-field-password').value = u.password;
-            document.getElementById('user-field-role').value = u.role;
-            document.getElementById('cancel-user-edit').classList.remove('hidden');
-            document.getElementById('user-submit-btn').textContent = "Apply Changes";
+            const u = users.find(x => x.id === id); document.getElementById('user-form-title').textContent = "Modify Identity"; document.getElementById('edit-user-id-field').value = id;
+            document.getElementById('user-field-name').value = u.name; document.getElementById('user-field-email').value = u.email; document.getElementById('user-field-password').value = u.password; document.getElementById('user-field-role').value = u.role;
+            document.getElementById('cancel-user-edit').classList.remove('hidden'); document.getElementById('user-submit-btn').textContent = "Save Identity";
         };
 
         window.deleteUser = async (id) => {
-            if (!confirm("Terminate user access permanently?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
-            showToast("IDENTITY TERMINATED");
+            if (!confirm("Deactivate and remove user access?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id)); showToast("Identity Terminated");
         };
 
         window.viewUserStats = (userId) => {
-            const user = users.find(u => u.id === userId);
-            const uList = customers.filter(c => c.agentId === userId);
-            const m = calculateGlobalMetrics(uList);
-            
-            document.getElementById('stats-user-email').textContent = user.name;
-            document.getElementById('stats-user-role').textContent = user.role.toUpperCase();
-            document.getElementById('user-stats-content').innerHTML = `
-                <div class="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
-                    <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-4">Pipeline Metrics</p>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase">Total Sales</p>
-                            <h3 class="text-3xl font-black text-slate-900">${uList.length}</h3>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase">Gross Yield</p>
-                            <h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-200">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Monthly Performance</p>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase">MTD Leads</p>
-                            <h3 class="text-3xl font-black text-slate-900">${m.monthSales}</h3>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase">MTD Revenue</p>
-                            <h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const user = users.find(u => u.id === userId); const uCustomers = customers.filter(c => c.agentId === userId); const m = calculateMetrics(uCustomers);
+            document.getElementById('stats-user-email').textContent = user.name; document.getElementById('stats-user-role').textContent = user.role;
+            document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
             document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
         };
 
-        // SHARED MODAL LOGIC
         window.openUpcomingModal = () => {
-            renderCommonModal("Upcoming Revenue", "Current Month Forecast", currentMonthMetrics.upcomingList, 'blue');
+            const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div><div class="text-[10px] text-blue-500 font-bold uppercase tracking-tighter">Click to View Profile</div></td><td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
+            document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
         };
 
         window.openNsfModal = () => {
-            renderCommonModal("NSF Sales", "Immediate Risk - Missed Window", currentMonthMetrics.nsfList, 'red');
+            const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[10px] text-red-500 font-bold uppercase tracking-tighter">Click to View Profile</div></td><td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="3" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
+            document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
         };
 
         window.openAgentLeadsModal = (agentId) => {
-            const agent = agentId === 'ROOT' ? { name: 'System Root' } : users.find(u => u.id === agentId);
-            const leads = customers.filter(c => c.agentId === agentId);
-            const data = leads.map(c => {
-                const sched = JSON.parse(c.paymentSchedule || '[]');
-                const paidSum = sched.reduce((sum, i) => i.status === 'paid' ? sum + parseFloat(i.amount) : sum, 0);
-                return { id: c.id, name: c.name, date: `Status: ${c.status || 'Active'}`, amount: paidSum };
-            });
-            renderCommonModal(`${agent.name}'s Portfolio`, `Tracking ${leads.length} active leads`, data, 'slate');
+            const agent = agentId === 'ROOT' ? { name: 'System Admin' } : users.find(u => u.id === agentId);
+            const agentName = agent ? agent.name : 'Unknown Agent';
+            const agentLeads = customers.filter(c => c.agentId === agentId);
+            
+            document.getElementById('agent-leads-title').textContent = `${agentName}'s Sales Detail`;
+            document.getElementById('agent-leads-subtitle').textContent = `Tracking ${agentLeads.length} leads in pipeline`;
+            
+            const tbody = document.getElementById('agent-leads-table');
+            tbody.innerHTML = agentLeads.length ? agentLeads.map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+                
+                return `
+                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td>
+                    <td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td>
+                    <td class="px-8 py-5">
+                        <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">No leads assigned to this agent yet.</td></tr>';
+            
+            document.getElementById('agent-leads-modal').classList.replace('hidden', 'flex');
         };
 
-        function renderCommonModal(title, subtitle, list, theme) {
-            const modal = document.getElementById('common-modal');
-            const header = document.getElementById('modal-header');
-            const tbody = document.getElementById('modal-table-body');
-            
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-subtitle').textContent = subtitle;
-            
-            header.className = `p-8 border-b border-slate-100 flex justify-between items-center text-white ${theme === 'blue' ? 'bg-blue-600' : theme === 'red' ? 'bg-red-600' : 'bg-slate-800'}`;
-            
-            tbody.innerHTML = list.length ? list.map(item => `
-                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}')">
-                    <td class="px-6 py-5">
-                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div>
-                        <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-0.5">Open Profile</div>
-                    </td>
-                    <td class="px-6 py-5 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
-                    <td class="px-6 py-5 text-right font-black ${theme === 'red' ? 'text-red-600' : 'text-blue-600'}">$${item.amount.toLocaleString()}</td>
-                </tr>
-            `).join('') : '<tr><td colspan="3" class="p-20 text-center text-slate-300 font-black uppercase tracking-widest text-xs italic">No data streams found</td></tr>';
-            
-            modal.classList.replace('hidden', 'flex');
-        }
-
-        window.viewCustomerFromModal = (id) => {
-            closeCommonModal();
+        window.viewCustomerFromModal = (id, type) => {
+            if(type === 'nsf') closeNsfModal(); 
+            else if(type === 'upcoming') closeUpcomingModal();
+            else if(type === 'agent') closeAgentLeadsModal();
             editCustomer(id);
         };
 
-        window.closeCommonModal = () => document.getElementById('common-modal').classList.replace('flex', 'hidden');
+        window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
+        window.closeNsfModal = () => document.getElementById('nsf-modal').classList.replace('flex', 'hidden');
+        window.closeAgentLeadsModal = () => document.getElementById('agent-leads-modal').classList.replace('flex', 'hidden');
         window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
 
         function showToast(m) {
-            const t = document.getElementById('toast');
-            t.textContent = m;
-            t.classList.remove('translate-y-32');
+            const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
             setTimeout(() => t.classList.add('translate-y-32'), 3000);
         }
 
         window.resetForm = () => {
-            document.getElementById('customer-form').reset();
-            document.getElementById('edit-customer-id').value = "";
-            document.getElementById('form-title').textContent = "Lead Processing";
-            document.getElementById('submit-btn').textContent = "Deploy Record";
-            document.getElementById('cancel-edit').classList.add('hidden');
-            updatePaymentSchedule();
+            document.getElementById('customer-form').reset(); document.getElementById('edit-customer-id').value = ""; document.getElementById('original-agent-id').value = "";
+            document.getElementById('original-agent-name').value = ""; document.getElementById('assigned-agent-select').value = ""; document.getElementById('form-title').textContent = "Customer Enrollment";
+            document.getElementById('submit-btn').textContent = "Finalize & Submit Enrollment"; document.getElementById('cancel-edit').classList.add('hidden'); updatePaymentSchedule();
         };
 
         window.resetUserForm = () => {
-            document.getElementById('add-user-form').reset();
-            document.getElementById('edit-user-id-field').value = "";
-            document.getElementById('user-form-title').textContent = "Provision Identity";
-            document.getElementById('user-submit-btn').textContent = "Commit to Cloud";
-            document.getElementById('cancel-user-edit').classList.add('hidden');
+            document.getElementById('add-user-form').reset(); document.getElementById('edit-user-id-field').value = ""; document.getElementById('user-form-title').textContent = "Create Account";
+            document.getElementById('user-submit-btn').textContent = "Deploy Account"; document.getElementById('cancel-user-edit').classList.add('hidden');
         };
 
-        // Init
         updatePaymentSchedule();
         window.renderCustomers = renderCustomers;
     </script>
