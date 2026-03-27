@@ -77,7 +77,6 @@
         </nav>
 
         <div class="flex flex-1 pt-16">
-            <!-- Sidebar Navigation -->
             <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto custom-scroll pt-16">
                 <div class="p-6 space-y-2">
                     <button onclick="switchTab('dashboard')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-dashboard">
@@ -140,7 +139,7 @@
                         </div>
                     </div>
 
-                    <!-- distribution -->
+                    <!-- Distribution -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
                             <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -168,7 +167,7 @@
                         </div>
                     </div>
 
-                    <!-- Leaderboard -->
+                    <!-- Agent performance leaderboard -->
                     <div id="agent-performance-section" class="hidden bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
                         <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -261,7 +260,6 @@
                                 </div>
                             </div>
 
-                            <!-- Financial -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                 <div class="space-y-8">
                                     <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
@@ -409,7 +407,7 @@
                     </div>
                 </section>
 
-                <!-- Users -->
+                <!-- System Users -->
                 <section id="tab-manage-users" class="tab-content hidden animate-fade-in space-y-8">
                     <h2 class="text-3xl font-black text-slate-900 tracking-tight">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -520,7 +518,7 @@
         </div>
     </div>
 
-    <!-- Agent Detail Modal -->
+    <!-- Agent Leads Modal -->
     <div id="agent-leads-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-5xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
@@ -577,6 +575,9 @@
         let authUser = null;
         let upcomingPaymentList = [];
         let nsfPaymentList = [];
+
+        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
+        const ADMIN_PASS = "Maaz@2026";
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -678,6 +679,7 @@
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
+                renderPipelineStats();
                 renderAgentPerformance();
             });
         }
@@ -741,12 +743,24 @@
             container.innerHTML = `<div class="overflow-x-auto custom-scroll"><table class="w-full text-left min-w-[800px]"><thead><tr class="border-b border-slate-50"><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th></tr></thead><tbody class="divide-y divide-slate-50">${sorted.map(a => `<tr class="hover:bg-slate-100 transition-colors cursor-pointer" onclick="openAgentLeadsModal('${a.id}')"><td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td><td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.totalSales}</td><td class="py-5 px-4 text-center font-bold text-blue-600 text-sm bg-blue-50/30">${a.monthlySales}</td><td class="py-5 px-4 text-right font-black text-green-600 text-sm">$${a.totalRevenue.toLocaleString()}</td><td class="py-5 px-4 text-right font-black text-blue-700 text-sm bg-blue-50/30">$${a.monthlyRevenue.toLocaleString()}</td></tr>`).join('')}</tbody></table></div>`;
         }
 
+        function renderPipelineStats() {
+            const container = document.getElementById('pipeline-stats');
+            const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
+            customers.forEach(c => { const s = c.status || 'Active'; if (counts[s] !== undefined) counts[s]++; });
+            const total = customers.length || 1;
+            container.innerHTML = Object.entries(counts).map(([status, count]) => {
+                const percent = (count / total) * 100;
+                let color = 'bg-blue-500'; if (status === 'Cancel') color = 'bg-red-500'; if (status === 'NSF') color = 'bg-amber-500';
+                return `<div class="space-y-1"><div class="flex justify-between items-end"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${status}</span><span class="text-xs font-black text-slate-900">${count}</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${color} h-full" style="width: ${percent}%"></div></div></div>`;
+            }).join('');
+        }
+
         function calculateMetrics(dataList) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const currM = now.getMonth();
             const currY = now.getFullYear();
-            let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [], distribution: { 'Active': 0, 'Cancel': 0, 'NSF': 0 } };
+            let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const d = new Date(c.createdAt);
@@ -771,26 +785,8 @@
                         }
                     }
                 });
-                
-                if (addedToNsf) {
-                    metrics.distribution['NSF']++;
-                } else {
-                    const s = c.status || 'Active';
-                    if (metrics.distribution[s] !== undefined) metrics.distribution[s]++;
-                    else metrics.distribution['Active']++;
-                }
             });
             return metrics;
-        }
-
-        function renderPipelineStats(dist) {
-            const container = document.getElementById('pipeline-stats');
-            const total = customers.length || 1;
-            container.innerHTML = Object.entries(dist).map(([status, count]) => {
-                const percent = (count / total) * 100;
-                let color = 'bg-blue-500'; if (status === 'Cancel') color = 'bg-red-500'; if (status === 'NSF') color = 'bg-amber-500';
-                return `<div class="space-y-1"><div class="flex justify-between items-end"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${status}</span><span class="text-xs font-black text-slate-900">${count}</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${color} h-full" style="width: ${percent}%"></div></div></div>`;
-            }).join('');
         }
 
         function renderCustomers() {
@@ -799,29 +795,18 @@
             const filter = document.getElementById('filter-status').value;
             let filtered = customers;
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
+            if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
+            if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').toLowerCase().includes(search));
             const metrics = calculateMetrics(filtered);
             upcomingPaymentList = metrics.upcomingDetails;
             nsfPaymentList = metrics.nsfDetails;
-            
-            renderPipelineStats(metrics.distribution);
-
-            if (filter !== 'All') filtered = filtered.filter(c => {
-                const isNsfLead = metrics.nsfDetails.some(l => l.id === c.id);
-                if (filter === 'NSF') return isNsfLead;
-                if (isNsfLead) return false;
-                return (c.status || 'Active').toLowerCase() === filter.toLowerCase();
-            });
-            
-            if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search) || (c.email || '').toLowerCase().includes(search) || (c.fileNumber || '').toLowerCase().includes(search));
-            
-            document.getElementById('stat-total-customers').textContent = customers.length;
+            document.getElementById('stat-total-customers').textContent = filtered.length;
             document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
             document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
             document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
             document.getElementById('stat-month-sales').textContent = metrics.monthCount;
             document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
             document.getElementById('stat-nsf-count').textContent = metrics.nsfDetails.length;
-            
             tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const paidCount = sched.filter(i => i.status === 'paid').length;
@@ -831,10 +816,7 @@
                 let agentDisp = c.agentName || 'System';
                 if (agentDisp === 'System Root') agentDisp = 'Admin';
                 const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
-                const isOverdue = metrics.nsfDetails.some(l => l.id === c.id);
-                const leadStatus = isOverdue ? 'NSF' : (c.status || 'Active');
-
-                return `<tr class="hover:bg-slate-50 transition group"><td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div><div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${agentDisp}</div><div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div></td><td class="px-8 py-5"><div class="text-xs font-black text-blue-600">${nextDue}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div></td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(leadStatus)}">${leadStatus}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3 ${!canManage ? 'hidden' : ''}"><button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button><button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></td></tr>`; }).join('');
+                return `<tr class="hover:bg-slate-50 transition group"><td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div><div class="text-[10px] text-blue-500 font-black mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${agentDisp}</div><div class="text-[10px] text-slate-400 uppercase tracking-tighter font-bold">Sales Agent</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${c.loanLender || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-900">${paidCount} / ${totalCount}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Installments</div></td><td class="px-8 py-5"><div class="text-xs font-black text-blue-600">${nextDue}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Scheduled</div></td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3 ${!canManage ? 'hidden' : ''}"><button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100" title="Edit Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button><button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition shadow-sm border border-red-100" title="Delete Lead"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></td></tr>`; }).join('');
         }
 
         function calculatePaidSum(c) {
@@ -966,22 +948,39 @@
             const agent = agentId === 'ROOT' ? { name: 'System Admin' } : users.find(u => u.id === agentId);
             const agentName = agent ? agent.name : 'Unknown Agent';
             const agentLeads = customers.filter(c => c.agentId === agentId);
+            
             document.getElementById('agent-leads-title').textContent = `${agentName}'s Sales Detail`;
             document.getElementById('agent-leads-subtitle').textContent = `Tracking ${agentLeads.length} leads in pipeline`;
+            
             const tbody = document.getElementById('agent-leads-table');
             tbody.innerHTML = agentLeads.length ? agentLeads.map(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const paidCount = sched.filter(i => i.status === 'paid').length;
                 const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
                 const totalPaid = calculatePaidSum(c);
-                const leadStatus = nsfPaymentList.some(l => l.id === c.id) ? 'NSF' : (c.status || 'Active');
-                return `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div></td><td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td><td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(leadStatus)}">${leadStatus}</span></td><td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td></tr>`;
+                
+                return `
+                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td>
+                    <td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td>
+                    <td class="px-8 py-5">
+                        <span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td>
+                </tr>`;
             }).join('') : '<tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">No leads assigned to this agent yet.</td></tr>';
+            
             document.getElementById('agent-leads-modal').classList.replace('hidden', 'flex');
         };
 
         window.viewCustomerFromModal = (id, type) => {
-            if(type === 'nsf') closeNsfModal(); else if(type === 'upcoming') closeUpcomingModal(); else if(type === 'agent') closeAgentLeadsModal();
+            if(type === 'nsf') closeNsfModal(); 
+            else if(type === 'upcoming') closeUpcomingModal();
+            else if(type === 'agent') closeAgentLeadsModal();
             editCustomer(id);
         };
 
