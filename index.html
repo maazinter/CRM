@@ -204,7 +204,7 @@
                             </div>
 
                             <!-- Main Calendar Card -->
-                            <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                            <div id="attendance-detail-section" class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
                                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-50 pb-6">
                                     <div class="flex flex-col">
                                         <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Personal Calendar</h4>
@@ -844,8 +844,17 @@
         function renderAttendancePortal() {
             if (!currentUser) return;
             const container = document.getElementById('attendance-actions');
+            const detailSection = document.getElementById('attendance-detail-section');
             const today = new Date().toISOString().split('T')[0];
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
+
+            // Visibility Logic for Admin/Manager
+            // Your attendance shown to agent and manager not to admin
+            if (currentUser.role === 'admin' && viewingUserId === null) {
+                detailSection.classList.add('hidden');
+            } else {
+                detailSection.classList.remove('hidden');
+            }
 
             // Header Actions
             let html = ``;
@@ -860,8 +869,10 @@
             }
             container.innerHTML = html;
 
-            // Calendar Rendering
-            renderAttendanceCalendar();
+            // Calendar Rendering (Only if section is visible)
+            if (!detailSection.classList.contains('hidden')) {
+                renderAttendanceCalendar();
+            }
 
             // Staff Overview (Managers/Admins)
             if (currentUser.role !== 'agent') {
@@ -889,7 +900,7 @@
             const targetUserName = targetUserId === currentUser.id ? "Your Attendance" : (targetUser?.name || "User") + " Attendance";
             
             document.getElementById('calendar-title').textContent = targetUserName;
-            document.getElementById('reset-calendar-btn').classList.toggle('hidden', targetUserId === currentUser.id);
+            document.getElementById('reset-calendar-btn').classList.toggle('hidden', targetUserId === currentUser.id || currentUser.role === 'admin');
 
             // Summary Stats Counters
             let presentCount = 0;
