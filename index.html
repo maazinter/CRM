@@ -577,20 +577,34 @@
         </div>
     </div>
 
-    <!-- Day Management Modal (WO/Holiday) -->
+    <!-- Day Management Modal (WO/Holiday/Attendance) -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
-                <h2 id="manage-date-title" class="text-lg font-black text-slate-900">Manage Date</h2>
+                <h2 id="manage-date-title" class="text-lg font-black text-slate-900 tracking-tight">Manage Date</h2>
                 <p id="manage-date-subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"></p>
             </div>
-            <div class="p-6 space-y-4">
-                <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Mark as Work Off (WO)</button>
-                <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Mark as Custom Holiday</button>
-                <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition">Reset to Working Day</button>
+            <div class="p-6 space-y-6">
+                <!-- Individual Attendance Options (Only if viewing staff) -->
+                <div id="staff-edit-controls" class="space-y-3 hidden">
+                    <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Individual Attendance</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setStaffAttendance('daily', 'approved')" class="bg-green-50 text-green-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-green-100 hover:bg-green-100 transition">Mark Present</button>
+                        <button onclick="clearStaffAttendance()" class="bg-slate-50 text-slate-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Mark Absent</button>
+                    </div>
+                    <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Mark Approved Leave</button>
+                </div>
+
+                <!-- Global Calendar Options -->
+                <div class="space-y-3">
+                    <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Settings</h3>
+                    <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
+                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
+                    <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition">Reset Global Marker</button>
+                </div>
             </div>
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                <button onclick="document.getElementById('day-management-modal').classList.replace('flex', 'hidden')" class="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-900">Close</button>
+                <button onclick="document.getElementById('day-management-modal').classList.replace('flex', 'hidden')" class="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 px-4 py-2">Close</button>
             </div>
         </div>
     </div>
@@ -849,7 +863,7 @@
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
 
             // Visibility Logic for Admin/Manager
-            // REVERT: Admin now sees the section again by default
+            // Revert Admin calendar visibility
             detailSection.classList.remove('hidden');
 
             // Header Actions
@@ -1093,8 +1107,56 @@
 
         window.openDayManagement = (dateStr) => {
             document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
-            document.getElementById('manage-date-subtitle').dataset.date = dateStr;
+            const subtitle = document.getElementById('manage-date-subtitle');
+            subtitle.dataset.date = dateStr;
+            subtitle.textContent = viewingUserId ? "Staff Member: " + (users.find(u => u.id === viewingUserId)?.name || "Unknown") : "Global Calendar Management";
+
+            // Toggle visibility of staff editing controls
+            document.getElementById('staff-edit-controls').classList.toggle('hidden', !viewingUserId);
+
             document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
+        }
+
+        window.setStaffAttendance = async (type, status) => {
+            if (!viewingUserId) return;
+            const date = document.getElementById('manage-date-subtitle').dataset.date;
+            try {
+                // Remove existing records for this user/date first to avoid duplicates
+                const querySnap = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of querySnap) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
+                }
+
+                const payload = {
+                    userId: viewingUserId,
+                    status: status,
+                    type: type,
+                    createdAt: new Date().toISOString()
+                };
+
+                if (type === 'daily') payload.date = date;
+                else {
+                    payload.startDate = date;
+                    payload.endDate = date;
+                }
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                showToast("Staff attendance updated");
+            } catch(e) { showToast("Update failed"); }
+        }
+
+        window.clearStaffAttendance = async () => {
+            if (!viewingUserId) return;
+            const date = document.getElementById('manage-date-subtitle').dataset.date;
+            try {
+                const querySnap = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of querySnap) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
+                }
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                showToast("Record cleared (Marked Absent)");
+            } catch(e) { showToast("Clear failed"); }
         }
 
         window.setGlobalDateMarker = async (type) => {
