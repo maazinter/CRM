@@ -1133,13 +1133,22 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
+                // Clear existing records to override
                 const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
                 for (const rec of existing) {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
                 }
-                const payload = { userId: viewingUserId, status: status, type: type, createdAt: new Date().toISOString() };
+
+                const payload = {
+                    userId: viewingUserId,
+                    status: status,
+                    type: type,
+                    createdAt: new Date().toISOString()
+                };
+
                 if (type === 'daily') payload.date = date;
                 else { payload.startDate = date; payload.endDate = date; }
+
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Staff attendance overridden successfully");
