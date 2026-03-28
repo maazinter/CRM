@@ -257,12 +257,10 @@
                             </div>
 
                             <!-- Legend -->
-                            <div class="flex flex-wrap gap-4 px-4">
+                            <div class="flex flex-wrap gap-6 px-4">
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">Present</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">Leave</span></div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">UL</span></div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">HD</span></div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">WO</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">Work Off</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span><span class="text-[10px] font-black text-slate-400 uppercase">Holiday</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-300"></span><span class="text-[10px] font-black text-slate-400 uppercase">Pending</span></div>
                             </div>
@@ -379,8 +377,7 @@
                                     <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium h-24"></textarea>
                                 </div>
                             </div>
-
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                 <div class="space-y-8">
                                     <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -593,11 +590,7 @@
                         <button onclick="setStaffAttendance('daily', 'approved')" class="bg-green-50 text-green-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-green-100 hover:bg-green-100 transition">Present</button>
                         <button onclick="clearStaffAttendance()" class="bg-slate-50 text-slate-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Absent</button>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="setStaffAttendance('leave', 'approved')" class="bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Leave</button>
-                        <button onclick="setStaffAttendance('UL', 'approved')" class="bg-purple-50 text-purple-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-purple-100 hover:bg-purple-100 transition">UL</button>
-                    </div>
-                    <button onclick="setStaffAttendance('HD', 'approved')" class="w-full bg-indigo-50 text-indigo-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-indigo-100 hover:bg-indigo-100 transition">Half Day (HD)</button>
+                    <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Approved Leave</button>
                 </div>
 
                 <!-- Global Markers -->
@@ -614,7 +607,6 @@
         </div>
     </div>
 
-    <!-- ... rest of modals (MTD, NSF, Leads) same as before ... -->
     <div id="upcoming-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
@@ -729,6 +721,7 @@
         let viewingUserId = null; 
         let currentCalendarDate = new Date();
 
+        // Consistent local date string generator
         function formatDateLocal(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -924,7 +917,7 @@
                 const global = globalCalendar.find(g => g.date === dateStr);
                 const record = attendance.find(a => {
                     if (a.userId !== targetUserId) return false;
-                    if (a.type === 'daily' || a.type === 'UL' || a.type === 'HD') return a.date === dateStr;
+                    if (a.type === 'daily') return a.date === dateStr;
                     if (a.type === 'leave') return dateStr >= a.startDate && dateStr <= a.endDate;
                     return false;
                 });
@@ -940,17 +933,15 @@
                     holidayCount++;
                 } else if (record) {
                     if (record.status === 'approved') {
-                        if (record.type === 'leave') {
-                            dayClass = "bg-blue-50"; statusLabel = "LEAVE"; indicatorColor = "bg-blue-500"; leaveCount++;
-                        } else if (record.type === 'UL') {
-                            dayClass = "bg-purple-50"; statusLabel = "UL"; indicatorColor = "bg-purple-500"; leaveCount++;
-                        } else if (record.type === 'HD') {
-                            dayClass = "bg-indigo-50"; statusLabel = "HD"; indicatorColor = "bg-indigo-500"; presentCount += 0.5;
-                        } else {
-                            dayClass = "bg-green-50"; statusLabel = "PRESENT"; indicatorColor = "bg-green-500"; presentCount++;
-                        }
+                        dayClass = record.type === 'leave' ? "bg-blue-50" : "bg-green-50";
+                        statusLabel = record.type === 'leave' ? "LEAVE" : "PRESENT";
+                        indicatorColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
+                        
+                        if(record.type === 'leave') leaveCount++; else presentCount++;
                     } else if (record.status === 'pending') {
-                        dayClass = "bg-slate-50"; statusLabel = "PENDING"; indicatorColor = "bg-slate-300";
+                        dayClass = "bg-slate-50";
+                        statusLabel = "PENDING";
+                        indicatorColor = "bg-slate-300";
                     }
                 }
 
@@ -984,7 +975,7 @@
             grid.innerHTML = staffList.map(u => {
                 const record = attendance.find(a => {
                     if (a.userId !== u.id) return false;
-                    if (a.type === 'daily' || a.type === 'UL' || a.type === 'HD') return a.date === today;
+                    if (a.type === 'daily') return a.date === today;
                     if (a.type === 'leave') return today >= a.startDate && today <= a.endDate;
                     return false;
                 });
@@ -993,10 +984,8 @@
                 let statusText = "Absent";
                 if (record) {
                     if (record.status === 'approved') {
-                        if (record.type === 'leave') { statusColor = "bg-blue-500"; statusText = "On Leave"; }
-                        else if (record.type === 'UL') { statusColor = "bg-purple-500"; statusText = "Unsched. Leave"; }
-                        else if (record.type === 'HD') { statusColor = "bg-indigo-500"; statusText = "Half Day"; }
-                        else { statusColor = "bg-green-500"; statusText = "Present"; }
+                        statusColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
+                        statusText = record.type === 'leave' ? "On Leave" : "Present";
                     } else {
                         statusColor = "bg-amber-500";
                         statusText = "Pending";
@@ -1044,16 +1033,26 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                // Clear existing
-                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
+                // Remove any existing records for this user on this day (daily or range)
+                const existingRecords = attendance.filter(a => 
+                    a.userId === viewingUserId && 
+                    (a.date === date || (a.startDate <= date && a.endDate >= date))
+                );
+                for (const rec of existingRecords) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
+                }
 
                 const payload = { userId: viewingUserId, status, type, createdAt: new Date().toISOString() };
-                if (type === 'daily' || type === 'UL' || type === 'HD') payload.date = date; else { payload.startDate = date; payload.endDate = date; }
+                if (type === 'daily') {
+                    payload.date = date;
+                } else {
+                    payload.startDate = date;
+                    payload.endDate = date;
+                }
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Record updated manually");
+                showToast("Record updated successfully");
             } catch(e) { showToast("Save error"); }
         }
 
@@ -1061,10 +1060,15 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
+                const existingRecords = attendance.filter(a => 
+                    a.userId === viewingUserId && 
+                    (a.date === date || (a.startDate <= date && a.endDate >= date))
+                );
+                for (const rec of existingRecords) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
+                }
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Marked as Absent");
+                showToast("Attendance cleared (Absent)");
             } catch(e) { showToast("Error"); }
         }
 
@@ -1073,142 +1077,37 @@
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
                 const existing = globalCalendar.find(g => g.date === date);
-                if (type === 'Normal') { if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id)); }
-                else {
+                if (type === 'Normal') {
+                    if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id));
+                } else {
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Global calendar updated");
+            } catch(e) { showToast("Save failed"); }
+        }
+
+        window.markAttendance = async () => {
+            const today = formatDateLocal(new Date());
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { 
+                    userId: currentUser.id, 
+                    date: today, 
+                    status: 'pending', 
+                    type: 'daily', 
+                    createdAt: new Date().toISOString() 
+                });
+                showToast("Request sent");
             } catch(e) {}
         }
 
-        window.changeMonth = (dir) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); renderAttendancePortal(); }
-
-        // --- Standard Logic Same as Before ---
-        function populateAgentSelect() {
-            const select = document.getElementById('assigned-agent-select');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">-- No Agent Assigned --</option>';
-            select.innerHTML += `<option value="ROOT">System Admin (System Root)</option>`;
-            users.forEach(u => { select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; });
-            select.value = currentVal;
+        window.changeMonth = (dir) => { 
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); 
+            renderAttendancePortal(); 
         }
 
-        function renderUsers() {
-            const tbody = document.getElementById('user-management-table');
-            tbody.innerHTML = users.map(u => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="px-6 py-4 font-black text-slate-900">${u.name}</td>
-                    <td class="px-6 py-4">
-                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
-                        <div class="text-[10px] font-bold text-blue-500 mt-1">${u.password}</div>
-                    </td>
-                    <td class="px-6 py-4"><span class="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200">${u.role}</span></td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex justify-end gap-3">
-                            <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:text-blue-800 transition font-black text-[10px] uppercase">Stats</button>
-                            <button onclick="editUserAccount('${u.id}')" class="text-slate-400 hover:text-slate-900 transition font-black text-[10px] uppercase">Edit</button>
-                            <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-[10px] uppercase">Del</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function renderAgentPerformance() {
-            if (!currentUser || currentUser.role === 'agent') return;
-            const container = document.getElementById('agent-performance-container');
-            const performance = {};
-            const now = new Date();
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
-            customers.forEach(c => {
-                const id = c.agentId || 'system';
-                let name = c.agentName || 'Unassigned';
-                if (name === 'System Root') name = 'Admin';
-                if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
-                performance[id].totalSales++;
-                const createdDate = new Date(c.createdAt);
-                if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) performance[id].monthlySales++;
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                sched.forEach(item => {
-                    if (item.status === 'paid') {
-                        const amt = parseFloat(item.amount || 0);
-                        performance[id].totalRevenue += amt;
-                        const payDate = new Date(item.date);
-                        if (payDate.getMonth() === currM && payDate.getFullYear() === currY) performance[id].monthlyRevenue += amt;
-                    }
-                });
-            });
-            const sorted = Object.values(performance).sort((a, b) => b.totalRevenue - a.totalRevenue);
-            container.innerHTML = `<div class="overflow-x-auto custom-scroll"><table class="w-full text-left min-w-[800px]"><thead><tr class="border-b border-slate-50"><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th></tr></thead><tbody class="divide-y divide-slate-50">${sorted.map(a => `<tr class="hover:bg-slate-100 transition-colors cursor-pointer" onclick="openAgentLeadsModal('${a.id}')"><td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td><td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.totalSales}</td><td class="py-5 px-4 text-center font-bold text-blue-600 text-sm bg-blue-50/30">${a.monthlySales}</td><td class="py-5 px-4 text-right font-black text-green-600 text-sm">$${a.totalRevenue.toLocaleString()}</td><td class="py-5 px-4 text-right font-black text-blue-700 text-sm bg-blue-50/30">$${a.monthlyRevenue.toLocaleString()}</td></tr>`).join('')}</tbody></table></div>`;
-        }
-
-        function renderPipelineStats(dataList = customers) {
-            const container = document.getElementById('pipeline-stats');
-            const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
-            dataList.forEach(c => { 
-                let s = c.status || 'Active'; 
-                if (s === 'Active') {
-                    const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                    const isNsfDue = sched.some(item => {
-                        if (item.status === 'pending' && item.date) {
-                            const pd = new Date(item.date);
-                            return pd.getMonth() === currM && pd.getFullYear() === currY && item.date < todayStr;
-                        }
-                        return false;
-                    });
-                    if (isNsfDue) s = 'NSF';
-                }
-                if (counts[s] !== undefined) counts[s]++; 
-            });
-            const total = dataList.length || 1;
-            container.innerHTML = Object.entries(counts).map(([status, count]) => {
-                const percent = (count / total) * 100;
-                let color = 'bg-blue-500'; if (status === 'Cancel') color = 'bg-red-500'; if (status === 'NSF') color = 'bg-amber-500';
-                return `<div class="space-y-1"><div class="flex justify-between items-end"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${status}</span><span class="text-xs font-black text-slate-900">${count}</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${color} h-full" style="width: ${percent}%"></div></div></div>`;
-            }).join('');
-        }
-
-        function calculateMetrics(dataList) {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
-            let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
-            dataList.forEach(c => {
-                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const d = new Date(c.createdAt);
-                if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
-                let addedToNsf = false;
-                sched.forEach(item => {
-                    const amt = parseFloat(item.amount || 0);
-                    if (item.status === 'paid') {
-                        metrics.lifetimeRev += amt;
-                        if (item.date === todayStr) metrics.todayRev += amt;
-                        const pd = new Date(item.date);
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
-                    } else if (item.date && c.status !== 'Cancel') {
-                        const pd = new Date(item.date);
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) {
-                            if (item.date < todayStr) {
-                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); addedToNsf = true; }
-                            } else {
-                                metrics.upcomingMonth += amt;
-                                metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
-                            }
-                        }
-                    }
-                });
-            });
-            return metrics;
-        }
-
+        // --- Enrollment Database Logic ---
         function renderCustomers() {
             const tbody = document.getElementById('customer-table-body');
             if (!tbody) return;
@@ -1356,6 +1255,63 @@
             document.getElementById('stats-user-email').textContent = user.name; document.getElementById('stats-user-role').textContent = user.role;
             document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
             document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openUpcomingModal = () => {
+            const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
+            document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openNsfModal = () => {
+            const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
+            document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openAgentLeadsModal = (agentId) => {
+            const agent = agentId === 'ROOT' ? { name: 'System Admin' } : users.find(u => u.id === agentId);
+            const agentName = agent ? agent.name : 'Unknown Agent';
+            const agentLeads = customers.filter(c => c.agentId === agentId);
+            document.getElementById('agent-leads-title').textContent = `${agentName}'s Sales Detail`;
+            document.getElementById('agent-leads-subtitle').textContent = `Tracking ${agentLeads.length} leads in pipeline`;
+            const tbody = document.getElementById('agent-leads-table');
+            tbody.innerHTML = agentLeads.length ? agentLeads.map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+                return `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div></td><td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td><td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td></tr>`;
+            }).join('') : '<tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">No leads assigned to this agent yet.</td></tr>';
+            document.getElementById('agent-leads-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.viewCustomerFromModal = (id, type) => {
+            const canViewDetails = currentUser.role === 'admin' || currentUser.role === 'manager';
+            if (!canViewDetails) { showToast("Access Restricted: Admin/Manager only."); return; }
+            if(type === 'nsf') closeNsfModal(); else if(type === 'upcoming') closeUpcomingModal(); else if(type === 'agent') closeAgentLeadsModal();
+            editCustomer(id);
+        };
+
+        window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
+        window.closeNsfModal = () => document.getElementById('nsf-modal').classList.replace('flex', 'hidden');
+        window.closeAgentLeadsModal = () => document.getElementById('agent-leads-modal').classList.replace('flex', 'hidden');
+        window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
+
+        function showToast(m) {
+            const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 3000);
+        }
+
+        window.resetForm = () => {
+            document.getElementById('customer-form').reset(); document.getElementById('edit-customer-id').value = ""; document.getElementById('original-agent-id').value = "";
+            document.getElementById('original-agent-name').value = ""; document.getElementById('assigned-agent-select').value = ""; document.getElementById('form-title').textContent = "Customer Enrollment";
+            document.getElementById('submit-btn').textContent = "Finalize & Submit Enrollment"; document.getElementById('cancel-edit').classList.add('hidden'); updatePaymentSchedule();
+        };
+
+        window.resetUserForm = () => {
+            document.getElementById('add-user-form').reset(); document.getElementById('edit-user-id-field').value = ""; document.getElementById('user-form-title').textContent = "Create Account";
+            document.getElementById('user-submit-btn').textContent = "Deploy Account"; document.getElementById('cancel-user-edit').classList.add('hidden');
         };
 
         function renderApprovalQueue() {
