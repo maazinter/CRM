@@ -225,22 +225,32 @@
                                 </div>
 
                                 <!-- Summary Stats Dashboard -->
-                                <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                     <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Month Days</p>
-                                        <h5 id="stat-month-days" class="text-2xl font-black text-slate-900">0</h5>
+                                        <h5 id="stat-month-days" class="text-xl font-black text-slate-900">0</h5>
                                     </div>
                                     <div class="bg-green-50 p-5 rounded-2xl border border-green-100">
-                                        <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Total Present</p>
-                                        <h5 id="stat-days-present" class="text-2xl font-black text-green-700">0</h5>
+                                        <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Present</p>
+                                        <h5 id="stat-days-present" class="text-xl font-black text-green-700">0</h5>
+                                    </div>
+                                    <!-- NEW: HD COUNTER -->
+                                    <div class="bg-violet-50 p-5 rounded-2xl border border-violet-100">
+                                        <p class="text-[9px] font-black text-violet-600 uppercase tracking-widest mb-1">Half Day (HD)</p>
+                                        <h5 id="stat-days-hd" class="text-xl font-black text-violet-700">0</h5>
                                     </div>
                                     <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
                                         <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Approved Leaves</p>
-                                        <h5 id="stat-days-leave" class="text-2xl font-black text-blue-700">0</h5>
+                                        <h5 id="stat-days-leave" class="text-xl font-black text-blue-700">0</h5>
+                                    </div>
+                                    <!-- NEW: UL COUNTER -->
+                                    <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100">
+                                        <p class="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">Unsched (UL)</p>
+                                        <h5 id="stat-days-ul" class="text-xl font-black text-rose-700">0</h5>
                                     </div>
                                     <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100">
                                         <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">WO / Holidays</p>
-                                        <h5 id="stat-days-holiday" class="text-2xl font-black text-amber-700">0</h5>
+                                        <h5 id="stat-days-holiday" class="text-xl font-black text-amber-700">0</h5>
                                     </div>
                                 </div>
                                 
@@ -299,7 +309,6 @@
 
                 <!-- Enrollment Form Tab -->
                 <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
-                    <!-- ... enrollment form code same as before ... -->
                     <div class="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-12">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
                             <div>
@@ -895,6 +904,8 @@
             let presentCount = 0;
             let leaveCount = 0;
             let holidayCount = 0;
+            let hdCount = 0;
+            let ulCount = 0;
 
             const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager';
 
@@ -906,7 +917,6 @@
                 const record = attendance.find(a => {
                     if (a.userId !== targetUserId) return false;
                     if (a.type === 'daily') return a.date === dateStr;
-                    // UPDATED: Include hd and ul in date range checks
                     if (a.type === 'leave' || a.type === 'hd' || a.type === 'ul') return dateStr >= a.startDate && dateStr <= a.endDate;
                     return false;
                 });
@@ -922,11 +932,10 @@
                     holidayCount++;
                 } else if (record) {
                     if (record.status === 'approved') {
-                        // UPDATED: Detailed rendering logic for HD and UL
                         if (record.type === 'hd') {
-                            dayClass = "bg-violet-50"; statusLabel = "HALF DAY"; indicatorColor = "bg-violet-500"; presentCount += 0.5;
+                            dayClass = "bg-violet-50"; statusLabel = "HALF DAY"; indicatorColor = "bg-violet-500"; hdCount++; presentCount += 0.5;
                         } else if (record.type === 'ul') {
-                            dayClass = "bg-rose-50"; statusLabel = "UNSCHED"; indicatorColor = "bg-rose-500"; leaveCount++;
+                            dayClass = "bg-rose-50"; statusLabel = "UNSCHED"; indicatorColor = "bg-rose-500"; ulCount++;
                         } else if (record.type === 'leave') {
                             dayClass = "bg-blue-50"; statusLabel = "LEAVE"; indicatorColor = "bg-blue-500"; leaveCount++;
                         } else {
@@ -956,6 +965,8 @@
             document.getElementById('stat-days-present').textContent = presentCount;
             document.getElementById('stat-days-leave').textContent = leaveCount;
             document.getElementById('stat-days-holiday').textContent = holidayCount;
+            document.getElementById('stat-days-hd').textContent = hdCount;
+            document.getElementById('stat-days-ul').textContent = ulCount;
         }
 
         function renderStaffOverview() {
