@@ -18,7 +18,7 @@
         /* Calendar Styles */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .calendar-day { min-height: 80px; transition: all 0.2s; cursor: pointer; }
-        .calendar-day:hover { filter: brightness(0.98); }
+        .calendar-day:hover { filter: brightness(0.96); }
         .calendar-day.readonly { cursor: default; }
         .calendar-day.readonly:hover { filter: none; }
     </style>
@@ -197,7 +197,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        <!-- Left: Calendar (Personal or Managerial) -->
+                        <!-- Left: Calendar & Summary -->
                         <div class="xl:col-span-2 space-y-8">
                             <!-- Today's Overview (Manager/Admin Only) -->
                             <div id="staff-attendance-overview" class="hidden bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
@@ -206,12 +206,15 @@
                             </div>
 
                             <!-- Main Calendar Card -->
-                            <div id="attendance-detail-section" class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                            <div id="attendance-detail-section" class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
                                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-50 pb-6">
                                     <div class="flex flex-col">
-                                        <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Personal Calendar</h4>
-                                        <div class="flex gap-3 mt-2">
-                                            <button id="reset-calendar-btn" onclick="viewingUserId = null; renderAttendancePortal();" class="hidden text-[8px] font-black text-blue-600 uppercase tracking-widest hover:underline">Back to Staff Directory</button>
+                                        <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Your Attendance</h4>
+                                        <div class="mt-2">
+                                            <button id="reset-calendar-btn" onclick="resetAttendanceView()" class="hidden text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" /></svg>
+                                                Back to My View
+                                            </button>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-4">
@@ -221,21 +224,21 @@
                                     </div>
                                 </div>
 
-                                <!-- Summary Row -->
+                                <!-- Summary Stats Dashboard -->
                                 <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Month Days</p>
                                         <h5 id="stat-month-days" class="text-2xl font-black text-slate-900">0</h5>
                                     </div>
-                                    <div class="bg-green-50 p-5 rounded-2xl border border-green-100 shadow-sm">
+                                    <div class="bg-green-50 p-5 rounded-2xl border border-green-100">
                                         <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Total Present</p>
                                         <h5 id="stat-days-present" class="text-2xl font-black text-green-700">0</h5>
                                     </div>
-                                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm">
+                                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
                                         <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Approved Leaves</p>
                                         <h5 id="stat-days-leave" class="text-2xl font-black text-blue-700">0</h5>
                                     </div>
-                                    <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
+                                    <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100">
                                         <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">WO / Holidays</p>
                                         <h5 id="stat-days-holiday" class="text-2xl font-black text-amber-700">0</h5>
                                     </div>
@@ -294,6 +297,7 @@
 
                 <!-- Enrollment Form Tab -->
                 <section id="tab-add-customer" class="tab-content hidden animate-fade-in">
+                    <!-- ... enrollment form code same as before ... -->
                     <div class="max-w-5xl mx-auto bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-12">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
                             <div>
@@ -374,12 +378,12 @@
                                     <textarea name="mailingAddress" id="mailingAddress" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium h-24"></textarea>
                                 </div>
                             </div>
-
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            <!-- ... other form code same as before ... -->
+                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                 <div class="space-y-8">
                                     <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 pool-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                                         </div>
                                         <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">2. FSA Credentials</h3>
                                     </div>
@@ -413,8 +417,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Billing -->
                             <div class="space-y-8">
                                 <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                     <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
@@ -432,7 +434,6 @@
                                         <option value="Installments">Installment Plan</option>
                                     </select>
                                 </div>
-                                
                                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <input type="text" name="cardHolderName" placeholder="Card Holder Name" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
                                     <input type="text" name="cardNumber" placeholder="Card / Account Number" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
@@ -441,13 +442,11 @@
                                         <input type="text" name="cardCVV" placeholder="CVV" maxlength="4" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none">
                                     </div>
                                 </div>
-
                                 <div class="flex items-center gap-3 ml-2">
                                     <input type="checkbox" id="sameAddress" onchange="toggleBillingAddress()" class="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500">
                                     <label for="sameAddress" class="text-xs font-black text-slate-400 uppercase tracking-wider">Same as Mailing Address</label>
                                 </div>
                                 <textarea name="billingAddress" id="billingAddress" placeholder="Billing Address" required class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none h-20"></textarea>
-
                                 <div class="bg-slate-50 p-6 md:p-10 rounded-[2rem] border border-slate-100">
                                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                         <h4 class="font-black uppercase tracking-widest text-blue-600">Payment Breakdown</h4>
@@ -463,7 +462,6 @@
                                     <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                                 </div>
                             </div>
-
                             <div id="admin-status-section" class="hidden p-8 bg-amber-50 rounded-[2rem] border border-amber-100 space-y-4">
                                 <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest">Workflow Status</h3>
                                 <select name="status" id="field-status" class="w-full px-5 py-4 bg-white border border-amber-100 rounded-2xl outline-none font-bold">
@@ -472,7 +470,6 @@
                                     <option value="NSF">NSF</option>
                                 </select>
                             </div>
-
                             <div class="flex justify-end pt-6">
                                 <button type="submit" id="submit-btn" class="w-full md:w-auto bg-blue-600 text-white px-16 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all active:scale-95">Finalize & Submit Enrollment</button>
                             </div>
@@ -482,7 +479,8 @@
 
                 <!-- Enrollment Database -->
                 <section id="tab-customer-list" class="tab-content hidden animate-fade-in space-y-8">
-                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <!-- ... database code same as before ... -->
+                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div>
                             <h2 class="text-3xl font-black text-slate-900 tracking-tight">Enrollment Database</h2>
                             <p class="text-slate-500 font-medium">Manage and track all customer pipelines</p>
@@ -500,7 +498,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
                         <div class="overflow-x-auto custom-scroll">
                             <table class="w-full text-left min-w-[1300px]">
@@ -524,6 +521,7 @@
 
                 <!-- System Users -->
                 <section id="tab-manage-users" class="tab-content hidden animate-fade-in space-y-8">
+                    <!-- ... users code same as before ... -->
                     <h2 class="text-3xl font-black text-slate-900 tracking-tight">System User Management</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 h-fit">
@@ -565,23 +563,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="user-stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in">
-            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h2 id="stats-user-email" class="text-xl font-black text-slate-900">User Performance</h2>
-                    <p id="stats-user-role" class="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1"></p>
-                </div>
-                <button onclick="closeStats()" class="bg-white p-2 rounded-xl text-slate-400 hover:text-slate-900 shadow-sm border border-slate-100 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            <div id="user-stats-content" class="p-10 grid grid-cols-1 md:grid-cols-2 gap-8"></div>
-        </div>
-    </div>
-
-    <!-- Day Management Modal (WO/Holiday/Attendance) -->
+    <!-- Day Management Modal -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
@@ -589,22 +571,22 @@
                 <p id="manage-date-subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"></p>
             </div>
             <div class="p-6 space-y-6">
-                <!-- Individual Attendance Options (Only if viewing staff) -->
+                <!-- Individual Attendance (For staff) -->
                 <div id="staff-edit-controls" class="space-y-3 hidden">
-                    <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Individual Attendance</h3>
+                    <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Staff Attendance</h3>
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="setStaffAttendance('daily', 'approved')" class="bg-green-50 text-green-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-green-100 hover:bg-green-100 transition">Mark Present</button>
-                        <button onclick="clearStaffAttendance()" class="bg-slate-50 text-slate-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Mark Absent</button>
+                        <button onclick="setStaffAttendance('daily', 'approved')" class="bg-green-50 text-green-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-green-100 hover:bg-green-100 transition">Present</button>
+                        <button onclick="clearStaffAttendance()" class="bg-slate-50 text-slate-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Absent</button>
                     </div>
-                    <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Mark Approved Leave</button>
+                    <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Approved Leave</button>
                 </div>
 
-                <!-- Global Calendar Options -->
+                <!-- Global Markers -->
                 <div id="global-management-controls" class="space-y-3">
-                    <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Settings</h3>
-                    <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
-                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
-                    <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition">Reset Global Marker</button>
+                    <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
+                    <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
+                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
+                    <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Clear Global Marker</button>
                 </div>
             </div>
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
@@ -613,6 +595,7 @@
         </div>
     </div>
 
+    <!-- ... rest of modals (MTD, NSF, Leads) same as before ... -->
     <div id="upcoming-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
@@ -639,7 +622,6 @@
             </div>
         </div>
     </div>
-
     <div id="nsf-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-red-600 text-white">
@@ -666,8 +648,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Agent Leads Modal -->
     <div id="agent-leads-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] w-full max-w-5xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
@@ -704,7 +684,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Initial Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
@@ -728,7 +707,7 @@
         let upcomingPaymentList = [];
         let nsfPaymentList = [];
         
-        let viewingUserId = null; // null means personal calendar
+        let viewingUserId = null; 
         let currentCalendarDate = new Date();
 
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
@@ -746,7 +725,7 @@
             } else {
                 authUser = null;
                 signInAnonymously(auth).catch(err => {
-                    document.getElementById('auth-error').textContent = "Database Offline. Check Firewall.";
+                    document.getElementById('auth-error').textContent = "Database Offline.";
                     document.getElementById('auth-error').classList.remove('hidden');
                 });
             }
@@ -817,7 +796,6 @@
             document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent');
             document.getElementById('admin-agent-select-group').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
             
-            // Attendance Permissions
             document.getElementById('leave-form-container').classList.toggle('hidden', role === 'admin');
             document.getElementById('staff-attendance-overview').classList.toggle('hidden', role === 'agent');
             document.getElementById('approval-queue-container').classList.toggle('hidden', role === 'agent');
@@ -830,7 +808,6 @@
 
         function syncDataStreams() {
             if (!authUser) return;
-            // Sync Users
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                 users = [];
                 snap.forEach(d => users.push({ ...d.data(), id: d.id }));
@@ -839,20 +816,17 @@
                 populateAgentSelect();
                 if (currentUser.role !== 'agent') renderStaffOverview();
             });
-            // Sync Customers
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
                 snap.forEach(d => customers.push({ ...d.data(), id: d.id }));
                 renderCustomers();
                 renderAgentPerformance();
             });
-            // Sync Attendance
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
                 attendance = [];
                 snap.forEach(d => attendance.push({ ...d.data(), id: d.id }));
                 renderAttendancePortal();
             });
-            // Sync Global Calendar (Holidays/WO)
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), (snap) => {
                 globalCalendar = [];
                 snap.forEach(d => globalCalendar.push({ ...d.data(), id: d.id }));
@@ -860,38 +834,37 @@
             });
         }
 
-        // --- ATTENDANCE LOGIC ---
+        // --- ATTENDANCE DASHBOARD LOGIC ---
 
         function renderAttendancePortal() {
             if (!currentUser) return;
             const container = document.getElementById('attendance-actions');
-            const detailSection = document.getElementById('attendance-detail-section');
             const today = new Date().toISOString().split('T')[0];
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
 
-            detailSection.classList.remove('hidden');
-
-            // Header Actions
             let html = ``;
-            if (currentUser.role !== 'admin' && !myTodayRecord && viewingUserId === null) {
-                html += `<button onclick="markAttendance()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-100">Mark Present</button>`;
-            } else if (myTodayRecord && viewingUserId === null) {
-                const statusColor = myTodayRecord.status === 'approved' ? 'text-green-600' : 'text-amber-500';
-                html += `<div class="bg-white border border-slate-100 px-6 py-3 rounded-xl shadow-sm flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Today: <span class="${statusColor}">${myTodayRecord.status.toUpperCase()}</span></span>
-                         </div>`;
-            } else if (viewingUserId !== null) {
+            if (viewingUserId === null) {
+                // Own View
+                if (currentUser.role !== 'admin' && !myTodayRecord) {
+                    html += `<button onclick="markAttendance()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-100">Mark Present</button>`;
+                } else if (myTodayRecord) {
+                    const statusColor = myTodayRecord.status === 'approved' ? 'text-green-600' : 'text-amber-500';
+                    html += `<div class="bg-white border border-slate-100 px-6 py-3 rounded-xl shadow-sm flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Today: <span class="${statusColor}">${myTodayRecord.status.toUpperCase()}</span></span>
+                             </div>`;
+                }
+            } else {
+                // Viewing Staff Member
                 const staff = users.find(u => u.id === viewingUserId);
                 html += `<div class="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
-                            <span class="text-[10px] font-black uppercase tracking-widest">Viewing: ${staff?.name || 'Staff'}</span>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Managing: ${staff?.name || 'Staff'}</span>
                          </div>`;
             }
             container.innerHTML = html;
 
             renderAttendanceCalendar();
 
-            // Staff Overview (Managers/Admins)
             if (currentUser.role !== 'agent') {
                 renderStaffOverview();
                 renderApprovalQueue();
@@ -913,9 +886,8 @@
 
             const targetUserId = viewingUserId || currentUser.id;
             const targetUser = targetUserId === currentUser.id ? currentUser : users.find(u => u.id === targetUserId);
-            const targetUserName = targetUserId === currentUser.id ? "Your Attendance" : (targetUser?.name || "User") + " Attendance";
             
-            document.getElementById('calendar-title').textContent = targetUserName;
+            document.getElementById('calendar-title').textContent = (targetUserId === currentUser.id) ? "Your Attendance" : `${targetUser?.name}'s Attendance`;
             document.getElementById('reset-calendar-btn').classList.toggle('hidden', targetUserId === currentUser.id);
 
             let presentCount = 0;
@@ -950,9 +922,7 @@
                         dayClass = record.type === 'leave' ? "bg-blue-50" : "bg-green-50";
                         statusLabel = record.type === 'leave' ? "LEAVE" : "PRESENT";
                         indicatorColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
-                        
-                        if(record.type === 'leave') leaveCount++;
-                        else presentCount++;
+                        if(record.type === 'leave') leaveCount++; else presentCount++;
                     } else if (record.status === 'pending') {
                         dayClass = "bg-slate-50";
                         statusLabel = "PENDING";
@@ -961,11 +931,8 @@
                 }
 
                 const isToday = dateStr === todayStr;
-                // Restriction: dates only clickable if user is Admin/Manager
-                const isClickable = isAdminOrManager;
-
                 html += `
-                    <div ${isClickable ? `onclick="openDayManagement('${dateStr}')"` : ''} class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between ${!isClickable ? 'readonly' : ''}">
+                    <div ${isAdminOrManager ? `onclick="openDayManagement('${dateStr}')"` : ''} class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between ${!isAdminOrManager ? 'readonly' : ''}">
                         <div class="flex justify-between items-start">
                             <span class="text-[10px] font-black ${isToday ? 'bg-blue-600 text-white w-5 h-5 flex items-center justify-center rounded-full' : 'text-slate-400'}">${day}</span>
                             ${indicatorColor ? `<span class="w-2 h-2 rounded-full ${indicatorColor}"></span>` : ''}
@@ -984,12 +951,11 @@
 
         function renderStaffOverview() {
             const grid = document.getElementById('today-staff-grid');
+            if (!grid) return;
             const today = new Date().toISOString().split('T')[0];
             
             let staffList = users;
-            if (currentUser.role === 'manager') {
-                staffList = users.filter(u => u.role === 'agent');
-            }
+            if (currentUser.role === 'manager') staffList = users.filter(u => u.role === 'agent');
 
             grid.innerHTML = staffList.map(u => {
                 const record = attendance.find(a => {
@@ -1006,12 +972,12 @@
                         statusColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
                         statusText = record.type === 'leave' ? "On Leave" : "Present";
                     } else {
-                        statusColor = "bg-amber-50";
+                        statusColor = "bg-amber-500";
                         statusText = "Pending";
                     }
                 }
                 return `
-                    <div onclick="viewingUserId = '${u.id}'; renderAttendancePortal();" class="p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group active:scale-95">
+                    <div onclick="selectStaffForView('${u.id}')" class="p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group active:scale-95">
                         <div class="flex items-center gap-3">
                             <div class="w-2 h-2 rounded-full ${statusColor}"></div>
                             <div>
@@ -1024,10 +990,63 @@
             }).join('');
         }
 
+        window.selectStaffForView = (uid) => {
+            viewingUserId = uid;
+            renderAttendancePortal();
+            showToast("Switching to staff dashboard...");
+        }
+
+        window.resetAttendanceView = () => {
+            viewingUserId = null;
+            renderAttendancePortal();
+        }
+
+        window.openDayManagement = (dateStr) => {
+            if (currentUser.role === 'agent') return;
+            document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
+            const subtitle = document.getElementById('manage-date-subtitle');
+            subtitle.dataset.date = dateStr;
+            
+            const staff = viewingUserId ? users.find(u => u.id === viewingUserId) : null;
+            subtitle.textContent = viewingUserId ? "Editing: " + (staff?.name || "Staff") : "Global Calendar Management";
+
+            document.getElementById('staff-edit-controls').classList.toggle('hidden', !viewingUserId);
+            document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
+        }
+
+        window.setStaffAttendance = async (type, status) => {
+            if (!viewingUserId) return;
+            const date = document.getElementById('manage-date-subtitle').dataset.date;
+            try {
+                // Clear existing
+                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
+
+                const payload = { userId: viewingUserId, status, type, createdAt: new Date().toISOString() };
+                if (type === 'daily') payload.date = date; else { payload.startDate = date; payload.endDate = date; }
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                showToast("Record updated manually");
+            } catch(e) { showToast("Save error"); }
+        }
+
+        window.clearStaffAttendance = async () => {
+            if (!viewingUserId) return;
+            const date = document.getElementById('manage-date-subtitle').dataset.date;
+            try {
+                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                showToast("Marked as Absent");
+            } catch(e) { showToast("Error"); }
+        }
+
+        // --- Standard Logic ---
         function renderApprovalQueue() {
             const list = document.getElementById('pending-approvals-list');
+            if (!list) return;
             const pending = attendance.filter(a => a.status === 'pending');
-            
             let visiblePending = pending;
             if (currentUser.role === 'manager') {
                 visiblePending = pending.filter(a => {
@@ -1035,7 +1054,6 @@
                     return user && user.role === 'agent';
                 });
             }
-
             list.innerHTML = visiblePending.length ? visiblePending.map(a => {
                 const user = users.find(u => u.id === a.userId);
                 const isLeave = a.type === 'leave';
@@ -1048,124 +1066,29 @@
                                     ${isLeave ? `LEAVE: ${a.startDate} to ${a.endDate}` : `ATTENDANCE: ${a.date}`}
                                 </p>
                             </div>
-                            <span class="px-2 py-0.5 rounded-lg bg-white border border-slate-100 text-[8px] font-black text-slate-400 uppercase">${user?.role}</span>
                         </div>
-                        ${isLeave ? `<p class="text-[10px] text-slate-500 italic">"${a.reason}"</p>` : ''}
                         <div class="flex gap-2">
-                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-green-700 transition">Approve</button>
-                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-red-50 transition">Deny</button>
+                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Approve</button>
+                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Deny</button>
                         </div>
                     </div>
                 `;
-            }).join('') : `<p class="text-center py-10 text-[10px] font-bold text-slate-400 uppercase italic">No pending requests</p>`;
+            }).join('') : `<p class="text-center py-10 text-[10px] font-bold text-slate-400 uppercase italic">No requests</p>`;
+        }
+
+        window.processApproval = async (id, status) => {
+            try {
+                if (status === 'denied') { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id)); showToast("Denied"); }
+                else { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status: 'approved' }); showToast("Approved"); }
+            } catch(e) {}
         }
 
         window.markAttendance = async () => {
             const today = new Date().toISOString().split('T')[0];
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), {
-                    userId: currentUser.id,
-                    date: today,
-                    status: 'pending',
-                    type: 'daily',
-                    createdAt: new Date().toISOString()
-                });
-                showToast("Attendance request sent for approval");
-            } catch(e) { showToast("Marking failed"); }
-        }
-
-        document.getElementById('leave-request-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), {
-                    ...data,
-                    userId: currentUser.id,
-                    status: 'pending',
-                    type: 'leave',
-                    createdAt: new Date().toISOString()
-                });
-                e.target.reset();
-                showToast("Leave request submitted");
-            } catch(e) { showToast("Submission failed"); }
-        });
-
-        window.processApproval = async (id, status) => {
-            try {
-                if (status === 'denied') {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id));
-                    showToast("Request Denied");
-                } else {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status: 'approved' });
-                    showToast("Request Approved");
-                }
-            } catch(e) { showToast("Update interrupted"); }
-        }
-
-        window.changeMonth = (dir) => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
-            renderAttendancePortal();
-        }
-
-        window.openDayManagement = (dateStr) => {
-            // Restriction Check
-            if (currentUser.role === 'agent') return;
-
-            document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
-            const subtitle = document.getElementById('manage-date-subtitle');
-            subtitle.dataset.date = dateStr;
-            
-            const staff = viewingUserId ? users.find(u => u.id === viewingUserId) : null;
-            subtitle.textContent = viewingUserId ? "Staff Member: " + (staff?.name || "Unknown") : "Global Calendar Management";
-
-            const canEditIndividual = (currentUser.role === 'admin' || currentUser.role === 'manager') && viewingUserId;
-            document.getElementById('staff-edit-controls').classList.toggle('hidden', !canEditIndividual);
-            
-            // Hide global controls if somehow a user gets in, though the UI prevents it
-            document.getElementById('global-management-controls').classList.toggle('hidden', currentUser.role === 'agent');
-
-            document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
-        }
-
-        window.setStaffAttendance = async (type, status) => {
-            if (!viewingUserId) return;
-            const date = document.getElementById('manage-date-subtitle').dataset.date;
-            try {
-                // Clear existing records to override
-                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of existing) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
-                }
-
-                const payload = {
-                    userId: viewingUserId,
-                    status: status,
-                    type: type,
-                    createdAt: new Date().toISOString()
-                };
-
-                if (type === 'daily') payload.date = date;
-                else { payload.startDate = date; payload.endDate = date; }
-
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Staff attendance overridden successfully");
-            } catch(e) { showToast("Save failed"); }
-        }
-
-        window.clearStaffAttendance = async () => {
-            if (!viewingUserId) return;
-            const date = document.getElementById('manage-date-subtitle').dataset.date;
-            try {
-                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of existing) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
-                }
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Record cleared (Marked Absent)");
-            } catch(e) { showToast("Clear failed"); }
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: today, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
+                showToast("Request sent");
+            } catch(e) {}
         }
 
         window.setGlobalDateMarker = async (type) => {
@@ -1173,18 +1096,19 @@
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
                 const existing = globalCalendar.find(g => g.date === date);
-                if (type === 'Normal') {
-                    if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id));
-                } else {
+                if (type === 'Normal') { if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id)); }
+                else {
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Global calendar updated");
-            } catch(e) { showToast("Global update failed"); }
+            } catch(e) {}
         }
 
-        // Standard CRM Utilities
+        window.changeMonth = (dir) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); renderAttendancePortal(); }
+
+        // --- Standard Logic Same as Before ---
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
@@ -1458,35 +1382,13 @@
 
         window.openUpcomingModal = () => {
             const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
-                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')">
-                    <td class="px-6 py-4">
-                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div>
-                        <div class="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div>
-                    </td>
-                    <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
-                    <td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td>
-                </tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
             document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
         };
 
         window.openNsfModal = () => {
             const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `
-                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')">
-                    <td class="px-6 py-4">
-                        <div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div>
-                        <div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div>
-                    </td>
-                    <td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td>
-                    <td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td>
-                </tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
             document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
         };
 
@@ -1509,13 +1411,8 @@
 
         window.viewCustomerFromModal = (id, type) => {
             const canViewDetails = currentUser.role === 'admin' || currentUser.role === 'manager';
-            if (!canViewDetails) {
-                showToast("Access Restricted: View lead profile available for Admin/Manager only.");
-                return;
-            }
-            if(type === 'nsf') closeNsfModal(); 
-            else if(type === 'upcoming') closeUpcomingModal();
-            else if(type === 'agent') closeAgentLeadsModal();
+            if (!canViewDetails) { showToast("Access Restricted: Admin/Manager only."); return; }
+            if(type === 'nsf') closeNsfModal(); else if(type === 'upcoming') closeUpcomingModal(); else if(type === 'agent') closeAgentLeadsModal();
             editCustomer(id);
         };
 
