@@ -1157,7 +1157,7 @@
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
                 showToast("Global calendar updated");
             } catch(e) { showToast("Global update failed"); }
         }
@@ -1274,10 +1274,10 @@
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
                             if (item.date < todayStr) {
-                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, email: c.email, date: item.date, amount: amt }); addedToNsf = true; }
+                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); addedToNsf = true; }
                             } else {
                                 metrics.upcomingMonth += amt;
-                                metrics.upcomingDetails.push({ id: c.id, name: c.name, email: c.email, date: item.date, amount: amt });
+                                metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
                             }
                         }
                     }
@@ -1443,7 +1443,7 @@
                         <div class="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.email || 'N/A'}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
                     <td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td>
@@ -1460,7 +1460,7 @@
                         <div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.email || 'N/A'}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td>
                     <td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td>
