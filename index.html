@@ -627,6 +627,7 @@
                     <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Identity</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
                         </tr>
@@ -653,6 +654,7 @@
                     <thead class="sticky top-0 bg-white border-b border-slate-100 z-10">
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Identity</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Overdue Date</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
                         </tr>
@@ -865,6 +867,8 @@
             const today = new Date().toISOString().split('T')[0];
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
 
+            detailSection.classList.remove('hidden');
+
             // Header Actions
             let html = ``;
             if (currentUser.role !== 'admin' && !myTodayRecord && viewingUserId === null) {
@@ -903,7 +907,6 @@
             monthDisplay.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
 
             let html = ``;
-            // Empty slots for start of month
             for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20 pointer-events-none"></div>`;
 
             const targetUserId = viewingUserId || currentUser.id;
@@ -913,7 +916,6 @@
             document.getElementById('calendar-title').textContent = targetUserName;
             document.getElementById('reset-calendar-btn').classList.toggle('hidden', targetUserId === currentUser.id);
 
-            // Summary Stats Counters
             let presentCount = 0;
             let leaveCount = 0;
             let holidayCount = 0;
@@ -922,10 +924,7 @@
                 const dateObj = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
                 const dateStr = dateObj.toISOString().split('T')[0];
                 
-                // Check Global Holidays/WO first
                 const global = globalCalendar.find(g => g.date === dateStr);
-                
-                // Check User Attendance (Daily or Leave Range)
                 const record = attendance.find(a => {
                     if (a.userId !== targetUserId) return false;
                     if (a.type === 'daily') return a.date === dateStr;
@@ -958,8 +957,6 @@
                 }
 
                 const isToday = dateStr === todayStr;
-                const canManageCalendar = currentUser.role === 'admin' || currentUser.role === 'manager';
-
                 html += `
                     <div onclick="openDayManagement('${dateStr}')" class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between">
                         <div class="flex justify-between items-start">
@@ -972,7 +969,6 @@
             }
             container.innerHTML = html;
 
-            // Update Summary Stats
             document.getElementById('stat-month-days').textContent = daysInMonth;
             document.getElementById('stat-days-present').textContent = presentCount;
             document.getElementById('stat-days-leave').textContent = leaveCount;
@@ -1003,8 +999,8 @@
                         statusColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
                         statusText = record.type === 'leave' ? "On Leave" : "Present";
                     } else {
-                        statusColor = "bg-amber-500";
-                        statusText = "Waiting Approval";
+                        statusColor = "bg-amber-50";
+                        statusText = "Pending";
                     }
                 }
                 return `
@@ -1114,7 +1110,6 @@
             const staff = viewingUserId ? users.find(u => u.id === viewingUserId) : null;
             subtitle.textContent = viewingUserId ? "Staff Member: " + (staff?.name || "Unknown") : "Global Calendar Management";
 
-            // Admins and Managers can edit individual staff attendance
             const canEditIndividual = (currentUser.role === 'admin' || currentUser.role === 'manager') && viewingUserId;
             document.getElementById('staff-edit-controls').classList.toggle('hidden', !canEditIndividual);
 
@@ -1125,22 +1120,13 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                // Clear existing records to override
                 const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
                 for (const rec of existing) {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
                 }
-
-                const payload = {
-                    userId: viewingUserId,
-                    status: status,
-                    type: type,
-                    createdAt: new Date().toISOString()
-                };
-
+                const payload = { userId: viewingUserId, status: status, type: type, createdAt: new Date().toISOString() };
                 if (type === 'daily') payload.date = date;
                 else { payload.startDate = date; payload.endDate = date; }
-
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Staff attendance overridden successfully");
@@ -1176,7 +1162,7 @@
             } catch(e) { showToast("Global update failed"); }
         }
 
-        // Standard CRM Utilities
+        // Standard Utility Functions
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
@@ -1288,10 +1274,10 @@
                         const pd = new Date(item.date);
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
                             if (item.date < todayStr) {
-                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt }); addedToNsf = true; }
+                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, email: c.email, date: item.date, amount: amt }); addedToNsf = true; }
                             } else {
                                 metrics.upcomingMonth += amt;
-                                metrics.upcomingDetails.push({ id: c.id, name: c.name, date: item.date, amount: amt });
+                                metrics.upcomingDetails.push({ id: c.id, name: c.name, email: c.email, date: item.date, amount: amt });
                             }
                         }
                     }
@@ -1447,6 +1433,74 @@
             document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
             document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
         };
+
+        window.openUpcomingModal = () => {
+            const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
+                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase">${item.name}</div>
+                        <div class="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.email || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td>
+                    <td class="px-6 py-4 text-right font-black text-blue-600">$${item.amount.toLocaleString()}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No pending revenue found.</td></tr>';
+            document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openNsfModal = () => {
+            const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `
+                <tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')">
+                    <td class="px-6 py-4">
+                        <div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div>
+                        <div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.email || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td>
+                    <td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td>
+                </tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
+            document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.openAgentLeadsModal = (agentId) => {
+            const agent = agentId === 'ROOT' ? { name: 'System Admin' } : users.find(u => u.id === agentId);
+            const agentName = agent ? agent.name : 'Unknown Agent';
+            const agentLeads = customers.filter(c => c.agentId === agentId);
+            document.getElementById('agent-leads-title').textContent = `${agentName}'s Sales Detail`;
+            document.getElementById('agent-leads-subtitle').textContent = `Tracking ${agentLeads.length} leads in pipeline`;
+            const tbody = document.getElementById('agent-leads-table');
+            tbody.innerHTML = agentLeads.length ? agentLeads.map(c => {
+                const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                const paidCount = sched.filter(i => i.status === 'paid').length;
+                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                const totalPaid = calculatePaidSum(c);
+                return `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${c.id}', 'agent')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.email || ''}</div></td><td class="px-6 py-4 text-center font-bold text-slate-600 text-sm">${paidCount} / ${sched.length}</td><td class="px-6 py-4 text-xs font-black text-blue-600">${nextDue}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-6 py-4 text-right font-black text-green-600">$${totalPaid.toLocaleString()}</td></tr>`;
+            }).join('') : '<tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">No leads assigned to this agent yet.</td></tr>';
+            document.getElementById('agent-leads-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.viewCustomerFromModal = (id, type) => {
+            const canViewDetails = currentUser.role === 'admin' || currentUser.role === 'manager';
+            if (!canViewDetails) {
+                showToast("Access Restricted: View lead profile available for Admin/Manager only.");
+                return;
+            }
+            if(type === 'nsf') closeNsfModal(); 
+            else if(type === 'upcoming') closeUpcomingModal();
+            else if(type === 'agent') closeAgentLeadsModal();
+            editCustomer(id);
+        };
+
+        window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
+        window.closeNsfModal = () => document.getElementById('nsf-modal').classList.replace('flex', 'hidden');
+        window.closeAgentLeadsModal = () => document.getElementById('agent-leads-modal').classList.replace('flex', 'hidden');
+        window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
 
         function showToast(m) {
             const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
