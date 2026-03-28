@@ -205,16 +205,39 @@
 
                             <!-- Main Calendar Card -->
                             <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
-                                <div class="flex justify-between items-center">
-                                    <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm">Personal Calendar</h4>
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-50 pb-6">
+                                    <div class="flex flex-col">
+                                        <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Personal Calendar</h4>
+                                        <button id="reset-calendar-btn" onclick="viewingUserId = null; renderAttendancePortal();" class="hidden text-[8px] font-black text-blue-600 uppercase tracking-widest mt-2 hover:underline text-left">Back to My Attendance</button>
+                                    </div>
                                     <div class="flex items-center gap-4">
                                         <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-50 rounded-xl transition text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
                                         <span id="current-month-display" class="font-black text-sm uppercase tracking-widest min-w-[120px] text-center">March 2024</span>
                                         <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-50 rounded-xl transition text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></button>
                                     </div>
                                 </div>
+
+                                <!-- Summary Row -->
+                                <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Month Days</p>
+                                        <h5 id="stat-month-days" class="text-2xl font-black text-slate-900">0</h5>
+                                    </div>
+                                    <div class="bg-green-50 p-5 rounded-2xl border border-green-100 shadow-sm">
+                                        <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Total Present</p>
+                                        <h5 id="stat-days-present" class="text-2xl font-black text-green-700">0</h5>
+                                    </div>
+                                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm">
+                                        <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Approved Leaves</p>
+                                        <h5 id="stat-days-leave" class="text-2xl font-black text-blue-700">0</h5>
+                                    </div>
+                                    <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
+                                        <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">WO / Holidays</p>
+                                        <h5 id="stat-days-holiday" class="text-2xl font-black text-amber-700">0</h5>
+                                    </div>
+                                </div>
                                 
-                                <div class="grid grid-cols-7 text-center mb-2">
+                                <div class="grid grid-cols-7 text-center mb-2 px-1">
                                     <div class="text-[10px] font-black text-slate-400">SUN</div>
                                     <div class="text-[10px] font-black text-slate-400">MON</div>
                                     <div class="text-[10px] font-black text-slate-400">TUE</div>
@@ -862,16 +885,31 @@
             for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20"></div>`;
 
             const targetUserId = viewingUserId || currentUser.id;
-            const targetUserName = targetUserId === currentUser.id ? "Your Attendance" : (users.find(u => u.id === targetUserId)?.name || "User") + " Attendance";
+            const targetUser = targetUserId === currentUser.id ? currentUser : users.find(u => u.id === targetUserId);
+            const targetUserName = targetUserId === currentUser.id ? "Your Attendance" : (targetUser?.name || "User") + " Attendance";
+            
             document.getElementById('calendar-title').textContent = targetUserName;
+            document.getElementById('reset-calendar-btn').classList.toggle('hidden', targetUserId === currentUser.id);
+
+            // Summary Stats Counters
+            let presentCount = 0;
+            let leaveCount = 0;
+            let holidayCount = 0;
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateObj = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
                 const dateStr = dateObj.toISOString().split('T')[0];
                 
-                // Check status
-                const record = attendance.find(a => a.userId === targetUserId && a.date === dateStr);
+                // Check Global Holidays/WO first
                 const global = globalCalendar.find(g => g.date === dateStr);
+                
+                // Check User Attendance (Daily or Leave Range)
+                const record = attendance.find(a => {
+                    if (a.userId !== targetUserId) return false;
+                    if (a.type === 'daily') return a.date === dateStr;
+                    if (a.type === 'leave') return dateStr >= a.startDate && dateStr <= a.endDate;
+                    return false;
+                });
                 
                 let dayClass = "bg-white";
                 let statusLabel = "";
@@ -881,11 +919,15 @@
                     dayClass = global.type === 'WO' ? "bg-amber-50" : "bg-red-50";
                     statusLabel = global.type;
                     indicatorColor = global.type === 'WO' ? "bg-amber-500" : "bg-red-500";
+                    holidayCount++;
                 } else if (record) {
                     if (record.status === 'approved') {
                         dayClass = record.type === 'leave' ? "bg-blue-50" : "bg-green-50";
                         statusLabel = record.type === 'leave' ? "LEAVE" : "PRESENT";
                         indicatorColor = record.type === 'leave' ? "bg-blue-500" : "bg-green-500";
+                        
+                        if(record.type === 'leave') leaveCount++;
+                        else presentCount++;
                     } else if (record.status === 'pending') {
                         dayClass = "bg-slate-50";
                         statusLabel = "PENDING";
@@ -907,6 +949,12 @@
                 `;
             }
             container.innerHTML = html;
+
+            // Update Summary Stats
+            document.getElementById('stat-month-days').textContent = daysInMonth;
+            document.getElementById('stat-days-present').textContent = presentCount;
+            document.getElementById('stat-days-leave').textContent = leaveCount;
+            document.getElementById('stat-days-holiday').textContent = holidayCount;
         }
 
         function renderStaffOverview() {
@@ -916,12 +964,17 @@
             // Define staff based on role
             let staffList = users;
             if (currentUser.role === 'manager') {
-                // Technically managers see everyone unless filtered, or we can assume they see agents
                 staffList = users.filter(u => u.role === 'agent');
             }
 
             grid.innerHTML = staffList.map(u => {
-                const record = attendance.find(a => a.userId === u.id && a.date === today);
+                const record = attendance.find(a => {
+                    if (a.userId !== u.id) return false;
+                    if (a.type === 'daily') return a.date === today;
+                    if (a.type === 'leave') return today >= a.startDate && today <= a.endDate;
+                    return false;
+                });
+
                 let statusColor = "bg-slate-200";
                 let statusText = "Absent";
                 if (record) {
@@ -1003,12 +1056,7 @@
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             
-            // Create range of dates for the leave
-            const start = new Date(data.startDate);
-            const end = new Date(data.endDate);
-            
             try {
-                // Note: Complex date logic can be added, but for simple CRM we store the request object
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), {
                     ...data,
                     userId: currentUser.id,
@@ -1023,15 +1071,11 @@
 
         window.processApproval = async (id, status) => {
             try {
-                const record = attendance.find(a => a.id === id);
                 if (status === 'denied') {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id));
                     showToast("Request Denied");
                 } else {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status: 'approved' });
-                    
-                    // If it's a leave request, we ideally should populate all dates in the range, 
-                    // but for this MVP we keep the record as is and handle rendering logic.
                     showToast("Request Approved");
                 }
             } catch(e) { showToast("Update interrupted"); }
