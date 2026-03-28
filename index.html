@@ -19,6 +19,8 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .calendar-day { min-height: 80px; transition: all 0.2s; cursor: pointer; }
         .calendar-day:hover { filter: brightness(0.98); }
+        .calendar-day.readonly { cursor: default; }
+        .calendar-day.readonly:hover { filter: none; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -377,7 +379,7 @@
                                 <div class="space-y-8">
                                     <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 pool-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                                         </div>
                                         <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">2. FSA Credentials</h3>
                                     </div>
@@ -598,7 +600,7 @@
                 </div>
 
                 <!-- Global Calendar Options -->
-                <div class="space-y-3">
+                <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Settings</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
                     <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
@@ -907,7 +909,7 @@
             monthDisplay.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
 
             let html = ``;
-            for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20 pointer-events-none"></div>`;
+            for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20 pointer-events-none readonly"></div>`;
 
             const targetUserId = viewingUserId || currentUser.id;
             const targetUser = targetUserId === currentUser.id ? currentUser : users.find(u => u.id === targetUserId);
@@ -919,6 +921,8 @@
             let presentCount = 0;
             let leaveCount = 0;
             let holidayCount = 0;
+
+            const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager';
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateObj = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
@@ -957,8 +961,11 @@
                 }
 
                 const isToday = dateStr === todayStr;
+                // Restriction: dates only clickable if user is Admin/Manager
+                const isClickable = isAdminOrManager;
+
                 html += `
-                    <div onclick="openDayManagement('${dateStr}')" class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between">
+                    <div ${isClickable ? `onclick="openDayManagement('${dateStr}')"` : ''} class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between ${!isClickable ? 'readonly' : ''}">
                         <div class="flex justify-between items-start">
                             <span class="text-[10px] font-black ${isToday ? 'bg-blue-600 text-white w-5 h-5 flex items-center justify-center rounded-full' : 'text-slate-400'}">${day}</span>
                             ${indicatorColor ? `<span class="w-2 h-2 rounded-full ${indicatorColor}"></span>` : ''}
@@ -1103,6 +1110,9 @@
         }
 
         window.openDayManagement = (dateStr) => {
+            // Restriction Check
+            if (currentUser.role === 'agent') return;
+
             document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
             const subtitle = document.getElementById('manage-date-subtitle');
             subtitle.dataset.date = dateStr;
@@ -1112,6 +1122,9 @@
 
             const canEditIndividual = (currentUser.role === 'admin' || currentUser.role === 'manager') && viewingUserId;
             document.getElementById('staff-edit-controls').classList.toggle('hidden', !canEditIndividual);
+            
+            // Hide global controls if somehow a user gets in, though the UI prevents it
+            document.getElementById('global-management-controls').classList.toggle('hidden', currentUser.role === 'agent');
 
             document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
         }
@@ -1157,12 +1170,12 @@
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
-                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Global calendar updated");
             } catch(e) { showToast("Global update failed"); }
         }
 
-        // Standard Utility Functions
+        // Standard CRM Utilities
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
