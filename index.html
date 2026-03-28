@@ -17,8 +17,8 @@
         
         /* Calendar Styles */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .calendar-day { min-height: 80px; transition: all 0.2s; }
-        .calendar-day:hover { background-color: #f8fafc; }
+        .calendar-day { min-height: 80px; transition: all 0.2s; cursor: pointer; }
+        .calendar-day:hover { filter: brightness(0.98); }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -208,7 +208,9 @@
                                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-50 pb-6">
                                     <div class="flex flex-col">
                                         <h4 id="calendar-title" class="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Personal Calendar</h4>
-                                        <button id="reset-calendar-btn" onclick="viewingUserId = null; renderAttendancePortal();" class="hidden text-[8px] font-black text-blue-600 uppercase tracking-widest mt-2 hover:underline text-left">Back to My Attendance</button>
+                                        <div class="flex gap-3 mt-2">
+                                            <button id="reset-calendar-btn" onclick="viewingUserId = null; renderAttendancePortal();" class="hidden text-[8px] font-black text-blue-600 uppercase tracking-widest hover:underline">Back to Staff Directory</button>
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-4">
                                         <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-50 rounded-xl transition text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>
@@ -831,6 +833,7 @@
                 renderUsers();
                 renderAgentPerformance();
                 populateAgentSelect();
+                if (currentUser.role !== 'agent') renderStaffOverview();
             });
             // Sync Customers
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
@@ -862,24 +865,24 @@
             const today = new Date().toISOString().split('T')[0];
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
 
-            // Visibility Logic for Admin/Manager
-            // Revert Admin calendar visibility
-            detailSection.classList.remove('hidden');
-
             // Header Actions
             let html = ``;
-            if (currentUser.role !== 'admin' && !myTodayRecord) {
+            if (currentUser.role !== 'admin' && !myTodayRecord && viewingUserId === null) {
                 html += `<button onclick="markAttendance()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-100">Mark Present</button>`;
-            } else if (myTodayRecord) {
+            } else if (myTodayRecord && viewingUserId === null) {
                 const statusColor = myTodayRecord.status === 'approved' ? 'text-green-600' : 'text-amber-500';
                 html += `<div class="bg-white border border-slate-100 px-6 py-3 rounded-xl shadow-sm flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-green-500"></span>
                             <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Today: <span class="${statusColor}">${myTodayRecord.status.toUpperCase()}</span></span>
                          </div>`;
+            } else if (viewingUserId !== null) {
+                const staff = users.find(u => u.id === viewingUserId);
+                html += `<div class="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+                            <span class="text-[10px] font-black uppercase tracking-widest">Viewing: ${staff?.name || 'Staff'}</span>
+                         </div>`;
             }
             container.innerHTML = html;
 
-            // Calendar Rendering
             renderAttendanceCalendar();
 
             // Staff Overview (Managers/Admins)
@@ -901,7 +904,7 @@
 
             let html = ``;
             // Empty slots for start of month
-            for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20"></div>`;
+            for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20 pointer-events-none"></div>`;
 
             const targetUserId = viewingUserId || currentUser.id;
             const targetUser = targetUserId === currentUser.id ? currentUser : users.find(u => u.id === targetUserId);
@@ -958,7 +961,7 @@
                 const canManageCalendar = currentUser.role === 'admin' || currentUser.role === 'manager';
 
                 html += `
-                    <div onclick="${canManageCalendar ? `openDayManagement('${dateStr}')` : ''}" class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between cursor-pointer">
+                    <div onclick="openDayManagement('${dateStr}')" class="calendar-day ${dayClass} p-3 border border-slate-100 flex flex-col justify-between">
                         <div class="flex justify-between items-start">
                             <span class="text-[10px] font-black ${isToday ? 'bg-blue-600 text-white w-5 h-5 flex items-center justify-center rounded-full' : 'text-slate-400'}">${day}</span>
                             ${indicatorColor ? `<span class="w-2 h-2 rounded-full ${indicatorColor}"></span>` : ''}
@@ -980,7 +983,6 @@
             const grid = document.getElementById('today-staff-grid');
             const today = new Date().toISOString().split('T')[0];
             
-            // Define staff based on role
             let staffList = users;
             if (currentUser.role === 'manager') {
                 staffList = users.filter(u => u.role === 'agent');
@@ -1006,11 +1008,11 @@
                     }
                 }
                 return `
-                    <div onclick="viewingUserId = '${u.id}'; renderAttendancePortal();" class="p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-slate-100 transition">
+                    <div onclick="viewingUserId = '${u.id}'; renderAttendancePortal();" class="p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all group active:scale-95">
                         <div class="flex items-center gap-3">
                             <div class="w-2 h-2 rounded-full ${statusColor}"></div>
                             <div>
-                                <p class="text-[10px] font-black text-slate-900 uppercase truncate">${u.name}</p>
+                                <p class="text-[10px] font-black text-slate-900 uppercase truncate group-hover:text-blue-600 transition-colors">${u.name}</p>
                                 <p class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">${statusText}</p>
                             </div>
                         </div>
@@ -1023,7 +1025,6 @@
             const list = document.getElementById('pending-approvals-list');
             const pending = attendance.filter(a => a.status === 'pending');
             
-            // Managers only see Agents. Admins see everyone.
             let visiblePending = pending;
             if (currentUser.role === 'manager') {
                 visiblePending = pending.filter(a => {
@@ -1048,8 +1049,8 @@
                         </div>
                         ${isLeave ? `<p class="text-[10px] text-slate-500 italic">"${a.reason}"</p>` : ''}
                         <div class="flex gap-2">
-                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Approve</button>
-                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Deny</button>
+                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-green-700 transition">Approve</button>
+                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-red-50 transition">Deny</button>
                         </div>
                     </div>
                 `;
@@ -1066,7 +1067,7 @@
                     type: 'daily',
                     createdAt: new Date().toISOString()
                 });
-                showToast("Request sent for approval");
+                showToast("Attendance request sent for approval");
             } catch(e) { showToast("Marking failed"); }
         }
 
@@ -1109,10 +1110,13 @@
             document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
             const subtitle = document.getElementById('manage-date-subtitle');
             subtitle.dataset.date = dateStr;
-            subtitle.textContent = viewingUserId ? "Staff Member: " + (users.find(u => u.id === viewingUserId)?.name || "Unknown") : "Global Calendar Management";
+            
+            const staff = viewingUserId ? users.find(u => u.id === viewingUserId) : null;
+            subtitle.textContent = viewingUserId ? "Staff Member: " + (staff?.name || "Unknown") : "Global Calendar Management";
 
-            // Toggle visibility of staff editing controls
-            document.getElementById('staff-edit-controls').classList.toggle('hidden', !viewingUserId);
+            // Admins and Managers can edit individual staff attendance
+            const canEditIndividual = (currentUser.role === 'admin' || currentUser.role === 'manager') && viewingUserId;
+            document.getElementById('staff-edit-controls').classList.toggle('hidden', !canEditIndividual);
 
             document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
         }
@@ -1121,9 +1125,9 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                // Remove existing records for this user/date first to avoid duplicates
-                const querySnap = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of querySnap) {
+                // Clear existing records to override
+                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of existing) {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
                 }
 
@@ -1135,23 +1139,20 @@
                 };
 
                 if (type === 'daily') payload.date = date;
-                else {
-                    payload.startDate = date;
-                    payload.endDate = date;
-                }
+                else { payload.startDate = date; payload.endDate = date; }
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Staff attendance updated");
-            } catch(e) { showToast("Update failed"); }
+                showToast("Staff attendance overridden successfully");
+            } catch(e) { showToast("Save failed"); }
         }
 
         window.clearStaffAttendance = async () => {
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                const querySnap = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of querySnap) {
+                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
+                for (const rec of existing) {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id));
                 }
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
@@ -1160,6 +1161,7 @@
         }
 
         window.setGlobalDateMarker = async (type) => {
+            if (currentUser.role === 'agent') return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
                 const existing = globalCalendar.find(g => g.date === date);
@@ -1174,7 +1176,7 @@
             } catch(e) { showToast("Global update failed"); }
         }
 
-        // Standard Utility Functions
+        // Standard CRM Utilities
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
