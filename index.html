@@ -234,7 +234,6 @@
                                         <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Present</p>
                                         <h5 id="stat-days-present" class="text-xl font-black text-green-700">0</h5>
                                     </div>
-                                    <!-- NEW: HD COUNTER -->
                                     <div class="bg-violet-50 p-5 rounded-2xl border border-violet-100">
                                         <p class="text-[9px] font-black text-violet-600 uppercase tracking-widest mb-1">Half Day (HD)</p>
                                         <h5 id="stat-days-hd" class="text-xl font-black text-violet-700">0</h5>
@@ -243,7 +242,6 @@
                                         <p class="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Approved Leaves</p>
                                         <h5 id="stat-days-leave" class="text-xl font-black text-blue-700">0</h5>
                                     </div>
-                                    <!-- NEW: UL COUNTER -->
                                     <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100">
                                         <p class="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">Unsched (UL)</p>
                                         <h5 id="stat-days-ul" class="text-xl font-black text-rose-700">0</h5>
@@ -587,7 +585,6 @@
                         <button onclick="clearStaffAttendance()" class="bg-slate-50 text-slate-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Absent</button>
                     </div>
                     <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-blue-100 hover:bg-blue-100 transition">Approved Leave</button>
-                    <!-- NEW FIELDS -->
                     <div class="grid grid-cols-2 gap-3 mt-3">
                         <button onclick="setStaffAttendance('hd', 'approved')" class="bg-violet-50 text-violet-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-violet-100 hover:bg-violet-100 transition">Half Day (HD)</button>
                         <button onclick="setStaffAttendance('ul', 'approved')" class="bg-rose-50 text-rose-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-rose-100 hover:bg-rose-100 transition">Unscheduled (UL)</button>
@@ -726,6 +723,16 @@
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
         const ADMIN_PASS = "Maaz@2026";
 
+        /**
+         * Helper: Format Date as YYYY-MM-DD using local time
+         */
+        function formatDateLocal(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authUser = user;
@@ -852,8 +859,8 @@
         function renderAttendancePortal() {
             if (!currentUser) return;
             const container = document.getElementById('attendance-actions');
-            const today = new Date().toISOString().split('T')[0];
-            const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === today && a.type === 'daily');
+            const todayStr = formatDateLocal(new Date());
+            const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === todayStr && a.type === 'daily');
 
             let html = ``;
             if (viewingUserId === null) {
@@ -887,7 +894,7 @@
             const monthDisplay = document.getElementById('current-month-display');
             const daysInMonth = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0).getDate();
             const firstDayIndex = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1).getDay();
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = formatDateLocal(new Date());
             
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             monthDisplay.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
@@ -911,7 +918,7 @@
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateObj = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
-                const dateStr = dateObj.toISOString().split('T')[0];
+                const dateStr = formatDateLocal(dateObj);
                 
                 const global = globalCalendar.find(g => g.date === dateStr);
                 const record = attendance.find(a => {
@@ -972,7 +979,7 @@
         function renderStaffOverview() {
             const grid = document.getElementById('today-staff-grid');
             if (!grid) return;
-            const today = new Date().toISOString().split('T')[0];
+            const todayStr = formatDateLocal(new Date());
             
             let staffList = users;
             if (currentUser.role === 'manager') staffList = users.filter(u => u.role === 'agent');
@@ -980,8 +987,8 @@
             grid.innerHTML = staffList.map(u => {
                 const record = attendance.find(a => {
                     if (a.userId !== u.id) return false;
-                    if (a.type === 'daily') return a.date === today;
-                    if (a.type === 'leave' || a.type === 'hd' || a.type === 'ul') return today >= a.startDate && today <= a.endDate;
+                    if (a.type === 'daily') return a.date === todayStr;
+                    if (a.type === 'leave' || a.type === 'hd' || a.type === 'ul') return todayStr >= a.startDate && todayStr <= a.endDate;
                     return false;
                 });
 
@@ -1104,9 +1111,9 @@
         }
 
         window.markAttendance = async () => {
-            const today = new Date().toISOString().split('T')[0];
+            const todayStr = formatDateLocal(new Date());
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: today, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: todayStr, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
                 showToast("Request sent");
             } catch(e) {}
         }
@@ -1191,7 +1198,7 @@
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
             const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
+            const todayStr = formatDateLocal(now);
             const currM = now.getMonth();
             const currY = now.getFullYear();
             dataList.forEach(c => { 
@@ -1219,7 +1226,7 @@
 
         function calculateMetrics(dataList) {
             const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
+            const todayStr = formatDateLocal(now);
             const currM = now.getMonth();
             const currY = now.getFullYear();
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
@@ -1316,13 +1323,13 @@
             const type = document.getElementById('paymentType').value; const payToday = document.getElementById('payToday').checked; const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); const container = document.getElementById('schedule-container'); const group = document.getElementById('tenure-input-group');
             container.innerHTML = '';
             if (type === 'Single') {
-                group.classList.add('hidden'); const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? new Date().toISOString().split('T')[0] : '' };
+                group.classList.add('hidden'); const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? formatDateLocal(new Date()) : '' };
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
                 group.classList.remove('hidden'); const count = parseInt(document.getElementById('tenureCount').value); const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
-                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? new Date().toISOString().split('T')[0] : '' };
+                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? formatDateLocal(new Date()) : '' };
                     container.innerHTML += createScheduleItem(i, sched, false);
                 }
             }
