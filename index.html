@@ -465,7 +465,7 @@
                                     </div>
                                     <div id="tenure-input-group" class="hidden mb-8 flex items-center gap-4">
                                         <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Duration (Months):</span>
-                                        <input type="number" id="tenureCount" value="6" min="2" max="24" class="w-24 px-4 py-2 border rounded-xl outline-none font-bold" oninput="updatePaymentSchedule()">
+                                        <input type="number" id="tenureCount" value="6" min="1" max="60" class="w-24 px-4 py-2 border rounded-xl outline-none font-bold" oninput="updatePaymentSchedule()">
                                     </div>
                                     <div id="schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                                 </div>
@@ -723,9 +723,6 @@
         const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
         const ADMIN_PASS = "Maaz@2026";
 
-        /**
-         * Helper: Format Date as YYYY-MM-DD using local time
-         */
         function formatDateLocal(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -853,8 +850,6 @@
                 renderAttendancePortal();
             });
         }
-
-        // --- ATTENDANCE DASHBOARD LOGIC ---
 
         function renderAttendancePortal() {
             if (!currentUser) return;
@@ -1320,13 +1315,29 @@
         document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
 
         window.updatePaymentSchedule = (existing = null) => {
-            const type = document.getElementById('paymentType').value; const payToday = document.getElementById('payToday').checked; const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); const container = document.getElementById('schedule-container'); const group = document.getElementById('tenure-input-group');
+            const type = document.getElementById('paymentType').value; 
+            const payToday = document.getElementById('payToday').checked; 
+            const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); 
+            const container = document.getElementById('schedule-container'); 
+            const group = document.getElementById('tenure-input-group');
+            
             container.innerHTML = '';
+            
             if (type === 'Single') {
-                group.classList.add('hidden'); const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? formatDateLocal(new Date()) : '' };
+                group.classList.add('hidden'); 
+                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? formatDateLocal(new Date()) : '' };
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
-                group.classList.remove('hidden'); const count = parseInt(document.getElementById('tenureCount').value); const perMonth = fee / count;
+                group.classList.remove('hidden');
+                
+                // CRITICAL FIX: Update tenureCount input if loading existing data
+                if (existing && existing.length > 0) {
+                    document.getElementById('tenureCount').value = existing.length;
+                }
+                
+                const count = parseInt(document.getElementById('tenureCount').value); 
+                const perMonth = fee / count;
+                
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
                     const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? formatDateLocal(new Date()) : '' };
