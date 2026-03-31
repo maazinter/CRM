@@ -724,20 +724,28 @@
 
         /**
          * Global Time Zone Management: New York (America/New_York)
+         * We avoid passing date objects through local parsing.
          */
-        function getNYDate(baseDate = new Date()) {
-            return new Date(baseDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
-        }
-
-        function formatDateLocal(date) {
-            const ny = getNYDate(date);
-            const y = ny.getFullYear();
-            const m = String(ny.getMonth() + 1).padStart(2, '0');
-            const d = String(ny.getDate()).padStart(2, '0');
+        function getNYDateString(baseDate = new Date()) {
+            // Returns a string directly: "YYYY-MM-DD"
+            const options = { timeZone: "America/New_York", year: 'numeric', month: '2-digit', day: '2-digit' };
+            const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(baseDate);
+            const y = parts.find(p => p.type === 'year').value;
+            const m = parts.find(p => p.type === 'month').value;
+            const d = parts.find(p => p.type === 'day').value;
             return `${y}-${m}-${d}`;
         }
 
-        let currentCalendarDate = getNYDate();
+        function getNYMonthYear(baseDate = new Date()) {
+            const options = { timeZone: "America/New_York", year: 'numeric', month: 'numeric' };
+            const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(baseDate);
+            return {
+                month: parseInt(parts.find(p => p.type === 'month').value) - 1, // 0-indexed
+                year: parseInt(parts.find(p => p.type === 'year').value)
+            };
+        }
+
+        let currentCalendarDate = new Date(); // This object is only used for relative month scrolling
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -860,10 +868,12 @@
             });
         }
 
+        // --- ATTENDANCE DASHBOARD LOGIC ---
+
         function renderAttendancePortal() {
             if (!currentUser) return;
             const container = document.getElementById('attendance-actions');
-            const todayStr = formatDateLocal(new Date());
+            const todayStr = getNYDateString(new Date());
             const myTodayRecord = attendance.find(a => a.userId === currentUser.id && a.date === todayStr && a.type === 'daily');
 
             let html = ``;
@@ -896,12 +906,15 @@
         function renderAttendanceCalendar() {
             const container = document.getElementById('calendar-days-container');
             const monthDisplay = document.getElementById('current-month-display');
-            const daysInMonth = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0).getDate();
-            const firstDayIndex = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1).getDay();
-            const todayStr = formatDateLocal(new Date());
+            
+            // Normalize current month/year based on New York context
+            const nyView = getNYMonthYear(currentCalendarDate);
+            const daysInMonth = new Date(nyView.year, nyView.month + 1, 0).getDate();
+            const firstDayIndex = new Date(nyView.year, nyView.month, 1).getDay();
+            const todayStr = getNYDateString(new Date());
             
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            monthDisplay.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+            monthDisplay.textContent = `${monthNames[nyView.month]} ${nyView.year}`;
 
             let html = ``;
             for (let i = 0; i < firstDayIndex; i++) html += `<div class="bg-white/40 calendar-day border border-slate-50/20 pointer-events-none readonly"></div>`;
@@ -921,8 +934,8 @@
             const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager';
 
             for (let day = 1; day <= daysInMonth; day++) {
-                const dateObj = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), day);
-                const dateStr = formatDateLocal(dateObj);
+                // Construct date string manually to avoid time zone shifts
+                const dateStr = `${nyView.year}-${String(nyView.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 const global = globalCalendar.find(g => g.date === dateStr);
                 const record = attendance.find(a => {
@@ -983,7 +996,7 @@
         function renderStaffOverview() {
             const grid = document.getElementById('today-staff-grid');
             if (!grid) return;
-            const todayStr = formatDateLocal(new Date());
+            const todayStr = getNYDateString(new Date());
             
             let staffList = users;
             if (currentUser.role === 'manager') staffList = users.filter(u => u.role === 'agent');
@@ -1115,7 +1128,7 @@
         }
 
         window.markAttendance = async () => {
-            const todayStr = formatDateLocal(new Date());
+            const todayStr = getNYDateString(new Date());
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: todayStr, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
                 showToast("Request sent");
@@ -1173,24 +1186,24 @@
             if (!currentUser || currentUser.role === 'agent') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyNow = getNYDate();
-            const currM = nyNow.getMonth();
-            const currY = nyNow.getFullYear();
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
             customers.forEach(c => {
                 const id = c.agentId || 'system';
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
                 if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
                 performance[id].totalSales++;
-                const createdDate = getNYDate(new Date(c.createdAt));
-                if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) performance[id].monthlySales++;
+                const nyCreated = getNYMonthYear(new Date(c.createdAt));
+                if (nyCreated.month === currM && nyCreated.year === currY) performance[id].monthlySales++;
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 sched.forEach(item => {
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        const payDate = getNYDate(new Date(item.date));
-                        if (payDate.getMonth() === currM && payDate.getFullYear() === currY) performance[id].monthlyRevenue += amt;
+                        const nyPay = getNYMonthYear(new Date(item.date));
+                        if (nyPay.month === currM && nyPay.year === currY) performance[id].monthlyRevenue += amt;
                     }
                 });
             });
@@ -1201,18 +1214,18 @@
         function renderPipelineStats(dataList = customers) {
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
-            const todayStr = formatDateLocal(new Date());
-            const nyNow = getNYDate();
-            const currM = nyNow.getMonth();
-            const currY = nyNow.getFullYear();
+            const todayStr = getNYDateString(new Date());
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
                         if (item.status === 'pending' && item.date) {
-                            const pd = getNYDate(new Date(item.date));
-                            return pd.getMonth() === currM && pd.getFullYear() === currY && item.date < todayStr;
+                            const nyItem = getNYMonthYear(new Date(item.date));
+                            return nyItem.month === currM && nyItem.year === currY && item.date < todayStr;
                         }
                         return false;
                     });
@@ -1229,26 +1242,26 @@
         }
 
         function calculateMetrics(dataList) {
-            const todayStr = formatDateLocal(new Date());
-            const nyNow = getNYDate();
-            const currM = nyNow.getMonth();
-            const currY = nyNow.getFullYear();
+            const todayStr = getNYDateString(new Date());
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const d = getNYDate(new Date(c.createdAt));
-                if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
+                const nyCreated = getNYMonthYear(new Date(c.createdAt));
+                if (nyCreated.month === currM && nyCreated.year === currY) metrics.monthCount++;
                 let addedToNsf = false;
                 sched.forEach(item => {
                     const amt = parseFloat(item.amount || 0);
                     if (item.status === 'paid') {
                         metrics.lifetimeRev += amt;
                         if (item.date === todayStr) metrics.todayRev += amt;
-                        const pd = getNYDate(new Date(item.date));
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
+                        const nyItem = getNYMonthYear(new Date(item.date));
+                        if (nyItem.month === currM && nyItem.year === currY) metrics.monthRev += amt;
                     } else if (item.date && c.status !== 'Cancel') {
-                        const pd = getNYDate(new Date(item.date));
-                        if (pd.getMonth() === currM && pd.getFullYear() === currY) {
+                        const nyItem = getNYMonthYear(new Date(item.date));
+                        if (nyItem.month === currM && nyItem.year === currY) {
                             if (item.date < todayStr) {
                                 if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); addedToNsf = true; }
                             } else {
@@ -1334,7 +1347,7 @@
             
             if (type === 'Single') {
                 group.classList.add('hidden'); 
-                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? formatDateLocal(new Date()) : '' };
+                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? getNYDateString(new Date()) : '' };
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
                 group.classList.remove('hidden');
@@ -1345,7 +1358,7 @@
                 const perMonth = fee / count;
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
-                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? formatDateLocal(new Date()) : '' };
+                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? getNYDateString(new Date()) : '' };
                     container.innerHTML += createScheduleItem(i, sched, false);
                 }
             }
