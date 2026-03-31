@@ -114,11 +114,11 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h2 class="text-3xl font-black text-slate-900 tracking-tight">Performance Overview</h2>
-                            <p class="text-slate-500 font-medium">Real-time statistics across all channels</p>
+                            <p class="text-slate-500 font-medium">Real-time statistics (New York Time)</p>
                         </div>
                         <div class="bg-white p-2 rounded-2xl border border-slate-100 flex items-center gap-2 shadow-sm">
                             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-2"></span>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">System Live</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">System Live - EST</span>
                         </div>
                     </div>
 
@@ -189,7 +189,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h2 class="text-3xl font-black text-slate-900 tracking-tight">Attendance & Leaves</h2>
-                            <p class="text-slate-500 font-medium">Track time and manage leave applications</p>
+                            <p class="text-slate-500 font-medium">Track time and manage leave applications (NY EST)</p>
                         </div>
                         <div id="attendance-actions" class="flex gap-3">
                             <!-- Populated via JS -->
@@ -201,7 +201,7 @@
                         <div class="xl:col-span-2 space-y-8">
                             <!-- Today's Overview (Manager/Admin Only) -->
                             <div id="staff-attendance-overview" class="hidden bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
-                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today's Staff Status</h4>
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today's Staff Status (NY Time)</h4>
                                 <div id="today-staff-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
                             </div>
 
@@ -718,17 +718,25 @@
         let nsfPaymentList = [];
         
         let viewingUserId = null; 
-        let currentCalendarDate = new Date();
-
-        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
-        const ADMIN_PASS = "Maaz@2026";
+        
+        /**
+         * Global Time Zone Management: New York (America/New_York)
+         */
+        function getNYDate(baseDate = new Date()) {
+            // Returns a Date object adjusted to NY time for visual consistency
+            // Note: Intl.DateTimeFormat is used for string display, but for calculations we normalize.
+            return new Date(baseDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        }
 
         function formatDateLocal(date) {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
+            const ny = getNYDate(date);
+            const y = ny.getFullYear();
+            const m = String(ny.getMonth() + 1).padStart(2, '0');
+            const d = String(ny.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
         }
+
+        let currentCalendarDate = getNYDate();
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -850,6 +858,8 @@
                 renderAttendancePortal();
             });
         }
+
+        // --- ATTENDANCE DASHBOARD LOGIC ---
 
         function renderAttendancePortal() {
             if (!currentUser) return;
@@ -1164,23 +1174,23 @@
             if (!currentUser || currentUser.role === 'agent') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const now = new Date();
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
+            const nyNow = getNYDate();
+            const currM = nyNow.getMonth();
+            const currY = nyNow.getFullYear();
             customers.forEach(c => {
                 const id = c.agentId || 'system';
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
                 if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
                 performance[id].totalSales++;
-                const createdDate = new Date(c.createdAt);
+                const createdDate = getNYDate(new Date(c.createdAt));
                 if (createdDate.getMonth() === currM && createdDate.getFullYear() === currY) performance[id].monthlySales++;
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 sched.forEach(item => {
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        const payDate = new Date(item.date);
+                        const payDate = getNYDate(new Date(item.date));
                         if (payDate.getMonth() === currM && payDate.getFullYear() === currY) performance[id].monthlyRevenue += amt;
                     }
                 });
@@ -1192,17 +1202,17 @@
         function renderPipelineStats(dataList = customers) {
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
-            const now = new Date();
-            const todayStr = formatDateLocal(now);
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
+            const todayStr = formatDateLocal(new Date());
+            const nyNow = getNYDate();
+            const currM = nyNow.getMonth();
+            const currY = nyNow.getFullYear();
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
                         if (item.status === 'pending' && item.date) {
-                            const pd = new Date(item.date);
+                            const pd = getNYDate(new Date(item.date));
                             return pd.getMonth() === currM && pd.getFullYear() === currY && item.date < todayStr;
                         }
                         return false;
@@ -1220,14 +1230,14 @@
         }
 
         function calculateMetrics(dataList) {
-            const now = new Date();
-            const todayStr = formatDateLocal(now);
-            const currM = now.getMonth();
-            const currY = now.getFullYear();
+            const todayStr = formatDateLocal(new Date());
+            const nyNow = getNYDate();
+            const currM = nyNow.getMonth();
+            const currY = nyNow.getFullYear();
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const d = new Date(c.createdAt);
+                const d = getNYDate(new Date(c.createdAt));
                 if (d.getMonth() === currM && d.getFullYear() === currY) metrics.monthCount++;
                 let addedToNsf = false;
                 sched.forEach(item => {
@@ -1235,10 +1245,10 @@
                     if (item.status === 'paid') {
                         metrics.lifetimeRev += amt;
                         if (item.date === todayStr) metrics.todayRev += amt;
-                        const pd = new Date(item.date);
+                        const pd = getNYDate(new Date(item.date));
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) metrics.monthRev += amt;
                     } else if (item.date && c.status !== 'Cancel') {
-                        const pd = new Date(item.date);
+                        const pd = getNYDate(new Date(item.date));
                         if (pd.getMonth() === currM && pd.getFullYear() === currY) {
                             if (item.date < todayStr) {
                                 if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); addedToNsf = true; }
@@ -1329,15 +1339,11 @@
                 container.innerHTML = createScheduleItem(1, sched, true);
             } else {
                 group.classList.remove('hidden');
-                
-                // CRITICAL FIX: Update tenureCount input if loading existing data
                 if (existing && existing.length > 0) {
                     document.getElementById('tenureCount').value = existing.length;
                 }
-                
                 const count = parseInt(document.getElementById('tenureCount').value); 
                 const perMonth = fee / count;
-                
                 for (let i = 1; i <= count; i++) {
                     const isFirstToday = (i === 1 && payToday);
                     const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? formatDateLocal(new Date()) : '' };
