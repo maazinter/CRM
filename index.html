@@ -719,12 +719,13 @@
         
         let viewingUserId = null; 
         
+        const ADMIN_EMAIL = "m.m.raza2932@gmail.com";
+        const ADMIN_PASS = "Maaz@2026";
+
         /**
          * Global Time Zone Management: New York (America/New_York)
          */
         function getNYDate(baseDate = new Date()) {
-            // Returns a Date object adjusted to NY time for visual consistency
-            // Note: Intl.DateTimeFormat is used for string display, but for calculations we normalize.
             return new Date(baseDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
         }
 
@@ -858,8 +859,6 @@
                 renderAttendancePortal();
             });
         }
-
-        // --- ATTENDANCE DASHBOARD LOGIC ---
 
         function renderAttendancePortal() {
             if (!currentUser) return;
