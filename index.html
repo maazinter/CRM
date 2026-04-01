@@ -637,7 +637,7 @@
             <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-red-600 text-white">
                 <div>
                     <h2 class="text-2xl font-black">NSF Sales List (Overdue)</h2>
-                    <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">Payments missed in current month</p>
+                    <p class="text-sm font-bold opacity-80 uppercase tracking-widest mt-1">All Overdue pending payments</p>
                 </div>
                 <button onclick="closeNsfModal()" class="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1183,9 +1183,9 @@
             if (!currentUser || currentUser.role === 'agent') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyView = getNYMonthYear(new Date());
-            const currM = nyView.month;
-            const currY = nyView.year;
+            const nyNow = getNYMonthYear(new Date());
+            const currM = nyNow.month;
+            const currY = nyNow.year;
             customers.forEach(c => {
                 const id = c.agentId || 'system';
                 let name = c.agentName || 'Unassigned';
@@ -1214,9 +1214,9 @@
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
             const todayStr = getNYDateString(new Date());
-            const nyView = getNYMonthYear(new Date());
-            const currM = nyView.month;
-            const currY = nyView.year;
+            const nyNow = getNYMonthYear(new Date());
+            const currM = nyNow.month;
+            const currY = nyNow.year;
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
@@ -1266,18 +1266,17 @@
                         if (item.date === todayStr) metrics.todayRev += amt;
                         if (itemM === currM && itemY === currY) metrics.monthRev += amt;
                     } else if (c.status !== 'Cancel') {
-                        // Only calculate MTD logic for items within current NY month/year
-                        if (itemM === currM && itemY === currY) {
-                            if (item.date < todayStr) {
-                                if (!addedToNsf) { 
-                                    metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
-                                    addedToNsf = true; 
-                                }
-                            } else {
-                                // Includes Today (if pending) and future dates in current month
-                                metrics.upcomingMonth += amt;
-                                metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
+                        // NSF / Overdue calculation (all dates before today)
+                        if (item.date < todayStr) {
+                            if (!addedToNsf) { 
+                                metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
+                                addedToNsf = true; 
                             }
+                        } 
+                        // Upcoming calculation (Today or future dates strictly within current NY month/year)
+                        else if (itemM === currM && itemY === currY) {
+                            metrics.upcomingMonth += amt;
+                            metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
                         }
                     }
                 });
