@@ -23,7 +23,8 @@
         .calendar-day.readonly:hover { filter: none; }
 
         /* Chat Styles */
-        .chat-container { height: calc(100vh - 300px); min-height: 400px; }
+        .chat-container { height: calc(100vh - 300px); min-height: 450px; }
+        #chat-messages-list.drag-over { background-color: rgba(37, 99, 235, 0.05); border: 2px dashed #2563eb; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -317,7 +318,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h2 class="text-3xl font-black text-slate-900 tracking-tight">Team Communication</h2>
-                            <p class="text-slate-500 font-medium">Internal broadcast and secure collaboration</p>
+                            <p class="text-slate-500 font-medium">Broadcast messages and share media (New York Time)</p>
                         </div>
                         <button id="admin-clear-chat-btn" onclick="clearTeamChat()" class="hidden bg-red-50 text-red-600 border border-red-100 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition shadow-sm">Clear All History</button>
                     </div>
@@ -332,8 +333,16 @@
 
                         <!-- Chat Input Area -->
                         <div class="p-6 bg-white border-t border-slate-100">
-                            <form id="chat-input-form" class="flex items-end gap-4">
-                                <textarea id="chat-input-field" placeholder="Type your message here... (Enter to send, Shift + Enter for new line)" required class="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium transition-all resize-none h-[56px] custom-scroll"></textarea>
+                            <form id="chat-input-form" class="flex items-end gap-3">
+                                <!-- Hidden File Input -->
+                                <input type="file" id="chat-file-input" class="hidden" multiple onchange="handleFileSelection(event)">
+                                
+                                <button type="button" onclick="document.getElementById('chat-file-input').click()" class="p-4 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-2xl transition-all shadow-sm flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                </button>
+                                
+                                <textarea id="chat-input-field" placeholder="Type message... (Drag & Drop files here)" required class="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium transition-all resize-none h-[56px] custom-scroll"></textarea>
+                                
                                 <button type="submit" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center gap-2">
                                     Send
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
@@ -607,7 +616,7 @@
         </div>
     </div>
 
-    <!-- Modals & Day Management -->
+    <!-- Day Management Modal -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
@@ -922,11 +931,38 @@
                 return;
             }
 
-            // Sort by timestamp
             const sorted = chatMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
             list.innerHTML = sorted.map(msg => {
                 const isMe = msg.senderId === currentUser.id;
+                let attachmentHtml = '';
+                
+                if (msg.fileData) {
+                    if (msg.fileType.startsWith('image/')) {
+                        attachmentHtml = `
+                            <div class="mt-2 relative group">
+                                <img src="${msg.fileData}" class="max-w-full h-auto rounded-xl shadow-sm border border-slate-100 max-h-[300px]" alt="${msg.fileName}">
+                                <a href="${msg.fileData}" download="${msg.fileName}" class="absolute top-2 right-2 bg-white/90 p-2 rounded-lg text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                </a>
+                            </div>`;
+                    } else {
+                        attachmentHtml = `
+                            <div class="mt-2 flex items-center gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100/50 group">
+                                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-black text-slate-700 truncate">${msg.fileName}</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase">${(msg.fileSize / 1024).toFixed(1)} KB</p>
+                                </div>
+                                <a href="${msg.fileData}" download="${msg.fileName}" class="p-2 bg-white text-blue-600 rounded-lg shadow-sm hover:shadow-md transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                </a>
+                            </div>`;
+                    }
+                }
+
                 return `
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-fade-in">
                         <div class="flex items-center gap-2 mb-1 px-2">
@@ -934,7 +970,8 @@
                             <span class="text-[8px] font-bold text-slate-300 uppercase">${msg.timeStr}</span>
                         </div>
                         <div class="max-w-[80%] px-6 py-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none shadow-sm'}">
-                            <p class="text-sm font-medium whitespace-pre-wrap">${msg.text}</p>
+                            ${msg.text ? `<p class="text-sm font-medium whitespace-pre-wrap">${msg.text}</p>` : ''}
+                            ${attachmentHtml}
                         </div>
                     </div>
                 `;
@@ -943,9 +980,62 @@
             list.scrollTop = list.scrollHeight;
         }
 
+        /**
+         * Enhanced File Handling Logic
+         */
+        async function sendFile(file) {
+            if (file.size > 800000) { // Keep under 1MB limit for Firestore doc
+                showToast("File too large (Max 800KB)");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const now = new Date();
+                const payload = {
+                    text: "",
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    fileData: e.target.result, // base64
+                    senderId: currentUser.id,
+                    senderName: currentUser.name,
+                    senderRole: currentUser.role,
+                    createdAt: now.toISOString(),
+                    timeStr: now.toLocaleTimeString("en-US", {timeZone: "America/New_York", hour: '2-digit', minute:'2-digit'})
+                };
+                
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), payload);
+                    showToast(`Sent: ${file.name}`);
+                } catch (err) {
+                    showToast("Failed to upload file");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.handleFileSelection = (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(sendFile);
+        };
+
+        // Drag and Drop implementation
+        const chatList = document.getElementById('chat-messages-list');
+        chatList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            chatList.classList.add('drag-over');
+        });
+        chatList.addEventListener('dragleave', () => chatList.classList.remove('drag-over'));
+        chatList.addEventListener('drop', (e) => {
+            e.preventDefault();
+            chatList.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            files.forEach(sendFile);
+        });
+
         const chatField = document.getElementById('chat-input-field');
         chatField.addEventListener('keydown', (e) => {
-            // UPDATED: Enter to send, Shift + Enter for new line
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 document.getElementById('chat-input-form').requestSubmit();
@@ -1323,7 +1413,6 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
