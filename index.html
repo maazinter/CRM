@@ -25,6 +25,9 @@
         /* Chat Styles */
         .chat-container { height: calc(100vh - 300px); min-height: 450px; }
         #chat-messages-list.drag-over { background-color: rgba(37, 99, 235, 0.05); border: 2px dashed #2563eb; }
+        
+        /* Notification Badge */
+        .nav-badge { position: absolute; top: 12px; right: 12px; height: 8px; width: 8px; border-radius: 999px; background-color: #ef4444; border: 2px solid white; display: none; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -94,9 +97,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         Attendance
                     </button>
-                    <button onclick="switchTab('team-chat')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-team-chat">
+                    <button onclick="switchTab('team-chat')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm relative" id="nav-team-chat">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                         Team Chat
+                        <span id="chat-notification-badge" class="nav-badge"></span>
                     </button>
                     <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-add-customer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -334,7 +338,6 @@
                         <!-- Chat Input Area -->
                         <div class="p-6 bg-white border-t border-slate-100">
                             <form id="chat-input-form" class="flex items-end gap-3">
-                                <!-- Hidden File Input -->
                                 <input type="file" id="chat-file-input" class="hidden" multiple onchange="handleFileSelection(event)">
                                 
                                 <button type="button" onclick="document.getElementById('chat-file-input').click()" class="p-4 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-2xl transition-all shadow-sm flex items-center justify-center">
@@ -765,6 +768,7 @@
         let authUser = null;
         let upcomingPaymentList = [];
         let nsfPaymentList = [];
+        let lastChatSync = false;
         
         let viewingUserId = null; 
         
@@ -866,7 +870,11 @@
             applyRolePermissions();
             syncDataStreams();
 
-            // Automatic Tab Redirection for Chat Support
+            // Request Notification Permission
+            if (window.Notification && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+
             if (currentUser.role === 'chat-support') {
                 switchTab('team-chat');
             } else {
@@ -884,14 +892,12 @@
             const role = currentUser.role;
             const isChatOnly = role === 'chat-support';
 
-            // Sidebar Visibility
             document.getElementById('nav-dashboard').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-attendance').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-add-customer').classList.toggle('hidden', isChatOnly || role === 'manager');
             document.getElementById('nav-customer-list').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
             
-            // UI Content Visibility
             document.getElementById('admin-status-section').classList.toggle('hidden', role !== 'admin');
             document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent' || isChatOnly);
             document.getElementById('admin-agent-select-group').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
@@ -932,11 +938,59 @@
                 snap.forEach(d => globalCalendar.push({ ...d.data(), id: d.id }));
                 renderAttendancePortal();
             });
+
+            // Chat Sync with New Message Notification logic
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), (snap) => {
+                const isInitial = !lastChatSync;
+                lastChatSync = true;
+
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added" && !isInitial) {
+                        const msg = change.doc.data();
+                        if (msg.senderId !== currentUser.id) {
+                            handleIncomingNotification(msg);
+                        }
+                    }
+                });
+
                 chatMessages = [];
                 snap.forEach(d => chatMessages.push({ ...d.data(), id: d.id }));
                 renderTeamChat();
             });
+        }
+
+        /**
+         * System Notification Logic
+         */
+        function handleIncomingNotification(msg) {
+            // Internal Badge
+            if (document.getElementById('tab-team-chat').classList.contains('hidden')) {
+                document.getElementById('chat-notification-badge').style.display = 'block';
+            }
+
+            // System Audio Alert
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+
+            // Desktop Notification
+            if (window.Notification && Notification.permission === "granted") {
+                const notification = new Notification(`New message from ${msg.senderName}`, {
+                    body: msg.text || (msg.fileData ? "Shared a file" : "New message"),
+                    icon: "https://cdn-icons-png.flaticon.com/512/2593/2593635.png"
+                });
+                notification.onclick = () => {
+                    window.focus();
+                    switchTab('team-chat');
+                };
+            }
         }
 
         // --- TEAM CHAT LOGIC ---
@@ -957,7 +1011,7 @@
                 let attachmentHtml = '';
                 
                 if (msg.fileData) {
-                    if (msg.fileType.startsWith('image/')) {
+                    if (msg.fileType && msg.fileType.startsWith('image/')) {
                         attachmentHtml = `
                             <div class="mt-2 relative group">
                                 <img src="${msg.fileData}" class="max-w-full h-auto rounded-xl shadow-sm border border-slate-100 max-h-[300px]" alt="${msg.fileName}">
@@ -967,13 +1021,13 @@
                             </div>`;
                     } else {
                         attachmentHtml = `
-                            <div class="mt-2 flex items-center gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100/50 group">
+                            <div class="mt-2 flex items-center gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100/50 group text-slate-700">
                                 <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-xs font-black text-slate-700 truncate">${msg.fileName}</p>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase">${(msg.fileSize / 1024).toFixed(1)} KB</p>
+                                    <p class="text-xs font-black truncate">${msg.fileName}</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase">${msg.fileSize ? (msg.fileSize / 1024).toFixed(1) + ' KB' : 'FILE'}</p>
                                 </div>
                                 <a href="${msg.fileData}" download="${msg.fileName}" class="p-2 bg-white text-blue-600 rounded-lg shadow-sm hover:shadow-md transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -1023,7 +1077,6 @@
                 
                 try {
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), payload);
-                    showToast(`Sent: ${file.name}`);
                 } catch (err) {
                     showToast("Failed to upload file");
                 }
@@ -1106,7 +1159,7 @@
 
             let html = ``;
             if (viewingUserId === null) {
-                if (currentUser.role !== 'admin' && !myTodayRecord) {
+                if (currentUser.role !== 'admin' && currentUser.role !== 'chat-support' && !myTodayRecord) {
                     html += `<button onclick="markAttendance()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-100">Mark Present</button>`;
                 } else if (myTodayRecord) {
                     const statusColor = myTodayRecord.status === 'approved' ? 'text-green-600' : 'text-amber-500';
@@ -1312,72 +1365,6 @@
             } catch(e) { showToast("Error"); }
         }
 
-        function renderApprovalQueue() {
-            const list = document.getElementById('pending-approvals-list');
-            if (!list) return;
-            const pending = attendance.filter(a => a.status === 'pending');
-            let visiblePending = pending;
-            if (currentUser.role === 'manager') {
-                visiblePending = pending.filter(a => {
-                    const user = users.find(u => u.id === a.userId);
-                    return user && user.role === 'agent';
-                });
-            }
-            list.innerHTML = visiblePending.length ? visiblePending.map(a => {
-                const user = users.find(u => u.id === a.userId);
-                const isLeave = a.type === 'leave' || a.type === 'ul';
-                const label = a.type === 'hd' ? "HALF DAY" : (a.type === 'ul' ? "UNSCHED LEAVE" : (a.type === 'leave' ? "LEAVE" : "ATTENDANCE"));
-                return `
-                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-[10px] font-black text-slate-900 uppercase">${user?.name || 'Unknown'}</p>
-                                <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
-                                    ${label}: ${a.date || a.startDate}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Approve</button>
-                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Deny</button>
-                        </div>
-                    </div>
-                `;
-            }).join('') : `<p class="text-center py-10 text-[10px] font-bold text-slate-400 uppercase italic">No requests</p>`;
-        }
-
-        window.processApproval = async (id, status) => {
-            try {
-                if (status === 'denied') { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id)); showToast("Denied"); }
-                else { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status: 'approved' }); showToast("Approved"); }
-            } catch(e) {}
-        }
-
-        window.markAttendance = async () => {
-            const todayStr = getNYDateString(new Date());
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: todayStr, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
-                showToast("Request sent");
-            } catch(e) {}
-        }
-
-        window.setGlobalDateMarker = async (type) => {
-            if (currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
-            const date = document.getElementById('manage-date-subtitle').dataset.date;
-            try {
-                const existing = globalCalendar.find(g => g.date === date);
-                if (type === 'Normal') { if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id)); }
-                else {
-                    if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
-                    else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
-                }
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Global calendar updated");
-            } catch(e) {}
-        }
-
-        window.changeMonth = (dir) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); renderAttendancePortal(); }
-
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
             const currentVal = select.value;
@@ -1428,7 +1415,6 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
@@ -1553,10 +1539,13 @@
         }
 
         window.switchTab = (id) => {
-            // Validation for Chat Support
             if (currentUser.role === 'chat-support' && id !== 'team-chat') {
                 showToast("Access Restricted to Chat only.");
                 return;
+            }
+
+            if (id === 'team-chat') {
+                document.getElementById('chat-notification-badge').style.display = 'none';
             }
 
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
