@@ -21,6 +21,9 @@
         .calendar-day:hover { filter: brightness(0.96); }
         .calendar-day.readonly { cursor: default; }
         .calendar-day.readonly:hover { filter: none; }
+
+        /* Chat Styles */
+        .chat-container { height: calc(100vh - 300px); min-height: 400px; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 custom-scroll overflow-x-hidden">
@@ -89,6 +92,10 @@
                     <button onclick="switchTab('attendance')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-attendance">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         Attendance
+                    </button>
+                    <button onclick="switchTab('team-chat')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-team-chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        Team Chat
                     </button>
                     <button onclick="switchTab('add-customer')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-add-customer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -301,6 +308,37 @@
                                 <h4 class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Approval Queue</h4>
                                 <div id="pending-approvals-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scroll"></div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chat Tab -->
+                <section id="tab-team-chat" class="tab-content hidden animate-fade-in space-y-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Team Communication</h2>
+                            <p class="text-slate-500 font-medium">Internal broadcast and secure collaboration</p>
+                        </div>
+                        <button id="admin-clear-chat-btn" onclick="clearTeamChat()" class="hidden bg-red-50 text-red-600 border border-red-100 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition shadow-sm">Clear All History</button>
+                    </div>
+
+                    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col chat-container">
+                        <!-- Chat Messages List -->
+                        <div id="chat-messages-list" class="flex-1 overflow-y-auto p-8 space-y-6 custom-scroll bg-slate-50/30">
+                            <div class="flex items-center justify-center h-full text-slate-400 font-bold italic text-sm">
+                                Loading team conversations...
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Area -->
+                        <div class="p-6 bg-white border-t border-slate-100">
+                            <form id="chat-input-form" class="flex gap-4">
+                                <input type="text" id="chat-input-field" placeholder="Type your message here..." required autocomplete="off" class="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium transition-all">
+                                <button type="submit" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center gap-2">
+                                    Send Message
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </section>
@@ -569,7 +607,7 @@
         </div>
     </div>
 
-    <!-- Day Management Modal -->
+    <!-- Modals & Day Management same as before -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
@@ -577,7 +615,6 @@
                 <p id="manage-date-subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"></p>
             </div>
             <div class="p-6 space-y-6">
-                <!-- Individual Attendance (For staff) -->
                 <div id="staff-edit-controls" class="space-y-3 hidden">
                     <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Staff Attendance</h3>
                     <div class="grid grid-cols-2 gap-3">
@@ -590,8 +627,6 @@
                         <button onclick="setStaffAttendance('ul', 'approved')" class="bg-rose-50 text-rose-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-rose-100 hover:bg-rose-100 transition">Unscheduled (UL)</button>
                     </div>
                 </div>
-
-                <!-- Global Markers -->
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
@@ -692,7 +727,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
@@ -712,6 +747,7 @@
         let customers = [];
         let attendance = [];
         let globalCalendar = [];
+        let chatMessages = [];
         let currentUser = null;
         let authUser = null;
         let upcomingPaymentList = [];
@@ -723,8 +759,7 @@
         const ADMIN_PASS = "Maaz@2026";
 
         /**
-         * Global Time Zone Management: New York (America/New_York)
-         * We avoid passing date objects through local parsing.
+         * Global Time Zone Management: New York (EST)
          */
         function getNYDateString(baseDate = new Date()) {
             const options = { timeZone: "America/New_York", year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -739,7 +774,7 @@
             const options = { timeZone: "America/New_York", year: 'numeric', month: 'numeric' };
             const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(baseDate);
             return {
-                month: parseInt(parts.find(p => p.type === 'month').value) - 1, // 0-indexed
+                month: parseInt(parts.find(p => p.type === 'month').value) - 1,
                 year: parseInt(parts.find(p => p.type === 'year').value)
             };
         }
@@ -819,6 +854,10 @@
             syncDataStreams();
             switchTab('dashboard');
             showToast(`Welcome back, ${currentUser.name.split(' ')[0]}`);
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-clear-chat-btn').classList.remove('hidden');
+            }
         }
 
         function applyRolePermissions() {
@@ -865,7 +904,83 @@
                 snap.forEach(d => globalCalendar.push({ ...d.data(), id: d.id }));
                 renderAttendancePortal();
             });
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), (snap) => {
+                chatMessages = [];
+                snap.forEach(d => chatMessages.push({ ...d.data(), id: d.id }));
+                renderTeamChat();
+            });
         }
+
+        // --- TEAM CHAT LOGIC ---
+
+        function renderTeamChat() {
+            const list = document.getElementById('chat-messages-list');
+            if (!list) return;
+
+            if (chatMessages.length === 0) {
+                list.innerHTML = `<div class="flex items-center justify-center h-full text-slate-400 font-bold italic text-sm">No messages yet. Start the conversation!</div>`;
+                return;
+            }
+
+            // Sort by timestamp
+            const sorted = chatMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+            list.innerHTML = sorted.map(msg => {
+                const isMe = msg.senderId === currentUser.id;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-fade-in">
+                        <div class="flex items-center gap-2 mb-1 px-2">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">${msg.senderName} (${msg.senderRole})</span>
+                            <span class="text-[8px] font-bold text-slate-300 uppercase">${msg.timeStr}</span>
+                        </div>
+                        <div class="max-w-[80%] px-6 py-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none shadow-sm'}">
+                            <p class="text-sm font-medium whitespace-pre-wrap">${msg.text}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            list.scrollTop = list.scrollHeight;
+        }
+
+        document.getElementById('chat-input-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input-field');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            const payload = {
+                text: text,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                senderRole: currentUser.role,
+                createdAt: now.toISOString(),
+                timeStr: now.toLocaleTimeString("en-US", {timeZone: "America/New_York", hour: '2-digit', minute:'2-digit'})
+            };
+
+            try {
+                input.value = '';
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), payload);
+            } catch (err) {
+                showToast("Chat Failed to send");
+            }
+        });
+
+        window.clearTeamChat = async () => {
+            if (currentUser.role !== 'admin') return;
+            if (!confirm("Are you sure you want to delete ALL chat history? This cannot be undone.")) return;
+
+            try {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'chat'));
+                const batch = writeBatch(db);
+                snap.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                showToast("Chat history cleared");
+            } catch (err) {
+                showToast("Failed to clear chat");
+            }
+        };
 
         // --- ATTENDANCE DASHBOARD LOGIC ---
 
@@ -1183,9 +1298,9 @@
             if (!currentUser || currentUser.role === 'agent') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyNow = getNYMonthYear(new Date());
-            const currM = nyNow.month;
-            const currY = nyNow.year;
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
             customers.forEach(c => {
                 const id = c.agentId || 'system';
                 let name = c.agentName || 'Unassigned';
@@ -1200,7 +1315,6 @@
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
                         
-                        // Parse date string directly to avoid offset jump
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
@@ -1214,9 +1328,9 @@
             const container = document.getElementById('pipeline-stats');
             const counts = { 'Active': 0, 'Cancel': 0, 'NSF': 0 };
             const todayStr = getNYDateString(new Date());
-            const nyNow = getNYMonthYear(new Date());
-            const currM = nyNow.month;
-            const currY = nyNow.year;
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
@@ -1266,14 +1380,12 @@
                         if (item.date === todayStr) metrics.todayRev += amt;
                         if (itemM === currM && itemY === currY) metrics.monthRev += amt;
                     } else if (c.status !== 'Cancel') {
-                        // NSF / Overdue calculation (all dates before today)
                         if (item.date < todayStr) {
                             if (!addedToNsf) { 
                                 metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
                                 addedToNsf = true; 
                             }
                         } 
-                        // Upcoming calculation (Today or future dates strictly within current NY month/year)
                         else if (itemM === currM && itemY === currY) {
                             metrics.upcomingMonth += amt;
                             metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
@@ -1332,6 +1444,7 @@
             document.getElementById(`tab-${id}`).classList.remove('hidden');
             const nav = document.getElementById(`nav-${id}`); if (nav) nav.classList.add('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200');
             if (id === 'attendance') { viewingUserId = null; renderAttendancePortal(); }
+            if (id === 'team-chat') { renderTeamChat(); }
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
                 if(!sidebar.classList.contains('-translate-x-full')) toggleMobileMenu();
