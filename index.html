@@ -102,7 +102,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Enroll Customer
                     </button>
-                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm" id="nav-customer-list">
+                    <button onclick="switchTab('customer-list')" class="nav-link w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-600 hover:bg-slate-50 transition font-black text-sm hidden" id="nav-customer-list">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                         Enrollment Database
                     </button>
@@ -590,6 +590,7 @@
                                 <select name="userRole" id="user-field-role" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
                                     <option value="agent">Agent</option>
                                     <option value="manager">Manager</option>
+                                    <option value="chat-support">Chat Support</option>
                                     <option value="admin">Administrator</option>
                                 </select>
                                 <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Deploy Account</button>
@@ -624,6 +625,7 @@
                 <p id="manage-date-subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"></p>
             </div>
             <div class="p-6 space-y-6">
+                <!-- Individual Attendance (For staff) -->
                 <div id="staff-edit-controls" class="space-y-3 hidden">
                     <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Staff Attendance</h3>
                     <div class="grid grid-cols-2 gap-3">
@@ -636,6 +638,8 @@
                         <button onclick="setStaffAttendance('ul', 'approved')" class="bg-rose-50 text-rose-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-rose-100 hover:bg-rose-100 transition">Unscheduled (UL)</button>
                     </div>
                 </div>
+
+                <!-- Global Markers -->
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
@@ -861,7 +865,14 @@
             
             applyRolePermissions();
             syncDataStreams();
-            switchTab('dashboard');
+
+            // Automatic Tab Redirection for Chat Support
+            if (currentUser.role === 'chat-support') {
+                switchTab('team-chat');
+            } else {
+                switchTab('dashboard');
+            }
+            
             showToast(`Welcome back, ${currentUser.name.split(' ')[0]}`);
 
             if (currentUser.role === 'admin') {
@@ -871,15 +882,23 @@
 
         function applyRolePermissions() {
             const role = currentUser.role;
-            document.getElementById('nav-add-customer').classList.toggle('hidden', role === 'manager');
+            const isChatOnly = role === 'chat-support';
+
+            // Sidebar Visibility
+            document.getElementById('nav-dashboard').classList.toggle('hidden', isChatOnly);
+            document.getElementById('nav-attendance').classList.toggle('hidden', isChatOnly);
+            document.getElementById('nav-add-customer').classList.toggle('hidden', isChatOnly || role === 'manager');
+            document.getElementById('nav-customer-list').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
+            
+            // UI Content Visibility
             document.getElementById('admin-status-section').classList.toggle('hidden', role !== 'admin');
-            document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent');
+            document.getElementById('agent-performance-section').classList.toggle('hidden', role === 'agent' || isChatOnly);
             document.getElementById('admin-agent-select-group').classList.toggle('hidden', role !== 'admin' && role !== 'manager');
             
-            document.getElementById('leave-form-container').classList.toggle('hidden', role === 'admin');
-            document.getElementById('staff-attendance-overview').classList.toggle('hidden', role === 'agent');
-            document.getElementById('approval-queue-container').classList.toggle('hidden', role === 'agent');
+            document.getElementById('leave-form-container').classList.toggle('hidden', role === 'admin' || isChatOnly);
+            document.getElementById('staff-attendance-overview').classList.toggle('hidden', role === 'agent' || isChatOnly);
+            document.getElementById('approval-queue-container').classList.toggle('hidden', role === 'agent' || isChatOnly);
         }
 
         document.getElementById('logout-btn').addEventListener('click', () => {
@@ -895,7 +914,7 @@
                 renderUsers();
                 renderAgentPerformance();
                 populateAgentSelect();
-                if (currentUser.role !== 'agent') renderStaffOverview();
+                if (currentUser.role !== 'agent' && currentUser.role !== 'chat-support') renderStaffOverview();
             });
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
                 customers = [];
@@ -980,11 +999,8 @@
             list.scrollTop = list.scrollHeight;
         }
 
-        /**
-         * Enhanced File Handling Logic
-         */
         async function sendFile(file) {
-            if (file.size > 800000) { // Keep under 1MB limit for Firestore doc
+            if (file.size > 800000) { 
                 showToast("File too large (Max 800KB)");
                 return;
             }
@@ -997,7 +1013,7 @@
                     fileName: file.name,
                     fileType: file.type,
                     fileSize: file.size,
-                    fileData: e.target.result, // base64
+                    fileData: e.target.result, 
                     senderId: currentUser.id,
                     senderName: currentUser.name,
                     senderRole: currentUser.role,
@@ -1020,7 +1036,6 @@
             files.forEach(sendFile);
         };
 
-        // Drag and Drop implementation
         const chatList = document.getElementById('chat-messages-list');
         chatList.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -1110,7 +1125,7 @@
 
             renderAttendanceCalendar();
 
-            if (currentUser.role !== 'agent') {
+            if (currentUser.role !== 'agent' && currentUser.role !== 'chat-support') {
                 renderStaffOverview();
                 renderApprovalQueue();
             }
@@ -1258,7 +1273,7 @@
         }
 
         window.openDayManagement = (dateStr) => {
-            if (currentUser.role === 'agent') return;
+            if (currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             document.getElementById('manage-date-title').textContent = "Manage " + dateStr;
             const subtitle = document.getElementById('manage-date-subtitle');
             subtitle.dataset.date = dateStr;
@@ -1347,7 +1362,7 @@
         }
 
         window.setGlobalDateMarker = async (type) => {
-            if (currentUser.role === 'agent') return;
+            if (currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
                 const existing = globalCalendar.find(g => g.date === date);
@@ -1394,7 +1409,7 @@
         }
 
         function renderAgentPerformance() {
-            if (!currentUser || currentUser.role === 'agent') return;
+            if (!currentUser || currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
             const nyView = getNYMonthYear(new Date());
@@ -1413,6 +1428,7 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
+                        
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
@@ -1537,6 +1553,12 @@
         }
 
         window.switchTab = (id) => {
+            // Validation for Chat Support
+            if (currentUser.role === 'chat-support' && id !== 'team-chat') {
+                showToast("Access Restricted to Chat only.");
+                return;
+            }
+
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('bg-blue-600', 'text-white', 'shadow-xl', 'shadow-blue-200'));
             document.getElementById(`tab-${id}`).classList.remove('hidden');
