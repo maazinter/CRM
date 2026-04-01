@@ -727,7 +727,6 @@
          * We avoid passing date objects through local parsing.
          */
         function getNYDateString(baseDate = new Date()) {
-            // Returns a string directly: "YYYY-MM-DD"
             const options = { timeZone: "America/New_York", year: 'numeric', month: '2-digit', day: '2-digit' };
             const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(baseDate);
             const y = parts.find(p => p.type === 'year').value;
@@ -745,7 +744,7 @@
             };
         }
 
-        let currentCalendarDate = new Date(); // This object is only used for relative month scrolling
+        let currentCalendarDate = new Date(); 
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -907,7 +906,6 @@
             const container = document.getElementById('calendar-days-container');
             const monthDisplay = document.getElementById('current-month-display');
             
-            // Normalize current month/year based on New York context
             const nyView = getNYMonthYear(currentCalendarDate);
             const daysInMonth = new Date(nyView.year, nyView.month + 1, 0).getDate();
             const firstDayIndex = new Date(nyView.year, nyView.month, 1).getDay();
@@ -934,7 +932,6 @@
             const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager';
 
             for (let day = 1; day <= daysInMonth; day++) {
-                // Construct date string manually to avoid time zone shifts
                 const dateStr = `${nyView.year}-${String(nyView.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 const global = globalCalendar.find(g => g.date === dateStr);
@@ -1202,8 +1199,10 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        const nyPay = getNYMonthYear(new Date(item.date));
-                        if (nyPay.month === currM && nyPay.year === currY) performance[id].monthlyRevenue += amt;
+                        
+                        // Parse date string directly to avoid offset jump
+                        const [py, pm, pd] = item.date.split('-').map(Number);
+                        if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
                 });
             });
@@ -1224,8 +1223,8 @@
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
                         if (item.status === 'pending' && item.date) {
-                            const nyItem = getNYMonthYear(new Date(item.date));
-                            return nyItem.month === currM && nyItem.year === currY && item.date < todayStr;
+                            const [iy, im, id] = item.date.split('-').map(Number);
+                            return (im - 1) === currM && iy === currY && item.date < todayStr;
                         }
                         return false;
                     });
@@ -1247,24 +1246,35 @@
             const currM = nyView.month;
             const currY = nyView.year;
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
+            
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const nyCreated = getNYMonthYear(new Date(c.createdAt));
                 if (nyCreated.month === currM && nyCreated.year === currY) metrics.monthCount++;
+                
                 let addedToNsf = false;
                 sched.forEach(item => {
+                    if (!item.date) return;
+                    
                     const amt = parseFloat(item.amount || 0);
+                    const [iy, im, id] = item.date.split('-').map(Number);
+                    const itemM = im - 1;
+                    const itemY = iy;
+
                     if (item.status === 'paid') {
                         metrics.lifetimeRev += amt;
                         if (item.date === todayStr) metrics.todayRev += amt;
-                        const nyItem = getNYMonthYear(new Date(item.date));
-                        if (nyItem.month === currM && nyItem.year === currY) metrics.monthRev += amt;
-                    } else if (item.date && c.status !== 'Cancel') {
-                        const nyItem = getNYMonthYear(new Date(item.date));
-                        if (nyItem.month === currM && nyItem.year === currY) {
+                        if (itemM === currM && itemY === currY) metrics.monthRev += amt;
+                    } else if (c.status !== 'Cancel') {
+                        // Only calculate MTD logic for items within current NY month/year
+                        if (itemM === currM && itemY === currY) {
                             if (item.date < todayStr) {
-                                if (!addedToNsf) { metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); addedToNsf = true; }
+                                if (!addedToNsf) { 
+                                    metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
+                                    addedToNsf = true; 
+                                }
                             } else {
+                                // Includes Today (if pending) and future dates in current month
                                 metrics.upcomingMonth += amt;
                                 metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
                             }
