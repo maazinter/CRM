@@ -1277,8 +1277,9 @@
             if (!grid) return;
             const todayStr = getNYDateString(new Date());
             
-            let staffList = users;
-            if (currentUser.role === 'manager') staffList = users.filter(u => u.role === 'agent');
+            // UPDATED: Exclude Chat Support from list
+            let staffList = users.filter(u => u.role !== 'chat-support');
+            if (currentUser.role === 'manager') staffList = staffList.filter(u => u.role === 'agent');
 
             grid.innerHTML = staffList.map(u => {
                 const record = attendance.find(a => {
@@ -1364,6 +1365,76 @@
                 showToast("Marked as Absent");
             } catch(e) { showToast("Error"); }
         }
+
+        function renderApprovalQueue() {
+            const list = document.getElementById('pending-approvals-list');
+            if (!list) return;
+            const pending = attendance.filter(a => a.status === 'pending');
+            let visiblePending = pending;
+            if (currentUser.role === 'manager') {
+                visiblePending = pending.filter(a => {
+                    const user = users.find(u => u.id === a.userId);
+                    return user && user.role === 'agent';
+                });
+            }
+            // UPDATED: Exclude Chat Support requests
+            list.innerHTML = visiblePending.length ? visiblePending.filter(a => {
+                const u = users.find(x => x.id === a.userId);
+                return u && u.role !== 'chat-support';
+            }).map(a => {
+                const user = users.find(u => u.id === a.userId);
+                const isLeave = a.type === 'leave' || a.type === 'ul';
+                const label = a.type === 'hd' ? "HALF DAY" : (a.type === 'ul' ? "UNSCHED LEAVE" : (a.type === 'leave' ? "LEAVE" : "ATTENDANCE"));
+                return `
+                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-900 uppercase">${user?.name || 'Unknown'}</p>
+                                <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
+                                    ${label}: ${a.date || a.startDate}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="processApproval('${a.id}', 'approved')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Approve</button>
+                            <button onclick="processApproval('${a.id}', 'denied')" class="flex-1 bg-white border border-red-100 text-red-500 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Deny</button>
+                        </div>
+                    </div>
+                `;
+            }).join('') : `<p class="text-center py-10 text-[10px] font-bold text-slate-400 uppercase italic">No requests</p>`;
+        }
+
+        window.processApproval = async (id, status) => {
+            try {
+                if (status === 'denied') { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id)); showToast("Denied"); }
+                else { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', id), { status: 'approved' }); showToast("Approved"); }
+            } catch(e) {}
+        }
+
+        window.markAttendance = async () => {
+            const todayStr = getNYDateString(new Date());
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), { userId: currentUser.id, date: todayStr, status: 'pending', type: 'daily', createdAt: new Date().toISOString() });
+                showToast("Request sent");
+            } catch(e) {}
+        }
+
+        window.setGlobalDateMarker = async (type) => {
+            if (currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
+            const date = document.getElementById('manage-date-subtitle').dataset.date;
+            try {
+                const existing = globalCalendar.find(g => g.date === date);
+                if (type === 'Normal') { if (existing) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id)); }
+                else {
+                    if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
+                    else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
+                }
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                showToast("Global calendar updated");
+            } catch(e) {}
+        }
+
+        window.changeMonth = (dir) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); renderAttendancePortal(); }
 
         function populateAgentSelect() {
             const select = document.getElementById('assigned-agent-select');
