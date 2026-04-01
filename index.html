@@ -332,10 +332,10 @@
 
                         <!-- Chat Input Area -->
                         <div class="p-6 bg-white border-t border-slate-100">
-                            <form id="chat-input-form" class="flex gap-4">
-                                <input type="text" id="chat-input-field" placeholder="Type your message here..." required autocomplete="off" class="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium transition-all">
+                            <form id="chat-input-form" class="flex items-end gap-4">
+                                <textarea id="chat-input-field" placeholder="Type your message here... (Enter to send, Shift + Enter for new line)" required class="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium transition-all resize-none h-[56px] custom-scroll"></textarea>
                                 <button type="submit" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center gap-2">
-                                    Send Message
+                                    Send
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                                 </button>
                             </form>
@@ -607,7 +607,7 @@
         </div>
     </div>
 
-    <!-- Modals & Day Management same as before -->
+    <!-- Modals & Day Management -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
@@ -942,6 +942,15 @@
 
             list.scrollTop = list.scrollHeight;
         }
+
+        const chatField = document.getElementById('chat-input-field');
+        chatField.addEventListener('keydown', (e) => {
+            // UPDATED: Enter to send, Shift + Enter for new line
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('chat-input-form').requestSubmit();
+            }
+        });
 
         document.getElementById('chat-input-form').addEventListener('submit', async (e) => {
             e.preventDefault();
