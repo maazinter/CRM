@@ -639,7 +639,16 @@
                                     <option value="chat-support">Chat Support</option>
                                     <option value="admin">Administrator</option>
                                 </select>
-                                <!-- Assign as Closer Option -->
+                                
+                                <!-- NEW: User Status Option -->
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Account Status</label>
+                                    <select name="userAccountStatus" id="user-field-status" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                                        <option value="Active">Active User</option>
+                                        <option value="Inactive">Inactive User</option>
+                                    </select>
+                                </div>
+
                                 <div class="flex items-center gap-3 px-2 py-2">
                                     <input type="checkbox" id="user-field-isCloser" name="userIsCloser" class="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500">
                                     <label for="user-field-isCloser" class="text-xs font-black text-slate-500 uppercase tracking-widest">Assign as Closer</label>
@@ -676,7 +685,6 @@
                 <p id="manage-date-subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"></p>
             </div>
             <div class="p-6 space-y-6">
-                <!-- Individual Attendance (For staff) -->
                 <div id="staff-edit-controls" class="space-y-3 hidden">
                     <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Staff Attendance</h3>
                     <div class="grid grid-cols-2 gap-3">
@@ -690,11 +698,10 @@
                     </div>
                 </div>
 
-                <!-- Global Markers -->
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
-                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
+                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
                     <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Clear Global Marker</button>
                 </div>
             </div>
@@ -888,7 +895,7 @@
             errorDiv.classList.add('hidden');
             
             if (email === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
-                return loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS });
+                return loginSuccess({ name: 'System Root', email: ADMIN_EMAIL, role: 'admin', id: 'ROOT', password: ADMIN_PASS, status: 'Active' });
             }
             try {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
@@ -897,7 +904,13 @@
                     const data = d.data();
                     if (data.email === email && data.password === pass) matchedUser = { ...data, id: d.id };
                 });
-                if (matchedUser) loginSuccess(matchedUser);
+                
+                if (matchedUser) {
+                    if (matchedUser.status === 'Inactive') {
+                        throw new Error("Access Denied: Your account is currently inactive.");
+                    }
+                    loginSuccess(matchedUser);
+                }
                 else throw new Error("Security check failed. Invalid Credentials.");
             } catch (error) {
                 errorDiv.textContent = error.message;
@@ -1317,7 +1330,8 @@
             if (!grid) return;
             const todayStr = getNYDateString(new Date());
             
-            let staffList = users.filter(u => u.role !== 'chat-support');
+            // Filter: Active users only AND not chat-support
+            let staffList = users.filter(u => u.role !== 'chat-support' && u.status === 'Active');
             if (currentUser.role === 'manager') staffList = staffList.filter(u => u.role === 'agent');
 
             grid.innerHTML = staffList.map(u => {
@@ -1389,7 +1403,7 @@
                 if (type === 'daily') payload.date = date; else { payload.startDate = date; payload.endDate = date; }
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
                 showToast("Record updated manually");
             } catch(e) { showToast("Save error"); }
         }
@@ -1489,9 +1503,12 @@
             closerSelect.innerHTML = '<option value="">-- Select Closer --</option>';
 
             users.forEach(u => { 
-                agentSelect.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; 
-                if (u.isCloser) {
-                    closerSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+                // Only show ACTIVE users in dropdowns
+                if (u.status === 'Active') {
+                    agentSelect.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; 
+                    if (u.isCloser) {
+                        closerSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+                    }
                 }
             });
             
@@ -1502,10 +1519,11 @@
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.map(u => `
-                <tr class="hover:bg-slate-50 transition">
+                <tr class="hover:bg-slate-50 transition ${u.status === 'Inactive' ? 'opacity-60' : ''}">
                     <td class="px-6 py-4 font-black text-slate-900">
                         ${u.name}
                         ${u.isCloser ? '<span class="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-md text-[8px] font-black uppercase border border-indigo-100">Closer</span>' : ''}
+                        ${u.status === 'Inactive' ? '<span class="ml-2 px-2 py-0.5 bg-red-50 text-red-500 rounded-md text-[8px] font-black uppercase border border-red-100">Inactive</span>' : ''}
                     </td>
                     <td class="px-6 py-4">
                         <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
@@ -1515,6 +1533,7 @@
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-3">
                             <button onclick="viewUserStats('${u.id}')" class="text-blue-600 hover:text-blue-800 transition font-black text-[10px] uppercase">Stats</button>
+                            <button onclick="selectStaffForView('${u.id}')" class="text-green-600 hover:text-green-800 transition font-black text-[10px] uppercase">Attendance</button>
                             <button onclick="editUserAccount('${u.id}')" class="text-slate-400 hover:text-slate-900 transition font-black text-[10px] uppercase">Edit</button>
                             <button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 transition font-black text-[10px] uppercase">Del</button>
                         </div>
@@ -1527,11 +1546,19 @@
             if (!currentUser || currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyNow = getNYMonthYear(new Date());
-            const currM = nyNow.month;
-            const currY = nyNow.year;
+            const nyView = getNYMonthYear(new Date());
+            const currM = nyView.month;
+            const currY = nyView.year;
+            
+            // Only show performance for ACTIVE agents
+            const activeAgents = users.filter(u => u.status === 'Active');
+
             customers.forEach(c => {
                 const id = c.agentId || 'system';
+                
+                // Skip performance rendering if agent is inactive
+                if (id !== 'ROOT' && id !== 'system' && !users.find(u => u.id === id && u.status === 'Active')) return;
+
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
                 if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
@@ -1543,7 +1570,6 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
-                        
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
@@ -1799,7 +1825,6 @@
             switchTab('add-customer'); document.getElementById('form-title').textContent = "Modify Enrollment Pipeline"; document.getElementById('submit-btn').textContent = "Update Records"; document.getElementById('edit-customer-id').value = id; document.getElementById('cancel-edit').classList.remove('hidden');
             document.getElementById('original-agent-id').value = c.agentId || ''; document.getElementById('original-agent-name').value = c.agentName || '';
             
-            // Safety check for dropdown populating
             const agentSelect = document.getElementById('assigned-agent-select'); if (agentSelect) agentSelect.value = c.agentId || '';
             const closerSelect = document.getElementById('sale-closer-select'); if (closerSelect) closerSelect.value = c.closerName || '';
 
@@ -1820,6 +1845,7 @@
                 email: e.target.userEmail.value.toLowerCase(), 
                 password: e.target.userPassword.value, 
                 role: e.target.userRole.value,
+                status: e.target.userAccountStatus.value, // Capture Status
                 isCloser: e.target.userIsCloser.checked 
             };
             try {
@@ -1837,6 +1863,7 @@
             document.getElementById('user-field-email').value = u.email; 
             document.getElementById('user-field-password').value = u.password; 
             document.getElementById('user-field-role').value = u.role;
+            document.getElementById('user-field-status').value = u.status || 'Active'; // Set Status
             document.getElementById('user-field-isCloser').checked = u.isCloser || false; 
             document.getElementById('cancel-user-edit').classList.remove('hidden'); 
             document.getElementById('user-submit-btn').textContent = "Save Identity";
