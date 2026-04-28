@@ -379,11 +379,18 @@
                                     <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">1. Client Identification</h3>
                                 </div>
                                 
-                                <div id="admin-agent-select-group" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                <div id="admin-agent-select-group" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                     <div class="space-y-1">
                                         <label class="text-[10px] font-black text-blue-500 uppercase ml-2 tracking-widest">Assigned Sales Agent</label>
                                         <select id="assigned-agent-select" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
                                             <option value="">-- No Agent Assigned --</option>
+                                        </select>
+                                    </div>
+                                    <!-- NEW: Sale Closer Field -->
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-black text-indigo-500 uppercase ml-2 tracking-widest">Sale Closer Name</label>
+                                        <select id="sale-closer-select" name="closerName" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
+                                            <option value="">-- Select Closer --</option>
                                         </select>
                                     </div>
                                 </div>
@@ -543,7 +550,6 @@
                             <p class="text-slate-500 font-medium">Manage and track all customer pipelines</p>
                         </div>
                         <div class="flex flex-wrap gap-4 w-full lg:w-auto">
-                            <!-- NEW: Date Range Filter UI -->
                             <div class="flex items-center gap-2 bg-white border border-slate-100 rounded-2xl shadow-sm px-4 py-2">
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Range:</span>
                                 <input type="date" id="filter-start-date" onchange="renderCustomers()" class="bg-transparent text-xs font-bold outline-none">
@@ -567,7 +573,6 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Range Summary Banner -->
                     <div id="range-summary-banner" class="hidden animate-fade-in">
                         <div class="bg-blue-600 text-white rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-blue-100">
                             <div class="flex items-center gap-4">
@@ -634,6 +639,11 @@
                                     <option value="chat-support">Chat Support</option>
                                     <option value="admin">Administrator</option>
                                 </select>
+                                <!-- NEW: Assign as Closer Option -->
+                                <div class="flex items-center gap-3 px-2 py-2">
+                                    <input type="checkbox" id="user-field-isCloser" name="userIsCloser" class="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500">
+                                    <label for="user-field-isCloser" class="text-xs font-black text-slate-500 uppercase tracking-widest">Assign as Closer</label>
+                                </div>
                                 <button type="submit" id="user-submit-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-100">Deploy Account</button>
                             </form>
                         </div>
@@ -679,6 +689,7 @@
                     </div>
                 </div>
 
+                <!-- Global Markers -->
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
@@ -1463,19 +1474,37 @@
         window.changeMonth = (dir) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir); renderAttendancePortal(); }
 
         function populateAgentSelect() {
-            const select = document.getElementById('assigned-agent-select');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">-- No Agent Assigned --</option>';
-            select.innerHTML += `<option value="ROOT">System Admin (System Root)</option>`;
-            users.forEach(u => { select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; });
-            select.value = currentVal;
+            const agentSelect = document.getElementById('assigned-agent-select');
+            const closerSelect = document.getElementById('sale-closer-select');
+            
+            const currentAgent = agentSelect.value;
+            const currentCloser = closerSelect.value;
+
+            agentSelect.innerHTML = '<option value="">-- No Agent Assigned --</option>';
+            agentSelect.innerHTML += `<option value="ROOT">System Admin (System Root)</option>`;
+            
+            closerSelect.innerHTML = '<option value="">-- Select Closer --</option>';
+
+            users.forEach(u => { 
+                agentSelect.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; 
+                // NEW: Populate Closer dropdown with only tagged users
+                if (u.isCloser) {
+                    closerSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+                }
+            });
+            
+            agentSelect.value = currentAgent;
+            closerSelect.value = currentCloser;
         }
 
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
             tbody.innerHTML = users.map(u => `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="px-6 py-4 font-black text-slate-900">${u.name}</td>
+                    <td class="px-6 py-4 font-black text-slate-900">
+                        ${u.name}
+                        ${u.isCloser ? '<span class="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-md text-[8px] font-black uppercase border border-indigo-100">Closer</span>' : ''}
+                    </td>
                     <td class="px-6 py-4">
                         <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
                         <div class="text-[10px] font-bold text-blue-500 mt-1">${u.password}</div>
@@ -1496,8 +1525,8 @@
             if (!currentUser || currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyView = getNYMonthYear(new Date());
-            const currM = nyView.month;
+            const nyNow = getNYMonthYear(new Date());
+            const currM = nyNow.month;
             const currY = nyView.year;
             customers.forEach(c => {
                 const id = c.agentId || 'system';
@@ -1610,7 +1639,6 @@
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
             if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
             
-            // Apply Manual Date Range Filter (by Created Date)
             if (startDate || endDate) {
                 filtered = filtered.filter(c => {
                     const cDate = getNYDateString(new Date(c.createdAt));
@@ -1619,12 +1647,10 @@
                     return isAfterStart && isBeforeEnd;
                 });
                 
-                // Show Range Summary
                 const banner = document.getElementById('range-summary-banner');
                 banner.classList.remove('hidden');
                 document.getElementById('range-summary-dates').textContent = `${startDate || 'Start'} to ${endDate || 'End'}`;
                 
-                // Calculate range-specific revenue
                 let rangeRevenue = 0;
                 filtered.forEach(c => {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
@@ -1770,6 +1796,10 @@
             switchTab('add-customer'); document.getElementById('form-title').textContent = "Modify Enrollment Pipeline"; document.getElementById('submit-btn').textContent = "Update Records"; document.getElementById('edit-customer-id').value = id; document.getElementById('cancel-edit').classList.remove('hidden');
             document.getElementById('original-agent-id').value = c.agentId || ''; document.getElementById('original-agent-name').value = c.agentName || '';
             const select = document.getElementById('assigned-agent-select'); if (select) select.value = c.agentId || '';
+            
+            // Populate Closer Select
+            const closerSelect = document.getElementById('sale-closer-select'); if (closerSelect) closerSelect.value = c.closerName || '';
+
             Object.keys(c).forEach(key => { const el = document.getElementsByName(key)[0]; if (el) el.value = c[key] || ''; });
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []); updatePaymentSchedule(sched);
         };
@@ -1780,8 +1810,15 @@
         };
 
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
-            e.preventDefault(); const editId = document.getElementById('edit-user-id-field').value;
-            const payload = { name: e.target.userName.value, email: e.target.userEmail.value.toLowerCase(), password: e.target.userPassword.value, role: e.target.userRole.value };
+            e.preventDefault(); 
+            const editId = document.getElementById('edit-user-id-field').value;
+            const payload = { 
+                name: e.target.userName.value, 
+                email: e.target.userEmail.value.toLowerCase(), 
+                password: e.target.userPassword.value, 
+                role: e.target.userRole.value,
+                isCloser: e.target.userIsCloser.checked // Capture Closer status
+            };
             try {
                 if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload); showToast("User Permission Updated"); }
                 else { payload.createdAt = new Date().toISOString(); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload); showToast("New User Provisioned"); }
@@ -1790,9 +1827,16 @@
         });
 
         window.editUserAccount = (id) => {
-            const u = users.find(x => x.id === id); document.getElementById('user-form-title').textContent = "Modify Identity"; document.getElementById('edit-user-id-field').value = id;
-            document.getElementById('user-field-name').value = u.name; document.getElementById('user-field-email').value = u.email; document.getElementById('user-field-password').value = u.password; document.getElementById('user-field-role').value = u.role;
-            document.getElementById('cancel-user-edit').classList.remove('hidden'); document.getElementById('user-submit-btn').textContent = "Save Identity";
+            const u = users.find(x => x.id === id); 
+            document.getElementById('user-form-title').textContent = "Modify Identity"; 
+            document.getElementById('edit-user-id-field').value = id;
+            document.getElementById('user-field-name').value = u.name; 
+            document.getElementById('user-field-email').value = u.email; 
+            document.getElementById('user-field-password').value = u.password; 
+            document.getElementById('user-field-role').value = u.role;
+            document.getElementById('user-field-isCloser').checked = u.isCloser || false; // Set Closer status
+            document.getElementById('cancel-user-edit').classList.remove('hidden'); 
+            document.getElementById('user-submit-btn').textContent = "Save Identity";
         };
 
         window.deleteUser = async (id) => {
