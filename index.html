@@ -640,7 +640,6 @@
                                     <option value="admin">Administrator</option>
                                 </select>
                                 
-                                <!-- NEW: User Status Option -->
                                 <div class="space-y-1">
                                     <label class="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Account Status</label>
                                     <select name="userAccountStatus" id="user-field-status" required class="w-full px-5 py-4 border border-slate-100 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
@@ -701,7 +700,7 @@
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
-                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
+                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
                     <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Clear Global Marker</button>
                 </div>
             </div>
@@ -1330,8 +1329,8 @@
             if (!grid) return;
             const todayStr = getNYDateString(new Date());
             
-            // Filter: Active users only AND not chat-support
-            let staffList = users.filter(u => u.role !== 'chat-support' && u.status === 'Active');
+            // Updated Filter: Active users only AND not chat-support
+            let staffList = users.filter(u => u.role !== 'chat-support' && (u.status === 'Active' || !u.status));
             if (currentUser.role === 'manager') staffList = staffList.filter(u => u.role === 'agent');
 
             grid.innerHTML = staffList.map(u => {
@@ -1403,7 +1402,7 @@
                 if (type === 'daily') payload.date = date; else { payload.startDate = date; payload.endDate = date; }
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
-                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Record updated manually");
             } catch(e) { showToast("Save error"); }
         }
@@ -1503,8 +1502,8 @@
             closerSelect.innerHTML = '<option value="">-- Select Closer --</option>';
 
             users.forEach(u => { 
-                // Only show ACTIVE users in dropdowns
-                if (u.status === 'Active') {
+                const isActive = u.status === 'Active' || !u.status;
+                if (isActive) {
                     agentSelect.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`; 
                     if (u.isCloser) {
                         closerSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
@@ -1546,18 +1545,16 @@
             if (!currentUser || currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyView = getNYMonthYear(new Date());
-            const currM = nyView.month;
-            const currY = nyView.year;
+            const nyNow = getNYMonthYear(new Date());
+            const currM = nyNow.month;
+            const currY = nyNow.year;
             
-            // Only show performance for ACTIVE agents
-            const activeAgents = users.filter(u => u.status === 'Active');
-
             customers.forEach(c => {
                 const id = c.agentId || 'system';
                 
-                // Skip performance rendering if agent is inactive
-                if (id !== 'ROOT' && id !== 'system' && !users.find(u => u.id === id && u.status === 'Active')) return;
+                // Show performance only for users who are NOT explicitly marked as Inactive
+                const agent = users.find(u => u.id === id);
+                if (id !== 'ROOT' && id !== 'system' && agent && agent.status === 'Inactive') return;
 
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
@@ -1570,6 +1567,7 @@
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
+                        
                         const [py, pm, pd] = item.date.split('-').map(Number);
                         if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
                     }
@@ -1845,7 +1843,7 @@
                 email: e.target.userEmail.value.toLowerCase(), 
                 password: e.target.userPassword.value, 
                 role: e.target.userRole.value,
-                status: e.target.userAccountStatus.value, // Capture Status
+                status: e.target.userAccountStatus.value,
                 isCloser: e.target.userIsCloser.checked 
             };
             try {
@@ -1863,7 +1861,7 @@
             document.getElementById('user-field-email').value = u.email; 
             document.getElementById('user-field-password').value = u.password; 
             document.getElementById('user-field-role').value = u.role;
-            document.getElementById('user-field-status').value = u.status || 'Active'; // Set Status
+            document.getElementById('user-field-status').value = u.status || 'Active';
             document.getElementById('user-field-isCloser').checked = u.isCloser || false; 
             document.getElementById('cancel-user-edit').classList.remove('hidden'); 
             document.getElementById('user-submit-btn').textContent = "Save Identity";
