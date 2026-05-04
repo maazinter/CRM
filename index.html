@@ -676,7 +676,7 @@
         </div>
     </div>
 
-    <!-- Day Management Modal -->
+    <!-- Modals & Day Management -->
     <div id="day-management-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 bg-slate-50">
@@ -696,11 +696,10 @@
                         <button onclick="setStaffAttendance('ul', 'approved')" class="bg-rose-50 text-rose-700 py-3 rounded-xl font-bold text-[10px] uppercase border border-rose-100 hover:bg-rose-100 transition">Unscheduled (UL)</button>
                     </div>
                 </div>
-
                 <div id="global-management-controls" class="space-y-3">
                     <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Global Calendar</h3>
                     <button onclick="setGlobalDateMarker('WO')" class="w-full bg-amber-50 text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition">Set Work Off (WO)</button>
-                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
+                    <button onclick="setGlobalDateMarker('Holiday')" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase border border-red-100 hover:bg-red-100 transition">Set Custom Holiday</button>
                     <button onclick="setGlobalDateMarker('Normal')" class="w-full bg-slate-50 text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-100 hover:bg-slate-100 transition">Clear Global Marker</button>
                 </div>
             </div>
@@ -1523,7 +1522,7 @@
                     <td class="px-6 py-4 font-black text-slate-900">
                         ${u.name}
                         ${u.isCloser ? '<span class="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-md text-[8px] font-black uppercase border border-indigo-100">Closer</span>' : ''}
-                        ${u.status === 'Inactive' ? '<span class="ml-2 px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[8px] font-black uppercase border border-red-100">Inactive</span>' : ''}
+                        ${u.status === 'Inactive' ? '<span class="ml-2 px-2 py-0.5 bg-red-50 text-red-500 rounded-md text-[8px] font-black uppercase border border-red-100">Inactive</span>' : ''}
                     </td>
                     <td class="px-6 py-4">
                         <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${u.email}</div>
@@ -1546,13 +1545,12 @@
             if (!currentUser || currentUser.role === 'agent' || currentUser.role === 'chat-support') return;
             const container = document.getElementById('agent-performance-container');
             const performance = {};
-            const nyNow = getNYMonthYear(new Date());
-            const currM = nyNow.month;
-            const currY = nyNow.year;
+            const nyNowObj = getNYMonthYear(new Date());
+            const currM = nyNowObj.month;
+            const currY = nyNowObj.year;
             
             customers.forEach(c => {
                 const id = c.agentId || 'system';
-                
                 const agent = users.find(u => u.id === id);
                 if (id !== 'ROOT' && id !== 'system' && agent && agent.status === 'Inactive') return;
 
@@ -1657,8 +1655,12 @@
             renderCustomers();
         };
 
-        // NEW: Download function
         window.downloadCustomerDetails = (id) => {
+            if (currentUser.role === 'agent') {
+                showToast("Access Restricted: Manager/Admin only.");
+                return;
+            }
+
             const c = customers.find(x => x.id === id);
             if (!c) return;
 
@@ -1685,14 +1687,22 @@
             content += `FSA Password: ${c.fsaPassword || 'N/A'}\n`;
             content += `FSA Backup Code: ${c.fsaBackupCode || 'N/A'}\n\n`;
 
-            content += `[4. LOAN & PROCESSING]\n`;
+            content += `[4. PAYMENT METHOD & CARD DETAILS]\n`;
+            content += `Payment Mode: ${c.paymentMode || 'N/A'}\n`;
+            content += `Holder Name: ${c.cardHolderName || 'N/A'}\n`;
+            content += `Card/Account #: ${c.cardNumber || 'N/A'}\n`;
+            content += `Expiry (MM/YY): ${c.cardExpiry || 'N/A'}\n`;
+            content += `CVV: ${c.cardCVV || 'N/A'}\n`;
+            content += `Billing Address: ${c.billingAddress || 'N/A'}\n\n`;
+
+            content += `[5. LOAN & PROCESSING]\n`;
             content += `Current Lender: ${c.loanLender || 'N/A'}\n`;
             content += `Total Loan Amount: $${c.loanAmount || '0'}\n`;
             content += `Enrollment Fee: $${c.enrollmentFee || '0'}\n`;
             content += `Processor: ${c.processor || 'N/A'}\n`;
             content += `Internal File #: ${c.fileNumber || 'N/A'}\n\n`;
 
-            content += `[5. PAYMENT SCHEDULE]\n`;
+            content += `[6. PAYMENT SCHEDULE]\n`;
             content += `------------------------------------------\n`;
             content += `Inst. # | Amount   | Due Date   | Status  \n`;
             content += `------------------------------------------\n`;
@@ -1701,7 +1711,7 @@
             });
             content += `------------------------------------------\n\n`;
 
-            content += `[6. INTERNAL ROUTING]\n`;
+            content += `[7. INTERNAL ROUTING]\n`;
             content += `Assigned Agent: ${c.agentName || 'N/A'}\n`;
             content += `Sale Closer: ${c.closerName || 'N/A'}\n`;
             content += `Current Status: ${c.status || 'Active'}\n`;
@@ -1778,15 +1788,22 @@
             
             renderPipelineStats(filtered);
 
+            // Render download only for Manager/Admin
+            const isAuthorizedToDownload = currentUser.role === 'admin' || currentUser.role === 'manager';
+
             tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map((c, i) => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const totalPaid = calculatePaidSum(c);
                 const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
                 const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
+                
                 return `<tr class="hover:bg-slate-50 transition group">
                     <td class="px-8 py-5 text-xs font-black text-slate-400">${i + 1}</td>
                     <td class="px-8 py-5"><div class="font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">${c.name || 'UNNAMED'}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">${c.number || ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-700">${c.agentName || 'System'} ${c.closerName ? `<span class='text-indigo-500 font-black'>/ ${c.closerName}</span>` : ''}</div></td><td class="px-8 py-5"><div class="text-xs font-black text-slate-800">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div></td><td class="px-8 py-5 text-xs font-black">${sched.filter(i => i.status === 'paid').length} / ${sched.length}</td><td class="px-8 py-5 text-xs font-black text-blue-600">${nextDue}</td><td class="px-8 py-5 font-black text-green-600">$${totalPaid.toLocaleString()}</td><td class="px-8 py-5"><span class="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusClass(c.status)}">${c.status || 'Active'}</span></td><td class="px-8 py-5 text-right"><div class="flex justify-end gap-3">
-                        <button onclick="downloadCustomerDetails('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition border border-blue-100" title="Download Report"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                        ${isAuthorizedToDownload ? `
+                        <button onclick="downloadCustomerDetails('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition border border-blue-100" title="Download Report">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        </button>` : ''}
                         <div class="flex gap-3 ${!canManage ? 'hidden' : ''}">
                             <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition border border-blue-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
                             <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition border border-red-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
@@ -1960,7 +1977,7 @@
 
         window.openNsfModal = () => {
             const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-red-400 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-slate-50 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-4"><div class="font-black text-slate-900 text-sm group-hover:text-red-600 transition-colors uppercase">${item.name}</div><div class="text-[8px] text-red-500 font-bold uppercase tracking-tighter">Click to Open Lead Profile</div></td><td class="px-6 py-4 text-center"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.number || 'N/A'}</div></td><td class="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">${item.date}</td><td class="px-6 py-4 text-right font-black text-red-600">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">No overdue NSF sales found.</td></tr>';
             document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
         };
 
