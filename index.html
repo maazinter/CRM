@@ -135,7 +135,7 @@
                     </div>
 
                     <!-- Metric Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-3xl font-black text-slate-900">0</h3>
@@ -143,6 +143,10 @@
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
                             <h3 id="stat-total-fees" class="text-3xl font-black text-green-600">$0</h3>
+                        </div>
+                        <div class="bg-slate-800 p-6 rounded-3xl shadow-xl text-white">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Residual (2nd+ Inst)</p>
+                            <h3 id="stat-total-residual" class="text-3xl font-black">$0</h3>
                         </div>
                         <div class="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-100 text-white">
                             <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Today's Revenue</p>
@@ -165,7 +169,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 Current Period Activity
                             </h4>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Sales</p>
                                     <h4 id="stat-month-sales" class="text-2xl font-black">0</h4>
@@ -173,6 +177,10 @@
                                 <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Month Collected</p>
                                     <h4 id="stat-month-revenue" class="text-2xl font-black">$0</h4>
+                                </div>
+                                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                                    <p class="text-[10px] font-black text-blue-600 uppercase mb-1">Residual Amount</p>
+                                    <h4 id="stat-month-residual" class="text-2xl font-black text-blue-700">$0</h4>
                                 </div>
                             </div>
                         </div>
@@ -1612,12 +1620,13 @@
             const nyView = getNYMonthYear(new Date());
             const currM = nyView.month;
             const currY = nyView.year;
-            let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
+            let metrics = { lifetimeRev: 0, lifetimeResidual: 0, todayRev: 0, monthRev: 0, monthResidual: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const nyCreated = getNYMonthYear(new Date(c.createdAt));
-                if (nyCreated.month === currM && nyCreated.year === currY) metrics.monthCount++;
+                const saleDoneThisMonth = (nyCreated.month === currM && nyCreated.year === currY);
+                if (saleDoneThisMonth) metrics.monthCount++;
                 
                 let addedToNsf = false;
                 sched.forEach(item => {
@@ -1627,11 +1636,24 @@
                     const [iy, im, id] = item.date.split('-').map(Number);
                     const itemM = im - 1;
                     const itemY = iy;
+                    const itemPaidThisMonth = (itemM === currM && itemY === currY);
 
                     if (item.status === 'paid') {
                         metrics.lifetimeRev += amt;
+                        // Residual: 2nd installment or after
+                        if (item.month >= 2) metrics.lifetimeResidual += amt;
+                        
                         if (item.date === todayStr) metrics.todayRev += amt;
-                        if (itemM === currM && itemY === currY) metrics.monthRev += amt;
+
+                        // Month Collected (Request specific): Sale done same month AND 1st installment only
+                        if (itemPaidThisMonth && item.month === 1 && saleDoneThisMonth) {
+                            metrics.monthRev += amt;
+                        }
+                        
+                        // Month Residual: any installment >= 2 paid this month
+                        if (itemPaidThisMonth && item.month >= 2) {
+                            metrics.monthResidual += amt;
+                        }
                     } else if (c.status !== 'Cancel') {
                         if (item.date < todayStr) {
                             if (!addedToNsf) { 
@@ -1639,7 +1661,7 @@
                                 addedToNsf = true; 
                             }
                         } 
-                        else if (itemM === currM && itemY === currY) {
+                        else if (itemPaidThisMonth) {
                             metrics.upcomingMonth += amt;
                             metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
                         }
@@ -1780,8 +1802,10 @@
             
             document.getElementById('stat-total-customers').textContent = filtered.length;
             document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
+            document.getElementById('stat-total-residual').textContent = `$${metrics.lifetimeResidual.toLocaleString()}`;
             document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
             document.getElementById('stat-month-revenue').textContent = `$${metrics.monthRev.toLocaleString()}`;
+            document.getElementById('stat-month-residual').textContent = `$${metrics.monthResidual.toLocaleString()}`;
             document.getElementById('stat-month-sales').textContent = metrics.monthCount;
             document.getElementById('stat-upcoming').textContent = `$${metrics.upcomingMonth.toLocaleString()}`;
             document.getElementById('stat-nsf-count').textContent = metrics.nsfDetails.length;
@@ -2008,7 +2032,7 @@
         window.closeUpcomingModal = () => document.getElementById('upcoming-modal').classList.replace('flex', 'hidden');
         window.closeNsfModal = () => document.getElementById('nsf-modal').classList.replace('flex', 'hidden');
         window.closeAgentLeadsModal = () => document.getElementById('agent-leads-modal').classList.replace('flex', 'hidden');
-        window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('flex', 'hidden');
+        window.closeStats = () => document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
 
         function showToast(m) {
             const t = document.getElementById('toast'); t.textContent = m; t.classList.remove('translate-y-32');
