@@ -137,11 +137,11 @@
                     <!-- Metric Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Sales (Paid)</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Enrollments</p>
                             <h3 id="stat-total-customers" class="text-3xl font-black text-slate-900">0</h3>
                         </div>
                         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sales Revenue (1st Inst)</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Revenue</p>
                             <h3 id="stat-total-fees" class="text-3xl font-black text-green-600">$0</h3>
                         </div>
                         <div class="bg-slate-800 p-6 rounded-3xl shadow-xl text-white">
@@ -1565,27 +1565,21 @@
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
                 if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
-                
+                performance[id].totalSales++;
+                const nyCreated = getNYMonthYear(new Date(c.createdAt));
+                if (nyCreated.month === currM && nyCreated.year === currY) performance[id].monthlySales++;
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const firstInst = sched.find(i => i.month === 1);
-                const isFirstPaid = firstInst && firstInst.status === 'paid';
-
-                // Leaderboard counts only paid sales (1st installment paid)
-                if (isFirstPaid) {
-                    performance[id].totalSales++;
-                    
-                    const nyCreated = getNYMonthYear(new Date(c.createdAt));
-                    if (nyCreated.month === currM && nyCreated.year === currY) performance[id].monthlySales++;
-
-                    // Agent revenue logic: only the 1st installment amount is recognized as agent revenue
-                    const amt = parseFloat(firstInst.amount || 0);
-                    performance[id].totalRevenue += amt;
-
-                    const [py, pm, pd] = firstInst.date.split('-').map(Number);
-                    if ((pm - 1) === currM && py === currY) {
-                        performance[id].monthlyRevenue += amt;
+                sched.forEach(item => {
+                    if (item.status === 'paid') {
+                        const amt = parseFloat(item.amount || 0);
+                        performance[id].totalRevenue += amt;
+                        
+                        if (item.date) {
+                            const [py, pm, pd] = item.date.split('-').map(Number);
+                            if ((pm - 1) === currM && py === currY) performance[id].monthlyRevenue += amt;
+                        }
                     }
-                }
+                });
             });
             const sorted = Object.values(performance).sort((a, b) => b.totalRevenue - a.totalRevenue);
             container.innerHTML = `<div class="overflow-x-auto custom-scroll"><table class="w-full text-left min-w-[800px]"><thead><tr class="border-b border-slate-50"><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th><th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th></tr></thead><tbody class="divide-y divide-slate-50">${sorted.map(a => `<tr class="hover:bg-slate-100 transition-colors cursor-pointer" onclick="openAgentLeadsModal('${a.id}')"><td class="py-5 px-4 font-black text-slate-900 text-sm">${a.name}</td><td class="py-5 px-4 text-center font-bold text-slate-600 text-sm">${a.totalSales}</td><td class="py-5 px-4 text-center font-bold text-blue-600 text-sm bg-blue-50/30">${a.monthlySales}</td><td class="py-5 px-4 text-right font-black text-green-600 text-sm">$${a.totalRevenue.toLocaleString()}</td><td class="py-5 px-4 text-right font-black text-blue-700 text-sm bg-blue-50/30">$${a.monthlyRevenue.toLocaleString()}</td></tr>`).join('')}</tbody></table></div>`;
@@ -1626,20 +1620,13 @@
             const nyView = getNYMonthYear(new Date());
             const currM = nyView.month;
             const currY = nyView.year;
-            let metrics = { lifetimeRev: 0, lifetimeResidual: 0, todayRev: 0, monthRev: 0, monthResidual: 0, monthCount: 0, totalPaidSalesCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
+            let metrics = { lifetimeRev: 0, lifetimeResidual: 0, todayRev: 0, monthRev: 0, monthResidual: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const nyCreated = getNYMonthYear(new Date(c.createdAt));
                 const saleDoneThisMonth = (nyCreated.month === currM && nyCreated.year === currY);
-                
-                const firstInst = sched.find(i => i.month === 1);
-                const isFirstPaid = firstInst && firstInst.status === 'paid';
-
-                if (isFirstPaid) {
-                    metrics.totalPaidSalesCount++;
-                    if (saleDoneThisMonth) metrics.monthCount++;
-                }
+                if (saleDoneThisMonth) metrics.monthCount++;
                 
                 let addedToNsf = false;
                 sched.forEach(item => {
@@ -1652,16 +1639,13 @@
                     const itemPaidThisMonth = (itemM === currM && itemY === currY);
 
                     if (item.status === 'paid') {
-                        // Main Lifetime Revenue card now only recognizes 1st installment (Actual Sales)
-                        if (item.month === 1) metrics.lifetimeRev += amt;
-                        
+                        metrics.lifetimeRev += amt;
                         // Residual: 2nd installment or after
                         if (item.month >= 2) metrics.lifetimeResidual += amt;
                         
-                        // Today recognizes any collected payment
                         if (item.date === todayStr) metrics.todayRev += amt;
 
-                        // Month Collected: Recognizes 1st installment of sales made this month
+                        // Month Collected (Request specific): Sale done same month AND 1st installment only
                         if (itemPaidThisMonth && item.month === 1 && saleDoneThisMonth) {
                             metrics.monthRev += amt;
                         }
@@ -1816,8 +1800,7 @@
             upcomingPaymentList = metrics.upcomingDetails;
             nsfPaymentList = metrics.nsfDetails;
             
-            // Total Enrollments card now recognizes only paid sales
-            document.getElementById('stat-total-customers').textContent = metrics.totalPaidSalesCount;
+            document.getElementById('stat-total-customers').textContent = filtered.length;
             document.getElementById('stat-total-fees').textContent = `$${metrics.lifetimeRev.toLocaleString()}`;
             document.getElementById('stat-total-residual').textContent = `$${metrics.lifetimeResidual.toLocaleString()}`;
             document.getElementById('stat-day-revenue').textContent = `$${metrics.todayRev.toLocaleString()}`;
@@ -1854,11 +1837,6 @@
 
         function calculatePaidSum(c) {
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-            // If Agent, only show 1st installment revenue. If Admin/Manager, show total collected.
-            if (currentUser && currentUser.role === 'agent') {
-                const first = sched.find(i => i.month === 1);
-                return (first && first.status === 'paid') ? parseFloat(first.amount || 0) : 0;
-            }
             return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
         }
 
@@ -2011,7 +1989,7 @@
         window.viewUserStats = (userId) => {
             const user = users.find(u => u.id === userId); const uCustomers = customers.filter(c => c.agentId === userId); const m = calculateMetrics(uCustomers);
             document.getElementById('stats-user-email').textContent = user.name; document.getElementById('stats-user-role').textContent = user.role;
-            document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${m.totalPaidSalesCount}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
+            document.getElementById('user-stats-content').innerHTML = `<div class="bg-blue-50 p-8 rounded-3xl border border-blue-100 shadow-sm"><p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Sales Metrics</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">Volume</p><h3 class="text-3xl font-black text-slate-900">${uCustomers.length}</h3></div><div><p class="text-xs font-bold text-slate-500">Yield</p><h3 class="text-3xl font-black text-green-600">$${m.lifetimeRev.toLocaleString()}</h3></div></div></div><div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month to Date</p><div class="space-y-4"><div><p class="text-xs font-bold text-slate-500">M. Sales</p><h3 class="text-3xl font-black text-slate-900">${m.monthCount}</h3></div><div><p class="text-xs font-bold text-slate-500">M. Rev</p><h3 class="text-3xl font-black text-blue-600">$${m.monthRev.toLocaleString()}</h3></div></div></div>`;
             document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
         };
 
