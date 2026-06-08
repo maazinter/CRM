@@ -804,6 +804,48 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Date parsing & comparison helpers to eliminate string comparison/padding bugs
+        function parseDateString(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                const d = parseInt(parts[2], 10);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                    return new Date(y, m, d);
+                }
+            }
+            const parsed = new Date(dateStr);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function isDateInRange(dateStr, startStr, endStr) {
+            const itemDate = parseDateString(dateStr);
+            if (!itemDate) return false;
+            
+            itemDate.setHours(0, 0, 0, 0);
+            const itemTime = itemDate.getTime();
+            
+            if (startStr) {
+                const startDate = parseDateString(startStr);
+                if (startDate) {
+                    startDate.setHours(0, 0, 0, 0);
+                    if (itemTime < startDate.getTime()) return false;
+                }
+            }
+            
+            if (endStr) {
+                const endDate = parseDateString(endStr);
+                if (endDate) {
+                    endDate.setHours(0, 0, 0, 0);
+                    if (itemTime > endDate.getTime()) return false;
+                }
+            }
+            
+            return true;
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyBcPl-2XuBll3nkrx4Q-9PHhBsYSpWPbQs",
             authDomain: "maaz-crm.firebaseapp.com",
@@ -1486,7 +1528,7 @@
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
                 showToast("Global calendar updated");
             } catch(e) {}
         }
@@ -1673,9 +1715,19 @@
             const startDate = document.getElementById('filter-start-date').value;
             const endDate = document.getElementById('filter-end-date').value;
             
+            // Apply standard filters to ensure complete parity with UI customer context
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const filter = document.getElementById('filter-status').value;
+
             let filteredCustomers = customers;
             if (currentUser.role === 'agent') {
                 filteredCustomers = customers.filter(c => c.agentId === currentUser.id);
+            }
+            if (filter !== 'All') {
+                filteredCustomers = filteredCustomers.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
+            }
+            if (search) {
+                filteredCustomers = filteredCustomers.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search));
             }
 
             let reportRows = [];
@@ -1685,10 +1737,7 @@
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 sched.forEach(item => {
                     if (item.status === 'paid' && item.date) {
-                        const isAfterStart = startDate ? item.date >= startDate : true;
-                        const isBeforeEnd = endDate ? item.date <= endDate : true;
-                        
-                        if (isAfterStart && isBeforeEnd) {
+                        if (isDateInRange(item.date, startDate, endDate)) {
                             const amt = parseFloat(item.amount || 0);
                             totalRevenue += amt;
                             
@@ -1829,29 +1878,32 @@
             if (currentUser.role === 'agent') filtered = customers.filter(c => c.agentId === currentUser.id);
             if (filter !== 'All') filtered = filtered.filter(c => (c.status || 'Active').toLowerCase() === filter.toLowerCase());
             
+            let rangeRevenue = 0;
+            let matchedCustomersForRange = [];
+
             if (startDate || endDate) {
-                filtered = filtered.filter(c => {
-                    const cDate = getNYDateString(new Date(c.createdAt));
-                    const isAfterStart = startDate ? cDate >= startDate : true;
-                    const isBeforeEnd = endDate ? cDate <= endDate : true;
-                    return isAfterStart && isBeforeEnd;
+                // Find all customers who have paid payments within the range using precise numeric date math
+                filtered.forEach(c => {
+                    const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+                    let contributedToRange = false;
+                    sched.forEach(item => {
+                        if (item.status === 'paid' && item.date) {
+                            if (isDateInRange(item.date, startDate, endDate)) {
+                                rangeRevenue += parseFloat(item.amount || 0);
+                                contributedToRange = true;
+                            }
+                        }
+                    });
+                    if (contributedToRange) {
+                        matchedCustomersForRange.push(c);
+                    }
                 });
+
+                filtered = matchedCustomersForRange;
                 
                 const banner = document.getElementById('range-summary-banner');
                 banner.classList.remove('hidden');
                 document.getElementById('range-summary-dates').textContent = `${startDate || 'Start'} to ${endDate || 'End'}`;
-                
-                let rangeRevenue = 0;
-                filtered.forEach(c => {
-                    const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                    sched.forEach(item => {
-                        if (item.status === 'paid' && item.date) {
-                            const isAfterStart = startDate ? item.date >= startDate : true;
-                            const isBeforeEnd = endDate ? item.date <= endDate : true;
-                            if (isAfterStart && isBeforeEnd) rangeRevenue += parseFloat(item.amount || 0);
-                        }
-                    });
-                });
                 document.getElementById('range-count-display').textContent = filtered.length;
                 document.getElementById('range-revenue-display').textContent = `$${rangeRevenue.toLocaleString()}`;
             } else {
