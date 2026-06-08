@@ -374,7 +374,7 @@
                             <div class="space-y-8">
                                 <div class="flex items-center gap-4 border-b border-slate-50 pb-4">
                                     <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/xl" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
                                     </div>
                                     <h3 class="text-lg font-black uppercase tracking-widest text-slate-800">1. Client Identification</h3>
                                 </div>
@@ -809,7 +809,7 @@
                 </button>
             </div>
             <div id="user-stats-content" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50">
-                <!-- Inner statistics will be populated dynamically -->
+                <!-- Populated dynamically -->
             </div>
         </div>
     </div>
@@ -825,32 +825,33 @@
         // Bulletproof Date parsing & comparison helpers supporting YYYY-MM-DD, DD-MM-YYYY, and MM-DD-YYYY
         function parseDateString(dateStr) {
             if (!dateStr) return null;
-            const cleanStr = dateStr.trim().replace(/\//g, '-');
+            if (dateStr instanceof Date) return dateStr;
+            const cleanStr = dateStr.trim().replace(/[\/\.\s]/g, '-');
             const parts = cleanStr.split('-');
             if (parts.length === 3) {
-                const p0 = parseInt(parts[0], 10);
-                const p1 = parseInt(parts[1], 10);
-                const p2 = parseInt(parts[2], 10);
+                let p0 = parseInt(parts[0], 10);
+                let p1 = parseInt(parts[1], 10);
+                let p2 = parseInt(parts[2], 10);
                 if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
-                    // Case 1: Year is first (YYYY-MM-DD or YYYY-DD-MM)
+                    // If year is first (YYYY-MM-DD)
                     if (p0 > 1000) {
                         return new Date(p0, p1 - 1, p2);
                     }
-                    // Case 2: Year is last (DD-MM-YYYY or MM-DD-YYYY)
-                    if (p2 > 1000) {
-                        if (p1 > 12) {
-                            return new Date(p2, p0 - 1, p1); // MM-DD-YYYY
-                        } else {
-                            return new Date(p2, p1 - 1, p0); // DD-MM-YYYY
-                        }
+                    // If year is last (DD-MM-YYYY or MM-DD-YYYY or DD-MM-YY)
+                    if (p2 < 100) p2 += 2000; // normalize 2-digit year (e.g. 26 -> 2026)
+                    
+                    if (p0 > 12) {
+                        return new Date(p2, p1 - 1, p0); // p0 is day, p1 is month: DD-MM-YYYY
+                    } else if (p1 > 12) {
+                        return new Date(p2, p0 - 1, p1); // p0 is month, p1 is day: MM-DD-YYYY
+                    } else {
+                        // Ambiguous case (both <= 12). Default to DD-MM-YYYY as standard in range input locale
+                        return new Date(p2, p1 - 1, p0);
                     }
                 }
             }
             const parsed = new Date(dateStr);
             if (!isNaN(parsed.getTime())) {
-                if (typeof dateStr === 'string' && dateStr.includes('-') && !dateStr.includes('T')) {
-                    return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
-                }
                 return parsed;
             }
             return null;
@@ -1564,7 +1565,7 @@
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
-                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
+                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
                 showToast("Global calendar updated");
             } catch(e) {}
         }
@@ -1698,9 +1699,9 @@
             }).join('');
         }
 
-        function calculateMetrics(dataList) {
+        function calculateMetrics(dataList, refDate = null) {
             const todayStr = getNYDateString(new Date());
-            const nyView = getNYMonthYear(new Date());
+            const nyView = getNYMonthYear(refDate || new Date());
             const currM = nyView.month;
             const currY = nyView.year;
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
@@ -1958,7 +1959,8 @@
 
             if (search) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(search) || (c.number || '').includes(search));
             
-            const metrics = calculateMetrics(filtered);
+            const refDate = startDate ? parseDateString(startDate) : null;
+            const metrics = calculateMetrics(filtered, refDate);
             upcomingPaymentList = metrics.upcomingDetails;
             nsfPaymentList = metrics.nsfDetails;
             
@@ -1990,7 +1992,7 @@
                         </button>` : ''}
                         <div class="flex gap-3 ${!canManage ? 'hidden' : ''}">
                             <button onclick="editCustomer('${c.id}')" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl hover:bg-blue-100 transition border border-blue-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition border border-red-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                            <button onclick="deleteCustomer('${c.id}')" class="bg-red-50 text-red-600 p-2.5 rounded-xl hover:bg-red-100 transition border border-red-100"><svg xmlns="http://www.w3.org/2000/xl" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                     </div></td></tr>`; }).join('');
         }
