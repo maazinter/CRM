@@ -822,65 +822,93 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Bulletproof Date parsing & comparison helpers supporting YYYY-MM-DD, DD-MM-YYYY, and MM-DD-YYYY
-        function parseDateString(dateStr) {
-            if (!dateStr) return null;
-            if (dateStr instanceof Date) return dateStr;
-            const cleanStr = dateStr.trim().replace(/[\/\.\s]/g, '-');
+        // Bulletproof date normalization to strip local browser timezone shifts
+        function normalizeToYYYYMMDD(dateInput) {
+            if (!dateInput) return "";
+            if (dateInput instanceof Date) {
+                try {
+                    const options = { timeZone: "America/New_York", year: 'numeric', month: '2-digit', day: '2-digit' };
+                    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(dateInput);
+                    const y = parts.find(p => p.type === 'year').value;
+                    const m = parts.find(p => p.type === 'month').value;
+                    const d = parts.find(p => p.type === 'day').value;
+                    return `${y}-${m}-${d}`;
+                } catch (e) {
+                    const y = dateInput.getUTCFullYear();
+                    const m = String(dateInput.getUTCMonth() + 1).padStart(2, '0');
+                    const d = String(dateInput.getUTCDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
+            }
+            
+            const dateStr = String(dateInput).trim();
+            const dashMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if (dashMatch) {
+                return `${dashMatch[1]}-${dashMatch[2].padStart(2, '0')}-${dashMatch[3].padStart(2, '0')}`;
+            }
+            
+            if (dateStr.includes('T')) {
+                return dateStr.split('T')[0];
+            }
+
+            const cleanStr = dateStr.replace(/[\/\.\s]/g, '-');
             const parts = cleanStr.split('-');
             if (parts.length === 3) {
                 let p0 = parseInt(parts[0], 10);
                 let p1 = parseInt(parts[1], 10);
                 let p2 = parseInt(parts[2], 10);
                 if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
-                    // If year is first (YYYY-MM-DD)
                     if (p0 > 1000) {
-                        return new Date(p0, p1 - 1, p2);
+                        return `${p0}-${String(p1).padStart(2, '0')}-${String(p2).padStart(2, '0')}`;
                     }
-                    // If year is last (DD-MM-YYYY or MM-DD-YYYY or DD-MM-YY)
-                    if (p2 < 100) p2 += 2000; // normalize 2-digit year (e.g. 26 -> 2026)
+                    if (p2 < 100) p2 += 2000;
                     
+                    let month = p0;
+                    let day = p1;
                     if (p0 > 12) {
-                        return new Date(p2, p1 - 1, p0); // p0 is day, p1 is month: DD-MM-YYYY
+                        month = p1;
+                        day = p0;
                     } else if (p1 > 12) {
-                        return new Date(p2, p0 - 1, p1); // p0 is month, p1 is day: MM-DD-YYYY
+                        month = p0;
+                        day = p1;
                     } else {
-                        // Ambiguous case (both <= 12). Default to DD-MM-YYYY as standard in range input locale
-                        return new Date(p2, p1 - 1, p0);
+                        // Ambiguous - April payments spreadsheets use standard DD/MM/YYYY
+                        month = p1;
+                        day = p0;
                     }
+                    return `${p2}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 }
             }
-            const parsed = new Date(dateStr);
+            
+            const parsed = new Date(dateInput);
             if (!isNaN(parsed.getTime())) {
-                return parsed;
+                const y = parsed.getUTCFullYear();
+                const m = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(parsed.getUTCDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
             }
-            return null;
+            return "";
         }
 
         function isDateInRange(dateStr, startStr, endStr) {
-            const itemDate = parseDateString(dateStr);
-            if (!itemDate) return false;
+            const itemNormal = normalizeToYYYYMMDD(dateStr);
+            if (!itemNormal) return false;
             
-            itemDate.setHours(0, 0, 0, 0);
-            const itemTime = itemDate.getTime();
+            const startNormal = normalizeToYYYYMMDD(startStr);
+            const endNormal = normalizeToYYYYMMDD(endStr);
             
-            if (startStr) {
-                const startDate = parseDateString(startStr);
-                if (startDate) {
-                    startDate.setHours(0, 0, 0, 0);
-                    if (itemTime < startDate.getTime()) return false;
-                }
-            }
-            
-            if (endStr) {
-                const endDate = parseDateString(endStr);
-                if (endDate) {
-                    endDate.setHours(0, 0, 0, 0);
-                    if (itemTime > endDate.getTime()) return false;
-                }
-            }
+            if (startNormal && itemNormal < startNormal) return false;
+            if (endNormal && itemNormal > endNormal) return false;
             
             return true;
+        }
+
+        // Dummy fallback date parser for legacy UI features
+        function parseDateString(dateStr) {
+            const normal = normalizeToYYYYMMDD(dateStr);
+            if (!normal) return null;
+            const parts = normal.split('-');
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         }
 
         const firebaseConfig = {
@@ -1565,7 +1593,7 @@
                     if (existing) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'global_calendar', existing.id), { type });
                     else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), { date, type });
                 }
-                document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
+                document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
                 showToast("Global calendar updated");
             } catch(e) {}
         }
@@ -1651,10 +1679,11 @@
                         const amt = parseFloat(item.amount || 0);
                         performance[id].totalRevenue += amt;
                         
-                        const itemDate = parseDateString(item.date);
-                        if (itemDate) {
-                            const pm = itemDate.getMonth();
-                            const py = itemDate.getFullYear();
+                        const itemNormal = normalizeToYYYYMMDD(item.date);
+                        if (itemNormal) {
+                            const itemParts = itemNormal.split('-');
+                            const pm = parseInt(itemParts[1], 10) - 1;
+                            const py = parseInt(itemParts[0], 10);
                             if (pm === currM && py === currY) performance[id].monthlyRevenue += amt;
                         }
                     }
@@ -1677,12 +1706,12 @@
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
                         if (item.status === 'pending' && item.date) {
-                            const itemDate = parseDateString(item.date);
-                            if (itemDate) {
-                                const itemM = itemDate.getMonth();
-                                const itemY = itemDate.getFullYear();
-                                const normalizedItemDateStr = `${itemY}-${String(itemM + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
-                                return itemM === currM && itemY === currY && normalizedItemDateStr < todayStr;
+                            const itemNormal = normalizeToYYYYMMDD(item.date);
+                            if (itemNormal) {
+                                const itemParts = itemNormal.split('-');
+                                const itemM = parseInt(itemParts[1], 10) - 1;
+                                const itemY = parseInt(itemParts[0], 10);
+                                return itemM === currM && itemY === currY && itemNormal < todayStr;
                             }
                         }
                         return false;
@@ -1701,34 +1730,43 @@
 
         function calculateMetrics(dataList, refDate = null) {
             const todayStr = getNYDateString(new Date());
-            const nyView = getNYMonthYear(refDate || new Date());
-            const currM = nyView.month;
-            const currY = nyView.year;
+            
+            // Safe month/year parsing
+            const refNormal = normalizeToYYYYMMDD(refDate || new Date());
+            const parts = refNormal.split('-');
+            const currY = parseInt(parts[0], 10);
+            const currM = parseInt(parts[1], 10) - 1;
+            
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             
             dataList.forEach(c => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-                const nyCreated = getNYMonthYear(new Date(c.createdAt));
-                if (nyCreated.month === currM && nyCreated.year === currY) metrics.monthCount++;
+                const cNormal = normalizeToYYYYMMDD(c.createdAt);
+                if (cNormal) {
+                    const cParts = cNormal.split('-');
+                    const cY = parseInt(cParts[0], 10);
+                    const cM = parseInt(cParts[1], 10) - 1;
+                    if (cM === currM && cY === currY) metrics.monthCount++;
+                }
                 
                 let addedToNsf = false;
                 sched.forEach(item => {
                     if (!item.date) return;
                     
                     const amt = parseFloat(item.amount || 0);
-                    const itemDate = parseDateString(item.date);
-                    if (!itemDate) return;
+                    const itemNormal = normalizeToYYYYMMDD(item.date);
+                    if (!itemNormal) return;
                     
-                    const itemM = itemDate.getMonth();
-                    const itemY = itemDate.getFullYear();
-                    const normalizedItemDateStr = `${itemY}-${String(itemM + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
+                    const itemParts = itemNormal.split('-');
+                    const itemY = parseInt(itemParts[0], 10);
+                    const itemM = parseInt(itemParts[1], 10) - 1;
 
                     if (item.status === 'paid') {
                         metrics.lifetimeRev += amt;
-                        if (normalizedItemDateStr === todayStr) metrics.todayRev += amt;
+                        if (itemNormal === todayStr) metrics.todayRev += amt;
                         if (itemM === currM && itemY === currY) metrics.monthRev += amt;
                     } else if (c.status !== 'Cancel') {
-                        if (normalizedItemDateStr < todayStr) {
+                        if (itemNormal < todayStr) {
                             if (!addedToNsf) { 
                                 metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
                                 addedToNsf = true; 
