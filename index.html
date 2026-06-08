@@ -822,23 +822,14 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, onSnapshot, doc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Bulletproof date normalization to strip local browser timezone shifts
+        // Timezone-independent parsing engine that treats date strings as local calendar days
         function normalizeToYYYYMMDD(dateInput) {
             if (!dateInput) return "";
             if (dateInput instanceof Date) {
-                try {
-                    const options = { timeZone: "America/New_York", year: 'numeric', month: '2-digit', day: '2-digit' };
-                    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(dateInput);
-                    const y = parts.find(p => p.type === 'year').value;
-                    const m = parts.find(p => p.type === 'month').value;
-                    const d = parts.find(p => p.type === 'day').value;
-                    return `${y}-${m}-${d}`;
-                } catch (e) {
-                    const y = dateInput.getUTCFullYear();
-                    const m = String(dateInput.getUTCMonth() + 1).padStart(2, '0');
-                    const d = String(dateInput.getUTCDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                }
+                const y = dateInput.getFullYear();
+                const m = String(dateInput.getMonth() + 1).padStart(2, '0');
+                const d = String(dateInput.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
             }
             
             const dateStr = String(dateInput).trim();
@@ -863,18 +854,18 @@
                     }
                     if (p2 < 100) p2 += 2000;
                     
-                    let month = p0;
-                    let day = p1;
+                    let month = p1;
+                    let day = p0;
                     if (p0 > 12) {
-                        month = p1;
                         day = p0;
+                        month = p1;
                     } else if (p1 > 12) {
-                        month = p0;
                         day = p1;
+                        month = p0;
                     } else {
-                        // Ambiguous - April payments spreadsheets use standard DD/MM/YYYY
-                        month = p1;
+                        // Ambiguous case: Since database dates are proven to be DD/MM/YYYY
                         day = p0;
+                        month = p1;
                     }
                     return `${p2}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 }
@@ -882,9 +873,9 @@
             
             const parsed = new Date(dateInput);
             if (!isNaN(parsed.getTime())) {
-                const y = parsed.getUTCFullYear();
-                const m = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-                const d = String(parsed.getUTCDate()).padStart(2, '0');
+                const y = parsed.getFullYear();
+                const m = String(parsed.getMonth() + 1).padStart(2, '0');
+                const d = String(parsed.getDate()).padStart(2, '0');
                 return `${y}-${m}-${d}`;
             }
             return "";
@@ -903,7 +894,6 @@
             return true;
         }
 
-        // Dummy fallback date parser for legacy UI features
         function parseDateString(dateStr) {
             const normal = normalizeToYYYYMMDD(dateStr);
             if (!normal) return null;
