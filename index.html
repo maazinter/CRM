@@ -257,6 +257,11 @@
                         <span id="chat-notification-badge" class="nav-badge"></span>
                     </button>
 
+                    <button onclick="switchTab('payroll-governance')" class="nav-link w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-bold text-xs group" id="nav-payroll-governance">
+                        <i class="fa-solid fa-file-invoice-dollar text-slate-500 group-hover:text-emerald-400 transition-colors w-4 text-center"></i>
+                        <span>Payroll & Penalty Ledger</span>
+                    </button>
+
                     <p class="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest pt-5 mb-2 flex items-center justify-between">
                         <span>CRM Operations</span>
                         <span class="text-xs">💎</span>
@@ -602,8 +607,11 @@
                             <div id="leave-form-container" class="glass-card p-6 sm:p-8 rounded-3xl border border-white/10 space-y-5">
                                 <h4 class="text-xs font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
                                     <i class="fa-solid fa-plane-departure"></i>
-                                    Apply for Leave
+                                    Apply for Leave (48h Notice)
                                 </h4>
+                                <p class="text-[10px] font-semibold text-slate-400 leading-normal">
+                                    Planned leaves require 48h advance CRM notice. Monday cut-off: Fri 6 PM; Friday cut-off: Wed 6 PM. Emergency leave requires 2h advance notice & 24h proof.
+                                </p>
                                 <form id="leave-request-form" class="space-y-4">
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
@@ -618,14 +626,15 @@
                                     <div>
                                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Leave Category</label>
                                         <select name="leaveType" required class="w-full px-3.5 py-3 glass-input rounded-xl text-xs font-bold outline-none">
+                                            <option value="Paid Leave" class="bg-slate-900">Paid Leave (1 PL/mo available)</option>
+                                            <option value="Casual Leave" class="bg-slate-900">Casual Leave (48h Planned)</option>
+                                            <option value="Emergency" class="bg-slate-900">Emergency Leave (SOP: 2h notice + doc)</option>
                                             <option value="Sick Leave" class="bg-slate-900">Sick Leave</option>
-                                            <option value="Casual Leave" class="bg-slate-900">Casual Leave</option>
-                                            <option value="Emergency" class="bg-slate-900">Emergency Leave</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Reason</label>
-                                        <textarea name="reason" placeholder="State reason..." required class="w-full px-3.5 py-3 glass-input rounded-xl text-xs font-semibold outline-none h-24 custom-scroll"></textarea>
+                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Reason / Document Detail</label>
+                                        <textarea name="reason" placeholder="State reason & documentation details..." required class="w-full px-3.5 py-3 glass-input rounded-xl text-xs font-semibold outline-none h-24 custom-scroll"></textarea>
                                     </div>
                                     <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:opacity-95 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-neon-cyan transition">Submit Application</button>
                                 </form>
@@ -637,6 +646,71 @@
                                 <div id="pending-approvals-list" class="space-y-3.5 max-h-[450px] overflow-y-auto pr-1 custom-scroll"></div>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Payroll & Governance Ledger Tab -->
+                <section id="tab-payroll-governance" class="tab-content hidden animate-fade-in space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-white tracking-tight font-display flex items-center gap-3">
+                                <span>Salary & Automated Deduction Ledger</span>
+                                <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-extrabold border border-emerald-500/25">REF: MI/AGT-POL/2026</span>
+                            </h2>
+                            <p class="text-slate-400 font-semibold text-xs sm:text-sm mt-1">Automated Governance Engine: Late logins, Sandwich penalties, and Performance audits</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-400">Month:</span>
+                            <span id="payroll-month-label" class="text-xs font-black text-white uppercase bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">October 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- SOP Policy Rule Highlights Bar -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="glass-card p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+                            <div class="flex items-center gap-2 text-amber-400 text-xs font-black mb-1">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>Late Logins</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                                2 grace instances allowed (≤15m). <strong class="text-amber-300">3rd Late onwards = 0.5-Day salary cut</strong> each.
+                            </p>
+                        </div>
+
+                        <div class="glass-card p-4 rounded-2xl border border-rose-500/20 bg-rose-500/5">
+                            <div class="flex items-center gap-2 text-rose-400 text-xs font-black mb-1">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Unscheduled Absence</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                                Calling in without 48h advance notice = <strong class="text-rose-300">2-Day flat salary deduction</strong> per incident.
+                            </p>
+                        </div>
+
+                        <div class="glass-card p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5">
+                            <div class="flex items-center gap-2 text-purple-400 text-xs font-black mb-1">
+                                <i class="fa-solid fa-layer-group"></i>
+                                <span>Sandwich Rule</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                                Unapproved leave on Friday or Monday = <strong class="text-purple-300">4-Day salary deduction</strong> (Fri+Sat+Sun+Mon).
+                            </p>
+                        </div>
+
+                        <div class="glass-card p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                            <div class="flex items-center gap-2 text-emerald-400 text-xs font-black mb-1">
+                                <i class="fa-solid fa-gift"></i>
+                                <span>₹1,000 Attendance Bonus</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                                100% attendance, zero unapproved leaves, zero late penalties, + unused monthly PL credited.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Individual Agent Salary & Ledger Card (If Agent) OR All Agents Roster (If Admin/Manager) -->
+                    <div id="payroll-view-container" class="space-y-6">
+                        <!-- Populated dynamically -->
                     </div>
                 </section>
 
@@ -1017,6 +1091,15 @@
                                     </select>
                                 </div>
 
+                                <div>
+                                    <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-wider mb-1">Monthly Base Salary (₹ / INR)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3.5 top-3 text-emerald-400 font-bold text-xs">₹</span>
+                                        <input type="number" name="userSalary" id="user-field-salary" placeholder="e.g. 25000" min="0" step="500" required class="w-full pl-8 pr-4 py-3 glass-input rounded-xl outline-none font-bold text-xs text-emerald-300">
+                                    </div>
+                                    <p class="text-[9px] text-slate-500 font-semibold mt-1">Daily per-day rate = Base Salary / 30 for automated deduction formulas</p>
+                                </div>
+
                                 <div class="flex items-center gap-2.5 px-1 py-1">
                                     <input type="checkbox" id="user-field-isCloser" name="userIsCloser" class="w-4 h-4 rounded border-slate-700 text-indigo-500 focus:ring-indigo-500">
                                     <label for="user-field-isCloser" class="text-xs font-bold text-slate-300 uppercase tracking-wider">Assign as Sale Closer</label>
@@ -1033,6 +1116,7 @@
                                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
                                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity & Pass</th>
                                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
                                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -1055,16 +1139,22 @@
             </div>
             <div class="p-6 space-y-5">
                 <div id="staff-edit-controls" class="space-y-2.5 hidden">
-                    <h3 class="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Staff Attendance</h3>
+                    <h3 class="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Staff Attendance & Governance</h3>
                     <div class="grid grid-cols-2 gap-2.5">
-                        <button onclick="setStaffAttendance('daily', 'approved')" class="bg-emerald-500/20 text-emerald-400 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-emerald-500/30 hover:bg-emerald-500/30 transition">Present</button>
+                        <button onclick="setStaffAttendance('daily', 'approved', false)" class="bg-emerald-500/20 text-emerald-400 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-emerald-500/30 hover:bg-emerald-500/30 transition">Present</button>
+                        <button onclick="setStaffAttendance('late', 'approved', true)" class="bg-amber-500/20 text-amber-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-amber-500/30 hover:bg-amber-500/30 transition">Late Login (>15m)</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button onclick="setStaffAttendance('leave', 'approved', false)" class="bg-cyan-500/20 text-cyan-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-cyan-500/30 hover:bg-cyan-500/30 transition">Approved Leave</button>
                         <button onclick="clearStaffAttendance()" class="bg-slate-800 text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-white/10 hover:bg-slate-700 transition">Absent</button>
                     </div>
-                    <button onclick="setStaffAttendance('leave', 'approved')" class="w-full bg-cyan-500/20 text-cyan-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-cyan-500/30 hover:bg-cyan-500/30 transition">Approved Leave</button>
-                    <div class="grid grid-cols-2 gap-2.5 mt-2">
-                        <button onclick="setStaffAttendance('hd', 'approved')" class="bg-violet-500/20 text-violet-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-violet-500/30 hover:bg-violet-500/30 transition">Half Day (HD)</button>
-                        <button onclick="setStaffAttendance('ul', 'approved')" class="bg-rose-500/20 text-rose-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-rose-500/30 hover:bg-rose-500/30 transition">Unscheduled (UL)</button>
+                    <div class="grid grid-cols-2 gap-2.5 mt-1">
+                        <button onclick="setStaffAttendance('hd', 'approved', false)" class="bg-violet-500/20 text-violet-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-violet-500/30 hover:bg-violet-500/30 transition">Half Day (HD)</button>
+                        <button onclick="setStaffAttendance('ul', 'approved', false)" class="bg-rose-500/20 text-rose-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-rose-500/30 hover:bg-rose-500/30 transition">Unscheduled (UL 2-Day)</button>
                     </div>
+                    <button onclick="setStaffAttendance('sandwich', 'approved', false)" class="w-full bg-purple-500/20 text-purple-300 py-2.5 rounded-xl font-bold text-[10px] uppercase border border-purple-500/30 hover:bg-purple-500/30 transition">
+                        Flag Sandwich Absence (4-Day Penalty)
+                    </button>
                 </div>
                 <div id="global-management-controls" class="space-y-2.5">
                     <h3 class="text-[10px] font-black text-amber-400 uppercase tracking-widest">Global Calendar Override</h3>
@@ -1679,6 +1769,7 @@
 
             document.getElementById('nav-dashboard').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-attendance').classList.toggle('hidden', isChatOnly);
+            document.getElementById('nav-payroll-governance').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-add-customer').classList.toggle('hidden', isChatOnly || role === 'manager');
             document.getElementById('nav-customer-list').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-manage-users').classList.toggle('hidden', role !== 'admin');
@@ -1707,6 +1798,7 @@
                 renderUsers();
                 renderAgentPerformance();
                 populateAgentSelect();
+                renderPayrollLedger();
                 if (currentUser.role !== 'agent' && currentUser.role !== 'chat-support') renderStaffOverview();
             });
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
@@ -1719,11 +1811,13 @@
                 attendance = [];
                 snap.forEach(d => attendance.push({ ...d.data(), id: d.id }));
                 renderAttendancePortal();
+                renderPayrollLedger();
             });
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'global_calendar'), (snap) => {
                 globalCalendar = [];
                 snap.forEach(d => globalCalendar.push({ ...d.data(), id: d.id }));
                 renderAttendancePortal();
+                renderPayrollLedger();
             });
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), (snap) => {
@@ -2014,10 +2108,14 @@
                     holidayCount++;
                 } else if (record) {
                     if (record.status === 'approved') {
-                        if (record.type === 'hd') {
+                        if (record.type === 'sandwich') {
+                            dayClass = "bg-purple-500/10 border-purple-500/30"; statusLabel = "SANDWICH (-4D)"; indicatorColor = "bg-purple-400"; ulCount += 4;
+                        } else if (record.type === 'late' || record.isLate) {
+                            dayClass = "bg-amber-500/10 border-amber-500/30"; statusLabel = "LATE LOGIN"; indicatorColor = "bg-amber-400"; presentCount++;
+                        } else if (record.type === 'hd') {
                             dayClass = "bg-violet-500/10 border-violet-500/30"; statusLabel = "HALF DAY"; indicatorColor = "bg-violet-400"; hdCount++; presentCount += 0.5;
                         } else if (record.type === 'ul') {
-                            dayClass = "bg-rose-500/10 border-rose-500/30"; statusLabel = "UNSCHED"; indicatorColor = "bg-rose-400"; ulCount++;
+                            dayClass = "bg-rose-500/10 border-rose-500/30"; statusLabel = "UNSCHED (-2D)"; indicatorColor = "bg-rose-400"; ulCount++;
                         } else if (record.type === 'leave') {
                             dayClass = "bg-cyan-500/10 border-cyan-500/30"; statusLabel = "LEAVE"; indicatorColor = "bg-cyan-400"; leaveCount++;
                         } else {
@@ -2112,24 +2210,28 @@
             
             const staff = viewingUserId ? users.find(u => u.id === viewingUserId) : null;
             subtitle.textContent = viewingUserId ? "Editing: " + (staff?.name || "Staff") : "Global Calendar Override";
-
             document.getElementById('staff-edit-controls').classList.toggle('hidden', !viewingUserId);
             document.getElementById('day-management-modal').classList.replace('hidden', 'flex');
-        }
+        };
 
-        window.setStaffAttendance = async (type, status) => {
+        window.setStaffAttendance = async (type, status, isLate = false) => {
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
                 const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
                 for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
 
-                const payload = { userId: viewingUserId, status, type, createdAt: new Date().toISOString() };
-                if (type === 'daily') payload.date = date; else { payload.startDate = date; payload.endDate = date; }
+                const payload = { userId: viewingUserId, status, type, isLate, createdAt: new Date().toISOString() };
+                if (type === 'daily' || type === 'late' || type === 'sandwich') {
+                    payload.date = date; 
+                } else { 
+                    payload.startDate = date; 
+                    payload.endDate = date; 
+                }
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Record updated manually");
+                showToast("Record updated with governance code");
             } catch(e) { showToast("Save error"); }
         }
 
@@ -2242,7 +2344,10 @@
 
         function renderUsers() {
             const tbody = document.getElementById('user-management-table');
-            tbody.innerHTML = users.map(u => `
+            tbody.innerHTML = users.map(u => {
+                const baseSal = parseFloat(u.monthlySalary || 0);
+                const dailyRate = (baseSal / 30).toFixed(0);
+                return `
                 <tr class="hover:bg-white/5 transition ${u.status === 'Inactive' ? 'opacity-50' : ''}">
                     <td class="px-6 py-4 font-black text-white text-xs">
                         ${u.name}
@@ -2254,6 +2359,10 @@
                         <div class="text-[10px] font-bold text-cyan-400 mt-1">${u.password}</div>
                     </td>
                     <td class="px-6 py-4"><span class="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black uppercase tracking-wider text-slate-300 border border-white/10">${u.role}</span></td>
+                    <td class="px-6 py-4">
+                        <div class="text-xs font-black text-emerald-400">₹${baseSal.toLocaleString()}</div>
+                        <div class="text-[9px] font-bold text-slate-500">₹${dailyRate}/day</div>
+                    </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2.5">
                             <button onclick="viewUserStats('${u.id}')" class="text-cyan-400 hover:text-cyan-300 transition font-black text-[10px] uppercase">Stats</button>
@@ -2263,7 +2372,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function renderAgentPerformance() {
@@ -2823,6 +2932,7 @@
             }
 
             if (id === 'attendance') { viewingUserId = null; renderAttendancePortal(); }
+            if (id === 'payroll-governance') { renderPayrollLedger(); }
             if (id === 'team-chat') { renderTeamChat(); }
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
@@ -2830,226 +2940,348 @@
             }
         };
 
-        window.toggleMobileMenu = () => {
-            const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');
-        };
+        // --- AUTOMATED PAYROLL & GOVERNANCE DEDUCTION ENGINE ---
+        function calculateAgentPayrollGovernance(userObj, targetMonth = null, targetYear = null) {
+            const nyView = getNYMonthYear(new Date());
+            const m = targetMonth !== null ? targetMonth : nyView.month;
+            const y = targetYear !== null ? targetYear : nyView.year;
 
-        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
+            const baseSalary = parseFloat(userObj.monthlySalary || 0);
+            const dailyRate = baseSalary > 0 ? (baseSalary / 30) : 0;
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-        window.updatePaymentSchedule = (existing = null) => {
-            const type = document.getElementById('paymentType').value; 
-            const payToday = document.getElementById('payToday').checked; 
-            const fee = parseFloat(document.getElementById('enrollmentFee').value || 0); 
-            const container = document.getElementById('schedule-container'); 
-            const group = document.getElementById('tenure-input-group');
-            
-            container.innerHTML = '';
-            
-            if (type === 'Single') {
-                group.classList.add('hidden'); 
-                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? getNYDateString(new Date()) : '' };
-                container.innerHTML = createScheduleItem(1, sched, true);
-            } else {
-                group.classList.remove('hidden');
-                if (existing && existing.length > 0) {
-                    document.getElementById('tenureCount').value = existing.length;
+            let lateInstances = [];
+            let unscheduledLeaves = [];
+            let sandwichLeaves = [];
+            let approvedPaidLeaves = [];
+            let halfDays = [];
+            let totalPresentDays = 0;
+
+            // Fetch records for current selected month
+            attendance.forEach(rec => {
+                if (rec.userId !== userObj.id) return;
+                const recDate = rec.date || rec.startDate;
+                if (!recDate) return;
+                const normal = normalizeToYYYYMMDD(recDate);
+                if (!normal) return;
+                const [rY, rM, rD] = normal.split('-').map(v => parseInt(v, 10));
+                if (rM - 1 !== m || rY !== y) return;
+
+                if (rec.status === 'approved') {
+                    if (rec.type === 'late' || rec.isLate) {
+                        lateInstances.push({ date: normal, reason: "Late Shift Login (>15 mins)" });
+                        totalPresentDays += 1;
+                    } else if (rec.type === 'sandwich') {
+                        sandwichLeaves.push({ date: normal, reason: "Weekend Sandwich Rule Violation (Friday/Monday unapproved)" });
+                    } else if (rec.type === 'ul') {
+                        unscheduledLeaves.push({ date: normal, reason: "Unscheduled / Sudden Absence (<48 hrs notice)" });
+                    } else if (rec.type === 'hd') {
+                        halfDays.push({ date: normal, reason: "Half Day Logged" });
+                        totalPresentDays += 0.5;
+                    } else if (rec.type === 'leave') {
+                        approvedPaidLeaves.push({ date: normal, reason: "Approved Leave Application" });
+                    } else if (rec.type === 'daily') {
+                        totalPresentDays += 1;
+                    }
                 }
-                const count = parseInt(document.getElementById('tenureCount').value); 
-                const perMonth = fee / count;
-                for (let i = 1; i <= count; i++) {
-                    const isFirstToday = (i === 1 && payToday);
-                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? getNYDateString(new Date()) : '' };
-                    container.innerHTML += createScheduleItem(i, sched, false);
-                }
+            });
+
+            // 1. Late Login Deductions:
+            // 1st & 2nd late = Grace Warning (₹0 cut).
+            // 3rd late onwards = 0.5-Day salary cut per incident.
+            let lateDeductionDays = 0;
+            if (lateInstances.length >= 3) {
+                lateDeductionDays = (lateInstances.length - 2) * 0.5;
             }
-        };
+            const lateDeductionAmount = lateDeductionDays * dailyRate;
 
-        function createScheduleItem(index, data, isSingle) {
-            return `
-                <div class="schedule-item glass-card p-4 rounded-2xl border border-white/10 shadow-sm space-y-2.5">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Total Fee' : 'Inst. #' + index}</span>
-                        <select class="tenure-status-select text-[10px] font-bold border border-white/10 rounded-lg p-1 outline-none text-white bg-slate-900">
-                            <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="paid" ${data.status === 'paid' ? 'selected' : ''}>Paid</option>
-                            <option value="decline" ${data.status === 'decline' ? 'selected' : ''}>Decline</option>
-                        </select>
+            // 2. Unscheduled Leave Deductions:
+            // 2-Day Salary Deducted per incident
+            const unscheduledDeductionDays = unscheduledLeaves.length * 2.0;
+            const unscheduledDeductionAmount = unscheduledDeductionDays * dailyRate;
+
+            // 3. Sandwich Leave Deductions:
+            // 4-Day Salary Deducted (Fri+Sat+Sun+Mon)
+            const sandwichDeductionDays = sandwichLeaves.length * 4.0;
+            const sandwichDeductionAmount = sandwichDeductionDays * dailyRate;
+
+            // 4. Half Day Deductions: 0.5 day cut per HD
+            const hdDeductionDays = halfDays.length * 0.5;
+            const hdDeductionAmount = hdDeductionDays * dailyRate;
+
+            // Total Days Penalized
+            const totalDeductionDays = lateDeductionDays + unscheduledDeductionDays + sandwichDeductionDays + hdDeductionDays;
+            const totalDeductionAmount = lateDeductionAmount + unscheduledDeductionAmount + sandwichDeductionAmount + hdDeductionAmount;
+
+            // 5. Perfect Attendance Bonus (₹1,000 / $1,000):
+            // 100% full attendance, zero unapproved leaves (unscheduled/sandwich == 0),
+            // late logins <= 2 (grace), and unused monthly 1 PL
+            let attendanceBonus = 0;
+            const isFullAttendance = (unscheduledLeaves.length === 0 && sandwichLeaves.length === 0 && lateInstances.length <= 2);
+            if (isFullAttendance && approvedPaidLeaves.length === 0 && baseSalary > 0) {
+                attendanceBonus = 1000;
+            }
+
+            const netPayable = Math.max(0, baseSalary - totalDeductionAmount + attendanceBonus);
+
+            return {
+                user: userObj,
+                baseSalary,
+                dailyRate,
+                totalPresentDays,
+                lateInstances,
+                lateDeductionDays,
+                lateDeductionAmount,
+                unscheduledLeaves,
+                unscheduledDeductionDays,
+                unscheduledDeductionAmount,
+                sandwichLeaves,
+                sandwichDeductionDays,
+                sandwichDeductionAmount,
+                halfDays,
+                hdDeductionDays,
+                hdDeductionAmount,
+                totalDeductionDays,
+                totalDeductionAmount,
+                attendanceBonus,
+                netPayable
+            };
+        }
+
+        function renderPayrollLedger() {
+            const container = document.getElementById('payroll-view-container');
+            if (!container || !currentUser) return;
+
+            const nyView = getNYMonthYear(new Date());
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const monthLabel = document.getElementById('payroll-month-label');
+            if (monthLabel) monthLabel.textContent = `${monthNames[nyView.month]} ${nyView.year}`;
+
+            let targetUsers = [];
+            if (currentUser.role === 'agent') {
+                targetUsers = [currentUser];
+            } else if (currentUser.role === 'manager') {
+                targetUsers = users.filter(u => u.role === 'agent' && (u.status === 'Active' || !u.status));
+            } else {
+                targetUsers = users.filter(u => u.role !== 'chat-support');
+            }
+
+            if (!targetUsers.length) {
+                container.innerHTML = `<div class="p-8 text-center glass-card rounded-3xl border border-white/10 text-slate-400 font-bold">No active users with salary configurations found.</div>`;
+                return;
+            }
+
+            let html = ``;
+
+            // If Admin or Manager, show overall payroll ledger summary
+            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+                let totalCompanyBase = 0;
+                let totalCompanyDeductions = 0;
+                let totalCompanyBonus = 0;
+                let totalCompanyNet = 0;
+
+                const payrollReports = targetUsers.map(u => {
+                    const rep = calculateAgentPayrollGovernance(u, nyView.month, nyView.year);
+                    totalCompanyBase += rep.baseSalary;
+                    totalCompanyDeductions += rep.totalDeductionAmount;
+                    totalCompanyBonus += rep.attendanceBonus;
+                    totalCompanyNet += rep.netPayable;
+                    return rep;
+                });
+
+                html += `
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+                        <div class="glass-card p-5 rounded-3xl border border-white/10">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Company Base Payroll</p>
+                            <h3 class="text-2xl font-black text-white">₹${totalCompanyBase.toLocaleString()}</h3>
+                            <p class="text-[9px] font-bold text-slate-500 mt-1">${targetUsers.length} Team Members</p>
+                        </div>
+                        <div class="glass-card p-5 rounded-3xl border border-rose-500/20 bg-rose-500/5">
+                            <p class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Infraction Deductions</p>
+                            <h3 class="text-2xl font-black text-rose-400">-₹${totalCompanyDeductions.toLocaleString()}</h3>
+                            <p class="text-[9px] font-bold text-rose-500/80 mt-1">Automated Policy Matrix</p>
+                        </div>
+                        <div class="glass-card p-5 rounded-3xl border border-emerald-500/20 bg-emerald-500/5">
+                            <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Attendance Incentives</p>
+                            <h3 class="text-2xl font-black text-emerald-400">+₹${totalCompanyBonus.toLocaleString()}</h3>
+                            <p class="text-[9px] font-bold text-emerald-500/80 mt-1">₹1,000 Perfect Bonus Pool</p>
+                        </div>
+                        <div class="glass-card p-5 rounded-3xl border border-cyan-500/30 bg-cyan-500/10">
+                            <p class="text-[10px] font-black text-cyan-300 uppercase tracking-widest mb-1">Net Monthly Disbursal</p>
+                            <h3 class="text-2xl font-black text-cyan-400">₹${totalCompanyNet.toLocaleString()}</h3>
+                            <p class="text-[9px] font-bold text-cyan-400/80 mt-1">Live Payroll Output</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
-                        <span class="font-black text-slate-400 text-sm">$</span>
-                        <input type="number" step="0.01" class="tenure-amount-input font-black text-base w-full outline-none bg-transparent text-white" value="${data.amount}">
+
+                    <!-- Detailed Staff Payroll Governance Table -->
+                    <div class="glass-card rounded-3xl shadow-2xl border border-white/10 overflow-hidden">
+                        <div class="overflow-x-auto custom-scroll">
+                            <table class="w-full text-left min-w-[950px]">
+                                <thead class="bg-slate-950/80 border-b border-white/10">
+                                    <tr>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent / Role</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Late Logins</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Unscheduled / Sandwich</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Deduction (Days)</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Deducted (₹)</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Bonus (₹)</th>
+                                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Net Payable</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    ${payrollReports.map(r => `
+                                        <tr class="hover:bg-white/5 transition">
+                                            <td class="px-6 py-4">
+                                                <div class="font-black text-white text-xs">${r.user.name}</div>
+                                                <div class="text-[9px] font-bold text-slate-400 uppercase">${r.user.role}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-xs font-bold text-slate-200">₹${r.baseSalary.toLocaleString()}</div>
+                                                <div class="text-[9px] text-slate-500 font-semibold">₹${r.dailyRate.toFixed(0)}/day</div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black ${r.lateInstances.length > 2 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-white/5 text-slate-400'}">
+                                                    ${r.lateInstances.length} Lates ${r.lateInstances.length > 2 ? `(-${r.lateDeductionDays}D)` : '(Grace)'}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="text-[11px] font-bold ${r.unscheduledLeaves.length > 0 ? 'text-rose-400' : 'text-slate-400'}">
+                                                    ${r.unscheduledLeaves.length} UL ${r.sandwichLeaves.length > 0 ? `+ ${r.sandwichLeaves.length} Sandwich` : ''}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="px-2.5 py-1 rounded-lg text-xs font-black ${r.totalDeductionDays > 0 ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'text-slate-500'}">
+                                                    -${r.totalDeductionDays} Days
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right font-black text-xs ${r.totalDeductionAmount > 0 ? 'text-rose-400' : 'text-slate-500'}">
+                                                -₹${r.totalDeductionAmount.toLocaleString()}
+                                            </td>
+                                            <td class="px-6 py-4 text-right font-black text-xs ${r.attendanceBonus > 0 ? 'text-emerald-400' : 'text-slate-500'}">
+                                                +₹${r.attendanceBonus.toLocaleString()}
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <span class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 font-black text-xs border border-cyan-500/20">
+                                                    ₹${r.netPayable.toLocaleString()}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <input type="date" class="w-full glass-input p-2 rounded-xl text-xs font-bold outline-none" value="${data.date}">
+                `;
+            }
+
+            // Individual Detailed Breakdown Card (shown for agent or selected user)
+            const targetIndividual = (currentUser.role === 'agent') ? currentUser : targetUsers[0];
+            const indReport = calculateAgentPayrollGovernance(targetIndividual, nyView.month, nyView.year);
+
+            html += `
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-white/10 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-white/10 pb-5">
+                        <div>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Agent Performance & Deduction Statement</span>
+                            <h3 class="text-xl font-black text-white font-display mt-0.5">${indReport.user.name} (${indReport.user.role})</h3>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Base Rate</span>
+                            <h4 class="text-lg font-black text-emerald-400">₹${indReport.baseSalary.toLocaleString()} <span class="text-xs font-semibold text-slate-400">/ mo</span></h4>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Late Shift Logins</p>
+                            <h4 class="text-lg font-black ${indReport.lateInstances.length > 2 ? 'text-amber-400' : 'text-slate-300'} mt-1">
+                                ${indReport.lateInstances.length} <span class="text-xs font-medium text-slate-500">instances</span>
+                            </h4>
+                            <p class="text-[9px] font-semibold text-slate-400 mt-1">
+                                ${indReport.lateInstances.length > 2 ? `Deducted: ${indReport.lateDeductionDays} Day(s) (₹${indReport.lateDeductionAmount.toFixed(0)})` : '2 Monthly Grace Allowed'}
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Unscheduled Leaves</p>
+                            <h4 class="text-lg font-black ${indReport.unscheduledLeaves.length > 0 ? 'text-rose-400' : 'text-slate-300'} mt-1">
+                                ${indReport.unscheduledLeaves.length} <span class="text-xs font-medium text-slate-500">incidents</span>
+                            </h4>
+                            <p class="text-[9px] font-semibold text-slate-400 mt-1">
+                                ${indReport.unscheduledLeaves.length > 0 ? `2-Day cut per incident (-₹${indReport.unscheduledDeductionAmount.toFixed(0)})` : 'Zero unapproved leaves'}
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Sandwich Violations</p>
+                            <h4 class="text-lg font-black ${indReport.sandwichLeaves.length > 0 ? 'text-purple-400' : 'text-slate-300'} mt-1">
+                                ${indReport.sandwichLeaves.length} <span class="text-xs font-medium text-slate-500">occurrences</span>
+                            </h4>
+                            <p class="text-[9px] font-semibold text-slate-400 mt-1">
+                                ${indReport.sandwichLeaves.length > 0 ? `4-Day cut per incident (-₹${indReport.sandwichDeductionAmount.toFixed(0)})` : 'No weekend sandwich'}
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Attendance Bonus</p>
+                            <h4 class="text-lg font-black ${indReport.attendanceBonus > 0 ? 'text-emerald-400' : 'text-slate-500'} mt-1">
+                                ₹${indReport.attendanceBonus.toLocaleString()}
+                            </h4>
+                            <p class="text-[9px] font-semibold text-slate-400 mt-1">
+                                ${indReport.attendanceBonus > 0 ? '100% Punctual + Unused PL credited' : 'Requires 100% attendance & 0 unapproved'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Itemized Infraction Log -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-slate-400">Infraction Itemization Audit</h4>
+                        <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scroll">
+                            ${[...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning' })),
+                              ...indReport.unscheduledLeaves.map(x => ({ ...x, type: 'Unscheduled', penalty: '2-Day Salary Cut' })),
+                              ...indReport.sandwichLeaves.map(x => ({ ...x, type: 'Sandwich', penalty: '4-Day Salary Cut' })),
+                              ...indReport.halfDays.map(x => ({ ...x, type: 'Half Day', penalty: '0.5-Day Deduction' }))
+                            ].length > 0 ? 
+                            [...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning' })),
+                              ...indReport.unscheduledLeaves.map(x => ({ ...x, type: 'Unscheduled', penalty: '2-Day Salary Cut' })),
+                              ...indReport.sandwichLeaves.map(x => ({ ...x, type: 'Sandwich', penalty: '4-Day Salary Cut' })),
+                              ...indReport.halfDays.map(x => ({ ...x, type: 'Half Day', penalty: '0.5-Day Deduction' }))
+                            ].map(item => `
+                                <div class="p-3 bg-slate-950/60 rounded-xl border border-white/5 flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-2 h-2 rounded-full ${item.type === 'Late' ? 'bg-amber-400' : (item.type === 'Sandwich' ? 'bg-purple-400' : 'bg-rose-400')}"></span>
+                                        <span class="font-bold text-white uppercase">${item.type}: <span class="text-slate-400 font-semibold">${item.date}</span></span>
+                                        <span class="text-[10px] text-slate-500 font-medium">${item.reason}</span>
+                                    </div>
+                                    <span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${item.penalty.includes('Grace') ? 'bg-white/5 text-slate-400' : 'bg-rose-500/15 text-rose-300 border border-rose-500/20'}">
+                                        ${item.penalty}
+                                    </span>
+                                </div>
+                            `).join('') : `
+                                <div class="p-4 text-center text-xs font-semibold text-emerald-400 bg-emerald-500/5 rounded-2xl border border-emerald-500/20">
+                                    🌟 Pristine Record: Zero automated penalties or deductions logged for this cycle.
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- Final Net Summary -->
+                    <div class="p-5 bg-gradient-to-r from-slate-900 to-indigo-950/60 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="text-center sm:text-left">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Payroll Balance</p>
+                            <p class="text-xs text-slate-300 font-medium">Base Salary (₹${indReport.baseSalary.toLocaleString()}) - Deductions (₹${indReport.totalDeductionAmount.toLocaleString()}) + Bonus (₹${indReport.attendanceBonus.toLocaleString()})</p>
+                        </div>
+                        <div class="text-center sm:text-right">
+                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Final Net Payable</span>
+                            <h3 class="text-2xl font-black text-emerald-300 font-display">₹${indReport.netPayable.toLocaleString()}</h3>
+                        </div>
+                    </div>
                 </div>
             `;
+
+            container.innerHTML = html;
         }
-
-        window.toggleBillingAddress = () => {
-            const same = document.getElementById('sameAddress').checked; const billing = document.getElementById('billingAddress');
-            if (same) { billing.value = document.getElementById('mailingAddress').value; billing.readOnly = true; billing.classList.add('opacity-60'); }
-            else { billing.readOnly = false; billing.classList.remove('opacity-60'); }
-        };
-
-        document.getElementById('customer-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const editId = document.getElementById('edit-customer-id').value;
-            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-                const manualAgentId = document.getElementById('assigned-agent-select').value;
-                if (manualAgentId === 'ROOT') { data.agentId = 'ROOT'; data.agentName = 'System Root'; }
-                else if (manualAgentId) { const agentObj = users.find(u => u.id === manualAgentId); data.agentId = manualAgentId; data.agentName = agentObj?.name || 'Unknown Agent'; }
-                else { data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id; data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name; }
-            } else { if (editId) { data.agentId = data.originalAgentId; data.agentName = data.originalAgentName; } else { data.agentId = currentUser.id; data.agentName = currentUser.name; } }
-            delete data.originalAgentId; delete data.originalAgentName;
-            const schedule = []; document.querySelectorAll('.schedule-item').forEach((item, index) => { schedule.push({ month: index + 1, amount: parseFloat(item.querySelector('.tenure-amount-input').value), date: item.querySelector('input[type="date"]').value, status: item.querySelector('.tenure-status-select').value }); });
-            data.paymentSchedule = JSON.stringify(schedule);
-            
-            // Handle comments history preservation
-            const newCommentText = (data.comments || '').trim();
-            if (editId) {
-                const existingCust = customers.find(x => x.id === editId);
-                let hist = existingCust?.commentsHistory || [];
-                if (newCommentText && (!hist.length || hist[hist.length - 1].text !== newCommentText)) {
-                    hist.push({
-                        text: newCommentText,
-                        author: currentUser.name,
-                        authorRole: currentUser.role,
-                        time: new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" }),
-                        timestamp: new Date().toISOString()
-                    });
-                }
-                data.commentsHistory = hist;
-            } else if (newCommentText) {
-                data.commentsHistory = [{
-                    text: newCommentText,
-                    author: currentUser.name,
-                    authorRole: currentUser.role,
-                    time: new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" }),
-                    timestamp: new Date().toISOString()
-                }];
-            } else {
-                data.commentsHistory = [];
-            }
-
-            try {
-                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data); showToast("Cloud Record Updated Successfully"); }
-                else { data.createdAt = new Date().toISOString(); data.status = data.status || 'Active'; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data); showToast("New Enrollment Deployed"); }
-                resetForm(); switchTab('customer-list');
-            } catch(e) { showToast("System Error: Save Interrupted"); }
-        });
-
-        window.editCustomer = (id) => {
-            const c = customers.find(x => x.id === id); if (!c) return;
-            switchTab('add-customer'); document.getElementById('form-title').textContent = "Modify Enrollment Pipeline"; document.getElementById('submit-btn').textContent = "Update Records"; document.getElementById('edit-customer-id').value = id; document.getElementById('cancel-edit').classList.remove('hidden');
-            document.getElementById('original-agent-id').value = c.agentId || ''; document.getElementById('original-agent-name').value = c.agentName || '';
-            
-            const agentSelect = document.getElementById('assigned-agent-select'); if (agentSelect) agentSelect.value = c.agentId || '';
-            const closerSelect = document.getElementById('sale-closer-select'); if (closerSelect) closerSelect.value = c.closerName || '';
-
-            Object.keys(c).forEach(key => { const el = document.getElementsByName(key)[0]; if (el) el.value = c[key] || ''; });
-            
-            // Preload latest comment if present
-            if (c.commentsHistory && c.commentsHistory.length > 0) {
-                document.getElementById('customer-form-comments').value = c.commentsHistory[c.commentsHistory.length - 1].text || '';
-            } else {
-                document.getElementById('customer-form-comments').value = c.comments || '';
-            }
-
-            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []); updatePaymentSchedule(sched);
-        };
-
-        // --- Quick Customer Notes Modal Logic ---
-        window.openCustomerNotesModal = (customerId) => {
-            activeNotesCustomerId = customerId;
-            const c = customers.find(x => x.id === customerId);
-            if (!c) return;
-
-            document.getElementById('modal-notes-client-name').textContent = c.name || 'Unnamed Client';
-            document.getElementById('modal-notes-client-sub').textContent = `File #${c.fileNumber || 'N/A'} • Phone: ${c.number || 'N/A'}`;
-            document.getElementById('modal-new-note-input').value = '';
-
-            renderCustomerNotesInModal(c);
-            document.getElementById('customer-notes-modal').classList.replace('hidden', 'flex');
-        };
-
-        window.closeCustomerNotesModal = () => {
-            activeNotesCustomerId = null;
-            document.getElementById('customer-notes-modal').classList.replace('flex', 'hidden');
-        };
-
-        function renderCustomerNotesInModal(customer) {
-            const container = document.getElementById('modal-notes-container');
-            const history = (customer.commentsHistory && Array.isArray(customer.commentsHistory)) 
-                ? customer.commentsHistory 
-                : (customer.comments ? [{ text: customer.comments, author: customer.agentName || 'System', time: 'Initial Record' }] : []);
-
-            if (!history.length) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs font-semibold">No comments or updates recorded for this client yet.</div>`;
-                return;
-            }
-
-            container.innerHTML = history.map(item => `
-                <div class="p-4 bg-slate-900/80 rounded-2xl border border-white/10 space-y-1.5 animate-fade-in">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-indigo-400">${item.author || 'User'} <span class="text-[10px] text-slate-500 font-normal">(${item.authorRole || 'Team'})</span></span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${item.time || ''}</span>
-                    </div>
-                    <p class="text-xs font-medium text-slate-200 whitespace-pre-wrap leading-relaxed">${item.text}</p>
-                </div>
-            `).join('');
-            container.scrollTop = container.scrollHeight;
-        }
-
-        window.saveCustomerNoteFromModal = async () => {
-            if (!activeNotesCustomerId) return;
-            const input = document.getElementById('modal-new-note-input');
-            const text = input.value.trim();
-            if (!text) {
-                showToast("Please enter a comment or note first.");
-                return;
-            }
-
-            const c = customers.find(x => x.id === activeNotesCustomerId);
-            if (!c) return;
-
-            let history = (c.commentsHistory && Array.isArray(c.commentsHistory)) ? [...c.commentsHistory] : (c.comments ? [{ text: c.comments, author: c.agentName || 'System', time: 'Initial Record' }] : []);
-
-            const newNote = {
-                text: text,
-                author: currentUser.name,
-                authorRole: currentUser.role,
-                time: new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" }),
-                timestamp: new Date().toISOString()
-            };
-
-            history.push(newNote);
-
-            const btn = document.getElementById('modal-save-note-btn');
-            btn.disabled = true;
-            try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', activeNotesCustomerId), {
-                    commentsHistory: history,
-                    comments: text // Keep latest comment in top-level for backwards compatibility
-                });
-                input.value = '';
-                showToast("Note recorded successfully!");
-                // Update local memory
-                c.commentsHistory = history;
-                c.comments = text;
-                renderCustomerNotesInModal(c);
-                renderCustomers();
-            } catch (err) {
-                showToast("Failed to save note. Please retry.");
-            } finally {
-                btn.disabled = false;
-            }
-        };
-
-        window.deleteCustomer = async (id) => {
-            const confirmed = await showConfirm("Remove Client", "Caution: Are you sure you want to permanently purge this client from the database?");
-            if (!confirmed) return;
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id)); showToast("Record Purged"); } catch (err) { showToast("Delete Failed"); }
-        };
 
         document.getElementById('add-user-form').addEventListener('submit', async (e) => {
             e.preventDefault(); 
@@ -3060,24 +3292,26 @@
                 password: e.target.userPassword.value, 
                 role: e.target.userRole.value,
                 status: e.target.userAccountStatus.value,
+                monthlySalary: parseFloat(e.target.userSalary.value || 0),
                 isCloser: e.target.userIsCloser.checked 
             };
             try {
-                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload); showToast("User Permission Updated"); }
-                else { payload.createdAt = new Date().toISOString(); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload); showToast("New User Provisioned"); }
+                if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', editId), payload); showToast("User Permission & Salary Updated"); }
+                else { payload.createdAt = new Date().toISOString(); await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), payload); showToast("New User Provisioned with Salary"); }
                 resetUserForm();
             } catch(e) { showToast("Provisioning Failed"); }
         });
 
         window.editUserAccount = (id) => {
             const u = users.find(x => x.id === id); 
-            document.getElementById('user-form-title').textContent = "Modify Identity"; 
+            document.getElementById('user-form-title').textContent = "Modify Identity & Salary"; 
             document.getElementById('edit-user-id-field').value = id;
             document.getElementById('user-field-name').value = u.name; 
             document.getElementById('user-field-email').value = u.email; 
             document.getElementById('user-field-password').value = u.password; 
             document.getElementById('user-field-role').value = u.role;
             document.getElementById('user-field-status').value = u.status || 'Active';
+            document.getElementById('user-field-salary').value = u.monthlySalary || '';
             document.getElementById('user-field-isCloser').checked = u.isCloser || false; 
             document.getElementById('cancel-user-edit').classList.remove('hidden'); 
             document.getElementById('user-submit-btn').textContent = "Save Identity";
@@ -3091,6 +3325,7 @@
 
         window.viewUserStats = (userId) => {
             const user = users.find(u => u.id === userId); const uCustomers = customers.filter(c => c.agentId === userId); const m = calculateMetrics(uCustomers);
+            const payroll = calculateAgentPayrollGovernance(user);
             document.getElementById('stats-user-email').textContent = user.name; document.getElementById('stats-user-role').textContent = user.role;
             document.getElementById('user-stats-content').innerHTML = `
                 <div class="glass-card p-6 rounded-2xl border border-cyan-500/30 shadow-sm bg-cyan-500/10">
@@ -3100,11 +3335,12 @@
                         <div><p class="text-xs font-bold text-slate-400">Yield Revenue</p><h3 class="text-2xl font-black text-emerald-400">$${m.lifetimeRev.toLocaleString()}</h3></div>
                     </div>
                 </div>
-                <div class="glass-card p-6 rounded-2xl border border-white/10 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Month To Date ⚡</p>
+                <div class="glass-card p-6 rounded-2xl border border-emerald-500/30 shadow-sm bg-emerald-500/10">
+                    <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Monthly Salary & Governance 💼</p>
                     <div class="space-y-3">
-                        <div><p class="text-xs font-bold text-slate-400">M. Sales</p><h3 class="text-2xl font-black text-white">${m.monthCount}</h3></div>
-                        <div><p class="text-xs font-bold text-slate-400">M. Revenue</p><h3 class="text-2xl font-black text-cyan-400">$${m.monthRev.toLocaleString()}</h3></div>
+                        <div><p class="text-xs font-bold text-slate-400">Base Salary</p><h3 class="text-2xl font-black text-white">₹${payroll.baseSalary.toLocaleString()}</h3></div>
+                        <div><p class="text-xs font-bold text-slate-400">Net Payable</p><h3 class="text-2xl font-black text-emerald-400">₹${payroll.netPayable.toLocaleString()}</h3></div>
+                        <p class="text-[10px] font-semibold text-slate-400">Deductions: -₹${payroll.totalDeductionAmount.toLocaleString()} (${payroll.totalDeductionDays}d cut)</p>
                     </div>
                 </div>`;
             document.getElementById('user-stats-modal').classList.replace('hidden', 'flex');
@@ -3168,6 +3404,281 @@
             document.getElementById('add-user-form').reset(); document.getElementById('edit-user-id-field').value = ""; document.getElementById('user-form-title').textContent = "Create Account";
             document.getElementById('user-submit-btn').textContent = "Deploy Account"; document.getElementById('cancel-user-edit').classList.add('hidden');
         };
+
+        window.toggleMobileMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        };
+
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', window.toggleMobileMenu);
+
+        window.toggleBillingAddress = () => {
+            const same = document.getElementById('sameAddress').checked;
+            const billing = document.getElementById('billingAddress');
+            if (same) {
+                billing.value = document.getElementById('mailingAddress').value;
+                billing.readOnly = true;
+                billing.classList.add('opacity-50');
+            } else {
+                billing.readOnly = false;
+                billing.classList.remove('opacity-50');
+            }
+        };
+
+        window.updatePaymentSchedule = (existing = null) => {
+            const type = document.getElementById('paymentType')?.value || 'Single'; 
+            const payToday = document.getElementById('payToday')?.checked || false; 
+            const fee = parseFloat(document.getElementById('enrollmentFee')?.value || 0); 
+            const container = document.getElementById('schedule-container'); 
+            const group = document.getElementById('tenure-input-group');
+            
+            if (!container) return;
+            container.innerHTML = '';
+            
+            if (type === 'Single') {
+                group?.classList.add('hidden'); 
+                const sched = (existing && existing[0]) ? existing[0] : { amount: fee, status: payToday ? 'paid' : 'pending', date: payToday ? getNYDateString(new Date()) : '' };
+                container.innerHTML = createScheduleItem(1, sched, true);
+            } else {
+                group?.classList.remove('hidden');
+                if (existing && existing.length > 0 && document.getElementById('tenureCount')) {
+                    document.getElementById('tenureCount').value = existing.length;
+                }
+                const count = parseInt(document.getElementById('tenureCount')?.value || 6, 10); 
+                const perMonth = count > 0 ? (fee / count) : 0;
+                for (let i = 1; i <= count; i++) {
+                    const isFirstToday = (i === 1 && payToday);
+                    const sched = (existing && existing[i-1]) ? existing[i-1] : { amount: perMonth.toFixed(2), status: isFirstToday ? 'paid' : 'pending', date: isFirstToday ? getNYDateString(new Date()) : '' };
+                    container.innerHTML += createScheduleItem(i, sched, false);
+                }
+            }
+        };
+
+        function createScheduleItem(index, data, isSingle) {
+            return `
+                <div class="schedule-item glass-card p-4 rounded-2xl border border-white/10 space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${isSingle ? 'Total' : 'Inst. #' + index}</span>
+                        <select class="tenure-status-select text-[10px] font-black glass-input rounded-lg px-2 py-1 outline-none">
+                            <option value="pending" class="bg-slate-900" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="paid" class="bg-slate-900" ${data.status === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value="decline" class="bg-slate-900" ${data.status === 'decline' ? 'selected' : ''}>Decline</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2 border-b border-white/10 pb-2">
+                        <span class="font-black text-slate-400">$</span>
+                        <input type="number" step="0.01" class="tenure-amount-input font-black text-sm w-full outline-none bg-transparent text-white" value="${data.amount}">
+                    </div>
+                    <input type="date" class="w-full glass-input p-2 rounded-xl text-xs font-bold outline-none text-white" value="${data.date || ''}">
+                </div>
+            `;
+        }
+
+        document.getElementById('customer-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const editId = document.getElementById('edit-customer-id').value;
+
+            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+                const manualAgentId = document.getElementById('assigned-agent-select').value;
+                if (manualAgentId === 'ROOT') {
+                    data.agentId = 'ROOT';
+                    data.agentName = 'System Root';
+                } else if (manualAgentId) {
+                    const agentObj = users.find(u => u.id === manualAgentId);
+                    data.agentId = manualAgentId;
+                    data.agentName = agentObj?.name || 'Unknown Agent';
+                } else {
+                    data.agentId = editId ? (data.originalAgentId || 'ROOT') : currentUser.id;
+                    data.agentName = editId ? (data.originalAgentName || 'System Root') : currentUser.name;
+                }
+            } else {
+                if (editId) {
+                    data.agentId = data.originalAgentId;
+                    data.agentName = data.originalAgentName;
+                } else {
+                    data.agentId = currentUser.id;
+                    data.agentName = currentUser.name;
+                }
+            }
+            delete data.originalAgentId;
+            delete data.originalAgentName;
+
+            const schedule = [];
+            document.querySelectorAll('.schedule-item').forEach((item, index) => {
+                schedule.push({
+                    month: index + 1,
+                    amount: parseFloat(item.querySelector('.tenure-amount-input')?.value || 0),
+                    date: item.querySelector('input[type="date"]')?.value || '',
+                    status: item.querySelector('.tenure-status-select')?.value || 'pending'
+                });
+            });
+            data.paymentSchedule = JSON.stringify(schedule);
+
+            // Handle notes history initialization
+            if (data.comments && data.comments.trim()) {
+                const initialNote = {
+                    text: data.comments.trim(),
+                    author: currentUser.name,
+                    time: new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" })
+                };
+                if (editId) {
+                    const prevCust = customers.find(c => c.id === editId);
+                    data.commentsHistory = prevCust?.commentsHistory ? [...prevCust.commentsHistory, initialNote] : [initialNote];
+                } else {
+                    data.commentsHistory = [initialNote];
+                }
+            }
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', editId), data);
+                    showToast("Lead updated successfully");
+                } else {
+                    data.createdAt = new Date().toISOString();
+                    data.status = data.status || 'Active';
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
+                    showToast("New customer enrolled");
+                }
+                resetForm();
+                switchTab('customer-list');
+            } catch (err) {
+                showToast("Failed to save enrollment");
+            }
+        });
+
+        window.editCustomer = (id) => {
+            const c = customers.find(x => x.id === id);
+            if (!c) return;
+            switchTab('add-customer');
+            document.getElementById('form-title').textContent = "Modify Customer Enrollment";
+            document.getElementById('submit-btn').textContent = "Update Records";
+            document.getElementById('edit-customer-id').value = id;
+            document.getElementById('cancel-edit').classList.remove('hidden');
+            document.getElementById('original-agent-id').value = c.agentId || '';
+            document.getElementById('original-agent-name').value = c.agentName || '';
+            
+            const agentSelect = document.getElementById('assigned-agent-select');
+            if (agentSelect) agentSelect.value = c.agentId || '';
+            const closerSelect = document.getElementById('sale-closer-select');
+            if (closerSelect) closerSelect.value = c.closerName || '';
+
+            Object.keys(c).forEach(key => {
+                const el = document.getElementsByName(key)[0];
+                if (el) el.value = c[key] || '';
+            });
+
+            const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
+            updatePaymentSchedule(sched);
+        };
+
+        window.deleteCustomer = async (id) => {
+            const confirmed = await showConfirm("Delete Enrollment", "Are you sure you want to delete this customer record from the database?");
+            if (!confirmed) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
+                showToast("Record deleted");
+            } catch (err) {
+                showToast("Failed to delete record");
+            }
+        };
+
+        window.openCustomerNotesModal = (customerId) => {
+            activeNotesCustomerId = customerId;
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            document.getElementById('modal-notes-client-name').textContent = customer.name || 'Client Notes';
+            document.getElementById('modal-notes-client-sub').textContent = `File #${customer.fileNumber || '000'} | Ph: ${customer.number || 'N/A'}`;
+            
+            const container = document.getElementById('modal-notes-container');
+            const history = (customer.commentsHistory && Array.isArray(customer.commentsHistory)) 
+                ? customer.commentsHistory 
+                : (customer.comments ? [{ text: customer.comments, author: 'System', time: 'Initial' }] : []);
+
+            if (history.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs font-semibold">No comments or updates recorded yet.</div>`;
+            } else {
+                container.innerHTML = history.map(item => `
+                    <div class="p-3.5 glass-card rounded-2xl border border-white/10 space-y-1">
+                        <div class="flex justify-between items-center text-[10px]">
+                            <span class="font-black text-indigo-400 uppercase">${item.author || 'User'}</span>
+                            <span class="text-slate-500 font-mono">${item.time || ''}</span>
+                        </div>
+                        <p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${item.text}</p>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('modal-new-note-input').value = '';
+            document.getElementById('customer-notes-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.closeCustomerNotesModal = () => {
+            activeNotesCustomerId = null;
+            document.getElementById('customer-notes-modal').classList.replace('flex', 'hidden');
+        };
+
+        window.saveCustomerNoteFromModal = async () => {
+            if (!activeNotesCustomerId) return;
+            const text = document.getElementById('modal-new-note-input').value.trim();
+            if (!text) {
+                showToast("Please enter an update comment");
+                return;
+            }
+
+            const customer = customers.find(c => c.id === activeNotesCustomerId);
+            if (!customer) return;
+
+            const newEntry = {
+                text,
+                author: currentUser.name,
+                time: new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" })
+            };
+
+            const existingHistory = (customer.commentsHistory && Array.isArray(customer.commentsHistory))
+                ? customer.commentsHistory
+                : (customer.comments ? [{ text: customer.comments, author: 'System', time: 'Initial' }] : []);
+
+            const updatedHistory = [...existingHistory, newEntry];
+
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', activeNotesCustomerId), {
+                    commentsHistory: updatedHistory,
+                    comments: text
+                });
+                showToast("Update saved to client history");
+                openCustomerNotesModal(activeNotesCustomerId);
+            } catch (err) {
+                showToast("Failed to save note update");
+            }
+        };
+
+        document.getElementById('leave-request-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), {
+                    userId: currentUser.id,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                    leaveType: data.leaveType,
+                    reason: data.reason,
+                    type: 'leave',
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                });
+                e.target.reset();
+                showToast("Leave request submitted for review");
+            } catch (err) {
+                showToast("Failed to submit leave application");
+            }
+        });
 
         updatePaymentSchedule();
         window.renderCustomers = renderCustomers;
