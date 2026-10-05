@@ -427,7 +427,7 @@
                                 <span class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20"><i class="fa-solid fa-vault text-sm"></i></span>
                             </div>
                             <h3 id="stat-total-fees" class="text-3xl font-black text-emerald-400 tracking-tight font-display">$0</h3>
-                            <p class="text-[9px] font-bold text-emerald-500/80 mt-2">💰 All-Time Yield</p>
+                            <p id="stat-sub-fees-label" class="text-[9px] font-bold text-emerald-500/80 mt-2">💰 All-Time Yield</p>
                         </div>
 
                         <!-- Card 3 -->
@@ -437,7 +437,7 @@
                                 <span class="p-2.5 bg-white/20 rounded-2xl text-white backdrop-blur-md"><i class="fa-solid fa-arrow-trend-up text-sm"></i></span>
                             </div>
                             <h3 id="stat-day-revenue" class="text-3xl font-black tracking-tight font-display">$0</h3>
-                            <p class="text-[9px] font-bold text-white/80 mt-2">⚡ DailyEST Collections</p>
+                            <p id="stat-sub-today-label" class="text-[9px] font-bold text-white/80 mt-2">⚡ DailyEST Collections</p>
                         </div>
 
                         <!-- Card 4 -->
@@ -447,7 +447,7 @@
                                 <span class="p-2.5 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-black transition-colors"><i class="fa-solid fa-calendar-day text-sm"></i></span>
                             </div>
                             <h3 id="stat-upcoming" class="text-3xl font-black text-white tracking-tight font-display">$0</h3>
-                            <p class="text-[9px] font-bold text-cyan-400/80 mt-2">📅 Click to view due list</p>
+                            <p id="stat-sub-upcoming-label" class="text-[9px] font-bold text-cyan-400/80 mt-2">📅 Click to view due list</p>
                         </div>
 
                         <!-- Card 5 -->
@@ -457,7 +457,7 @@
                                 <span class="p-2.5 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20 group-hover:bg-rose-600 group-hover:text-white transition-colors"><i class="fa-solid fa-triangle-exclamation text-sm"></i></span>
                             </div>
                             <h3 id="stat-nsf-count" class="text-3xl font-black text-rose-400 tracking-tight font-display">0</h3>
-                            <p class="text-[9px] font-bold text-rose-500/80 mt-2">⚠️ Overdue payment list</p>
+                            <p id="stat-sub-nsf-label" class="text-[9px] font-bold text-rose-500/80 mt-2">⚠️ Overdue payment list</p>
                         </div>
                     </div>
 
@@ -1192,6 +1192,7 @@
                         <tr>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Name</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Contact</th>
+                            <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">File No.</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
                         </tr>
@@ -1220,6 +1221,7 @@
                         <tr>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Name</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Contact</th>
+                            <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">File No.</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Overdue Date</th>
                             <th class="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
                         </tr>
@@ -1772,6 +1774,17 @@
         function applyRolePermissions() {
             const role = currentUser.role;
             const isChatOnly = role === 'chat-support';
+            const isAgent = role === 'agent';
+
+            // Dynamic KPI subtitles based on Agent vs Admin/Manager view
+            const subFeesEl = document.getElementById('stat-sub-fees-label');
+            const subTodayEl = document.getElementById('stat-sub-today-label');
+            const subUpcomingEl = document.getElementById('stat-sub-upcoming-label');
+            const subNsfEl = document.getElementById('stat-sub-nsf-label');
+            if (subFeesEl) subFeesEl.textContent = isAgent ? "💰 1st Pay Yield (All-Time)" : "💰 All-Time Yield (All Inst.)";
+            if (subTodayEl) subTodayEl.textContent = isAgent ? "⚡ 1st Pay Collected Today" : "⚡ DailyEST Collections";
+            if (subUpcomingEl) subUpcomingEl.textContent = isAgent ? "📅 1st Pay Due List (MTD)" : "📅 Click to view due list";
+            if (subNsfEl) subNsfEl.textContent = isAgent ? "⚠️ 1st Pay Overdue List" : "⚠️ Overdue payment list";
 
             document.getElementById('nav-dashboard').classList.toggle('hidden', isChatOnly);
             document.getElementById('nav-attendance').classList.toggle('hidden', isChatOnly);
@@ -2494,7 +2507,16 @@
 
                 let name = c.agentName || 'Unassigned';
                 if (name === 'System Root') name = 'Admin';
-                if (!performance[id]) performance[id] = { id, name, totalSales: 0, monthlySales: 0, totalRevenue: 0, monthlyRevenue: 0 };
+                if (!performance[id]) performance[id] = { 
+                    id, 
+                    name, 
+                    totalSales: 0, 
+                    monthlySales: 0, 
+                    totalRevenue: 0, 
+                    monthlyRevenue: 0,
+                    firstPayTotalRev: 0,
+                    firstPayMonthRev: 0
+                };
                 performance[id].totalSales++;
                 const nyCreated = getNYMonthYear(new Date(c.createdAt));
                 if (nyCreated.month === currM && nyCreated.year === currY) performance[id].monthlySales++;
@@ -2502,31 +2524,44 @@
                 sched.forEach(item => {
                     if (item.status === 'paid') {
                         const amt = parseFloat(item.amount || 0);
+                        const instNum = parseInt(item.month || 1, 10);
+                        const isFirstPay = (instNum === 1);
+
                         performance[id].totalRevenue += amt;
+                        if (isFirstPay) {
+                            performance[id].firstPayTotalRev += amt;
+                        }
                         
                         const itemNormal = normalizeToYYYYMMDD(item.date);
                         if (itemNormal) {
                             const itemParts = itemNormal.split('-');
                             const pm = parseInt(itemParts[1], 10) - 1;
                             const py = parseInt(itemParts[0], 10);
-                            if (pm === currM && py === currY) performance[id].monthlyRevenue += amt;
+                            if (pm === currM && py === currY) {
+                                performance[id].monthlyRevenue += amt;
+                                if (isFirstPay) {
+                                    performance[id].firstPayMonthRev += amt;
+                                }
+                            }
                         }
                     }
                 });
             });
-            const sorted = Object.values(performance).sort((a, b) => b.totalRevenue - a.totalRevenue);
+            const sorted = Object.values(performance).sort((a, b) => b.firstPayTotalRev - a.firstPayTotalRev || b.totalRevenue - a.totalRevenue);
             
             container.innerHTML = `
                 <div class="overflow-x-auto custom-scroll">
-                    <table class="w-full text-left min-w-[750px]">
+                    <table class="w-full text-left min-w-[950px]">
                         <thead>
                             <tr class="border-b border-white/10">
                                 <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-12 text-center">Rank</th>
                                 <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Agent Name</th>
                                 <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Sales</th>
                                 <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Month Sales</th>
-                                <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th>
-                                <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue</th>
+                                <th class="pb-3.5 px-3 text-[10px] font-black text-emerald-400 uppercase tracking-widest text-right">1st Pay (Lifetime) ⭐</th>
+                                <th class="pb-3.5 px-3 text-[10px] font-black text-teal-300 uppercase tracking-widest text-right">1st Pay (Month) 🔥</th>
+                                <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue (All)</th>
+                                <th class="pb-3.5 px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Month Revenue (All)</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
@@ -2542,8 +2577,10 @@
                                         <td class="py-4 px-3 font-black text-white text-xs group-hover:text-cyan-400 transition-colors">${a.name}</td>
                                         <td class="py-4 px-3 text-center font-bold text-slate-300 text-xs">${a.totalSales}</td>
                                         <td class="py-4 px-3 text-center font-bold text-cyan-400 text-xs"><span class="bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">${a.monthlySales}</span></td>
-                                        <td class="py-4 px-3 text-right font-black text-emerald-400 text-xs">$${a.totalRevenue.toLocaleString()}</td>
-                                        <td class="py-4 px-3 text-right font-black text-cyan-300 text-xs"><span class="bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">$${a.monthlyRevenue.toLocaleString()}</span></td>
+                                        <td class="py-4 px-3 text-right font-black text-emerald-400 text-xs">$${a.firstPayTotalRev.toLocaleString()}</td>
+                                        <td class="py-4 px-3 text-right font-black text-teal-300 text-xs"><span class="bg-teal-500/10 px-2.5 py-1 rounded-lg border border-teal-500/20">$${a.firstPayMonthRev.toLocaleString()}</span></td>
+                                        <td class="py-4 px-3 text-right font-bold text-slate-400 text-xs">$${a.totalRevenue.toLocaleString()}</td>
+                                        <td class="py-4 px-3 text-right font-bold text-slate-400 text-xs">$${a.monthlyRevenue.toLocaleString()}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -2560,11 +2597,18 @@
             const nyView = getNYMonthYear(new Date());
             const currM = nyView.month;
             const currY = nyView.year;
+            const isAgent = currentUser && currentUser.role === 'agent';
+
             dataList.forEach(c => { 
                 let s = c.status || 'Active'; 
                 if (s === 'Active') {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     const isNsfDue = sched.some(item => {
+                        // For agents, only evaluate NSF status on the 1st Payment
+                        if (isAgent) {
+                            const instNum = parseInt(item.month || 1, 10);
+                            if (instNum !== 1) return false;
+                        }
                         if (item.status === 'pending' && item.date) {
                             const itemNormal = normalizeToYYYYMMDD(item.date);
                             if (itemNormal) {
@@ -2668,6 +2712,7 @@
             const parts = refNormal.split('-');
             const currY = parseInt(parts[0], 10);
             const currM = parseInt(parts[1], 10) - 1;
+            const isAgent = currentUser && currentUser.role === 'agent';
             
             let metrics = { lifetimeRev: 0, todayRev: 0, monthRev: 0, monthCount: 0, upcomingMonth: 0, upcomingDetails: [], nsfDetails: [] };
             
@@ -2685,6 +2730,12 @@
                 sched.forEach(item => {
                     if (!item.date) return;
                     
+                    const instNum = parseInt(item.month || 1, 10);
+                    // AGENT ISOLATION: Agents only calculate 1st Payment across all metrics
+                    if (isAgent && instNum !== 1) {
+                        return;
+                    }
+
                     const amt = parseFloat(item.amount || 0);
                     const itemNormal = normalizeToYYYYMMDD(item.date);
                     if (!itemNormal) return;
@@ -2700,13 +2751,29 @@
                     } else if (c.status !== 'Cancel') {
                         if (itemNormal < todayStr) {
                             if (!addedToNsf) { 
-                                metrics.nsfDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt }); 
+                                metrics.nsfDetails.push({ 
+                                    id: c.id, 
+                                    name: c.name, 
+                                    number: c.number, 
+                                    fileNumber: c.fileNumber || 'N/A',
+                                    date: item.date, 
+                                    amount: amt, 
+                                    month: item.month 
+                                }); 
                                 addedToNsf = true; 
                             }
                         } 
                         else if (itemM === currM && itemY === currY) {
                             metrics.upcomingMonth += amt;
-                            metrics.upcomingDetails.push({ id: c.id, name: c.name, number: c.number, date: item.date, amount: amt });
+                            metrics.upcomingDetails.push({ 
+                                id: c.id, 
+                                name: c.name, 
+                                number: c.number, 
+                                fileNumber: c.fileNumber || 'N/A',
+                                date: item.date, 
+                                amount: amt, 
+                                month: item.month 
+                            });
                         }
                     }
                 });
@@ -2907,12 +2974,16 @@
             
             let rangeRevenue = 0;
             let matchedCustomersForRange = [];
+            const isAgent = currentUser && currentUser.role === 'agent';
 
             if (startDate || endDate) {
                 filtered.forEach(c => {
                     const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                     let contributedToRange = false;
                     sched.forEach(item => {
+                        const instNum = parseInt(item.month || 1, 10);
+                        if (isAgent && instNum !== 1) return;
+
                         if (item.status === 'paid' && item.date) {
                             if (isDateInRange(item.date, startDate, endDate)) {
                                 rangeRevenue += parseFloat(item.amount || 0);
@@ -2958,13 +3029,22 @@
             tbody.innerHTML = filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map((c, i) => {
                 const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
                 const totalPaid = calculatePaidSum(c);
-                const nextDue = sched.find(i => i.status === 'pending')?.date || 'N/A';
+                
+                // For agent: only evaluate 1st pay next due and completion
+                const pendingTarget = isAgent 
+                    ? sched.find(item => parseInt(item.month || 1, 10) === 1 && item.status === 'pending')
+                    : sched.find(item => item.status === 'pending');
+                const nextDue = pendingTarget?.date || (isAgent ? '1st Pay Paid' : 'N/A');
+                
+                const paidCountDisplay = isAgent 
+                    ? `${sched.filter(item => parseInt(item.month || 1, 10) === 1 && item.status === 'paid').length} / 1 (1st Pay)`
+                    : `${sched.filter(item => item.status === 'paid').length} / ${sched.length}`;
+
                 const canManage = currentUser.role === 'admin' || currentUser.role === 'manager';
                 
                 // Notes summary count
                 const notesList = (c.commentsHistory && Array.isArray(c.commentsHistory)) ? c.commentsHistory : (c.comments ? [{ text: c.comments }] : []);
                 const notesCount = notesList.length;
-                const latestNoteSnippet = notesCount > 0 ? (notesList[notesList.length - 1].text || '').slice(0, 32) + '...' : 'No notes';
 
                 return `<tr class="hover:bg-white/5 transition group">
                     <td class="px-6 py-4 text-xs font-black text-slate-500">${i + 1}</td>
@@ -2978,7 +3058,7 @@
                     <td class="px-6 py-4">
                         <div class="text-xs font-bold text-slate-300">${c.processor || 'N/A'} / #${c.fileNumber || '000'}</div>
                     </td>
-                    <td class="px-6 py-4 text-xs font-black text-white">${sched.filter(i => i.status === 'paid').length} / ${sched.length}</td>
+                    <td class="px-6 py-4 text-xs font-black text-white">${paidCountDisplay}</td>
                     <td class="px-6 py-4 text-xs font-black text-indigo-300">${nextDue}</td>
                     <td class="px-6 py-4 font-black text-emerald-400 text-xs">$${totalPaid.toLocaleString()}</td>
                     <td class="px-6 py-4">
@@ -3003,7 +3083,14 @@
 
         function calculatePaidSum(c) {
             const sched = typeof c.paymentSchedule === 'string' ? JSON.parse(c.paymentSchedule) : (c.paymentSchedule || []);
-            return sched.reduce((acc, i) => i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc, 0);
+            const isAgent = currentUser && currentUser.role === 'agent';
+            return sched.reduce((acc, i) => {
+                if (isAgent) {
+                    const instNum = parseInt(i.month || 1, 10);
+                    if (instNum !== 1) return acc;
+                }
+                return i.status === 'paid' ? acc + parseFloat(i.amount || 0) : acc;
+            }, 0);
         }
 
         function getStatusClass(s) {
@@ -3514,14 +3601,46 @@
         };
 
         window.openUpcomingModal = () => {
-            const tbody = document.getElementById('upcoming-details-table'); upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `<tr class="hover:bg-white/5 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')"><td class="px-6 py-3.5"><div class="font-black text-white text-xs group-hover:text-cyan-400 transition uppercase font-display">${item.name}</div><div class="text-[9px] text-cyan-400 font-bold uppercase tracking-wider">Click to Open Profile</div></td><td class="px-6 py-3.5 text-center"><div class="text-[10px] font-bold text-slate-400">${item.number || 'N/A'}</div></td><td class="px-6 py-3.5 text-[10px] font-black text-slate-300 uppercase">${item.date}</td><td class="px-6 py-3.5 text-right font-black text-cyan-400 text-xs">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold italic text-xs">No pending revenue found.</td></tr>';
+            const tbody = document.getElementById('upcoming-details-table'); 
+            upcomingPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = upcomingPaymentList.length ? upcomingPaymentList.map(item => `
+                <tr class="hover:bg-white/5 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'upcoming')">
+                    <td class="px-6 py-3.5">
+                        <div class="font-black text-white text-xs group-hover:text-cyan-400 transition uppercase font-display">${item.name}</div>
+                        <div class="text-[9px] text-cyan-400 font-bold uppercase tracking-wider">Click to Open Profile</div>
+                    </td>
+                    <td class="px-6 py-3.5 text-center">
+                        <div class="text-[10px] font-bold text-slate-400">${item.number || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-3.5 text-center">
+                        <span class="text-[10px] font-black text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20 font-mono">#${item.fileNumber || 'N/A'}</span>
+                    </td>
+                    <td class="px-6 py-3.5 text-[10px] font-black text-slate-300 uppercase">${item.date}</td>
+                    <td class="px-6 py-3.5 text-right font-black text-cyan-400 text-xs">$${item.amount.toLocaleString()}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="5" class="p-8 text-center text-slate-500 font-bold italic text-xs">No pending revenue found.</td></tr>';
             document.getElementById('upcoming-modal').classList.replace('hidden', 'flex');
         };
 
         window.openNsfModal = () => {
-            const tbody = document.getElementById('nsf-details-table'); nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
-            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `<tr class="hover:bg-white/5 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')"><td class="px-6 py-3.5"><div class="font-black text-white text-xs group-hover:text-rose-400 transition uppercase font-display">${item.name}</div><div class="text-[9px] text-rose-400 font-bold uppercase tracking-wider">Click to Open Profile</div></td><td class="px-6 py-3.5 text-center"><div class="text-[10px] font-bold text-slate-400">${item.number || 'N/A'}</div></td><td class="px-6 py-3.5 text-[10px] font-black text-slate-300 uppercase">${item.date}</td><td class="px-6 py-3.5 text-right font-black text-rose-400 text-xs">$${item.amount.toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold italic text-xs">No overdue NSF sales found.</td></tr>';
+            const tbody = document.getElementById('nsf-details-table'); 
+            nsfPaymentList.sort((a,b) => a.date.localeCompare(b.date));
+            tbody.innerHTML = nsfPaymentList.length ? nsfPaymentList.map(item => `
+                <tr class="hover:bg-white/5 transition cursor-pointer group" onclick="viewCustomerFromModal('${item.id}', 'nsf')">
+                    <td class="px-6 py-3.5">
+                        <div class="font-black text-white text-xs group-hover:text-rose-400 transition uppercase font-display">${item.name}</div>
+                        <div class="text-[9px] text-rose-400 font-bold uppercase tracking-wider">Click to Open Profile</div>
+                    </td>
+                    <td class="px-6 py-3.5 text-center">
+                        <div class="text-[10px] font-bold text-slate-400">${item.number || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-3.5 text-center">
+                        <span class="text-[10px] font-black text-rose-300 bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 font-mono">#${item.fileNumber || 'N/A'}</span>
+                    </td>
+                    <td class="px-6 py-3.5 text-[10px] font-black text-slate-300 uppercase">${item.date}</td>
+                    <td class="px-6 py-3.5 text-right font-black text-rose-400 text-xs">$${item.amount.toLocaleString()}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="5" class="p-8 text-center text-slate-500 font-bold italic text-xs">No overdue NSF sales found.</td></tr>';
             document.getElementById('nsf-modal').classList.replace('hidden', 'flex');
         };
 
