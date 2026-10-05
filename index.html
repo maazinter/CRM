@@ -550,7 +550,7 @@
                                 </div>
 
                                 <!-- Summary Stats Dashboard -->
-                                <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div id="attendance-summary-row" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                                     <div class="glass-card p-4 rounded-2xl border border-white/10">
                                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Days</p>
                                         <h5 id="stat-month-days" class="text-xl font-black text-white">0</h5>
@@ -570,6 +570,10 @@
                                     <div class="glass-card p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10">
                                         <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Unsched (UL)</p>
                                         <h5 id="stat-days-ul" class="text-xl font-black text-rose-400">0</h5>
+                                    </div>
+                                    <div class="glass-card p-4 rounded-2xl border border-purple-500/30 bg-purple-500/10">
+                                        <p class="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Sandwich (4D)</p>
+                                        <h5 id="stat-days-sandwich" class="text-xl font-black text-purple-400">0</h5>
                                     </div>
                                     <div class="glass-card p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10">
                                         <p class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">WO / Holidays</p>
@@ -592,12 +596,13 @@
                             <!-- Legend -->
                             <div class="flex flex-wrap gap-5 px-2">
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-400 shadow-neon-green"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Present</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Late</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-violet-400"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Half Day (HD)</span></div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-400 shadow-neon-cyan"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Leave</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-400 shadow-neon-cyan"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Leave (1 PL Free)</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-400 shadow-neon-pink"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Unscheduled (UL)</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-400"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Sandwich (Fri-Mon)</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Work Off</span></div>
                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Holiday</span></div>
-                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-600"></span><span class="text-[10px] font-bold text-slate-400 uppercase">Pending</span></div>
                             </div>
                         </div>
 
@@ -2084,6 +2089,7 @@
             let holidayCount = 0;
             let hdCount = 0;
             let ulCount = 0;
+            let sandwichDayCount = 0;
 
             const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager';
 
@@ -2093,7 +2099,13 @@
                 const global = globalCalendar.find(g => g.date === dateStr);
                 const record = attendance.find(a => {
                     if (a.userId !== targetUserId) return false;
-                    if (a.type === 'daily') return a.date === dateStr;
+                    if (a.type === 'daily' || a.type === 'late') return a.date === dateStr;
+                    if (a.type === 'sandwich') {
+                        if (a.date === dateStr) return true;
+                        if (a.sandwichSpan && Array.isArray(a.sandwichSpan) && a.sandwichSpan.includes(dateStr)) return true;
+                        if (a.startDate && a.endDate && dateStr >= a.startDate && dateStr <= a.endDate) return true;
+                        return false;
+                    }
                     if (a.type === 'leave' || a.type === 'hd' || a.type === 'ul') return dateStr >= a.startDate && dateStr <= a.endDate;
                     return false;
                 });
@@ -2101,53 +2113,90 @@
                 let dayClass = "bg-slate-900/40";
                 let statusLabel = "";
                 let indicatorColor = "";
+                let badgeHtml = "";
 
-                if (global) {
+                // Sandwich penalty has priority over standard weekend Work-Off to visualize the 4-day cut
+                if (record && record.type === 'sandwich') {
+                    dayClass = "bg-purple-950/40 border-purple-500/40 shadow-inner";
+                    statusLabel = "SANDWICH";
+                    indicatorColor = "bg-purple-400";
+                    badgeHtml = `<span class="px-1.5 py-0.5 rounded bg-purple-500/25 text-purple-300 border border-purple-500/40 text-[8px] font-black uppercase tracking-tighter">SANDWICH</span>`;
+                    sandwichDayCount++;
+                } else if (global) {
                     dayClass = global.type === 'WO' ? "bg-amber-500/10 border-amber-500/30" : "bg-rose-500/10 border-rose-500/30";
                     statusLabel = global.type;
                     indicatorColor = global.type === 'WO' ? "bg-amber-400" : "bg-rose-500";
+                    badgeHtml = `<span class="text-[8px] font-bold text-amber-300 uppercase">${global.type}</span>`;
                     holidayCount++;
                 } else if (record) {
                     if (record.status === 'approved') {
-                        if (record.type === 'sandwich') {
-                            dayClass = "bg-purple-500/10 border-purple-500/30"; statusLabel = "SANDWICH (-4D)"; indicatorColor = "bg-purple-400"; ulCount += 4;
-                        } else if (record.type === 'late' || record.isLate) {
-                            dayClass = "bg-amber-500/10 border-amber-500/30"; statusLabel = "LATE LOGIN"; indicatorColor = "bg-amber-400"; presentCount++;
+                        if (record.type === 'late' || record.isLate) {
+                            dayClass = "bg-amber-500/15 border-amber-500/40";
+                            statusLabel = "LATE";
+                            indicatorColor = "bg-amber-400";
+                            badgeHtml = `<span class="px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[8px] font-black uppercase tracking-wider">LATE</span>`;
+                            presentCount++;
                         } else if (record.type === 'hd') {
-                            dayClass = "bg-violet-500/10 border-violet-500/30"; statusLabel = "HALF DAY"; indicatorColor = "bg-violet-400"; hdCount++; presentCount += 0.5;
+                            dayClass = "bg-violet-500/15 border-violet-500/30";
+                            statusLabel = "HALF DAY";
+                            indicatorColor = "bg-violet-400";
+                            badgeHtml = `<span class="px-1.5 py-0.5 rounded bg-violet-500/25 text-violet-300 border border-violet-500/30 text-[8px] font-black uppercase">HALF DAY</span>`;
+                            hdCount++;
+                            presentCount += 0.5;
                         } else if (record.type === 'ul') {
-                            dayClass = "bg-rose-500/10 border-rose-500/30"; statusLabel = "UNSCHED (-2D)"; indicatorColor = "bg-rose-400"; ulCount++;
+                            dayClass = "bg-rose-500/15 border-rose-500/30";
+                            statusLabel = "UNSCHED";
+                            indicatorColor = "bg-rose-400";
+                            badgeHtml = `<span class="px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-300 border border-rose-500/30 text-[8px] font-black uppercase">UNSCHED (-2D)</span>`;
+                            ulCount++;
                         } else if (record.type === 'leave') {
-                            dayClass = "bg-cyan-500/10 border-cyan-500/30"; statusLabel = "LEAVE"; indicatorColor = "bg-cyan-400"; leaveCount++;
+                            dayClass = "bg-cyan-500/15 border-cyan-500/30";
+                            statusLabel = "LEAVE";
+                            indicatorColor = "bg-cyan-400";
+                            badgeHtml = `<span class="px-1.5 py-0.5 rounded bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-[8px] font-black uppercase">LEAVE</span>`;
+                            leaveCount++;
                         } else {
-                            dayClass = "bg-emerald-500/10 border-emerald-500/30"; statusLabel = "PRESENT"; indicatorColor = "bg-emerald-400"; presentCount++;
+                            dayClass = "bg-emerald-500/10 border-emerald-500/30";
+                            statusLabel = "PRESENT";
+                            indicatorColor = "bg-emerald-400";
+                            badgeHtml = `<span class="text-[8px] font-black text-emerald-400 uppercase">PRESENT</span>`;
+                            presentCount++;
                         }
                     } else if (record.status === 'pending') {
                         dayClass = "bg-slate-800/50 border-white/10";
                         statusLabel = "PENDING";
                         indicatorColor = "bg-slate-500";
+                        badgeHtml = `<span class="text-[8px] font-black text-slate-400 uppercase">PENDING</span>`;
                     }
                 }
 
                 const isToday = dateStr === todayStr;
                 html += `
-                    <div ${isAdminOrManager ? `onclick="openDayManagement('${dateStr}')"` : ''} class="calendar-day ${dayClass} p-2.5 rounded-xl border border-white/10 flex flex-col justify-between ${!isAdminOrManager ? 'readonly' : ''}">
+                    <div ${isAdminOrManager ? `onclick="openDayManagement('${dateStr}')"` : ''} class="calendar-day ${dayClass} p-2 rounded-xl border border-white/10 flex flex-col justify-between ${!isAdminOrManager ? 'readonly' : ''}">
                         <div class="flex justify-between items-start">
                             <span class="text-[11px] font-black ${isToday ? 'bg-cyan-500 text-black w-5 h-5 flex items-center justify-center rounded-full shadow-neon-cyan' : 'text-slate-300'}">${day}</span>
                             ${indicatorColor ? `<span class="w-2 h-2 rounded-full ${indicatorColor}"></span>` : ''}
                         </div>
-                        ${statusLabel ? `<div class="text-[8px] font-black text-center tracking-tight uppercase opacity-90 mt-1 text-slate-300">${statusLabel}</div>` : ''}
+                        <div class="text-center mt-1">
+                            ${badgeHtml}
+                        </div>
                     </div>
                 `;
             }
             container.innerHTML = html;
 
-            document.getElementById('stat-month-days').textContent = daysInMonth;
-            document.getElementById('stat-days-present').textContent = presentCount;
-            document.getElementById('stat-days-leave').textContent = leaveCount;
-            document.getElementById('stat-days-holiday').textContent = holidayCount;
-            document.getElementById('stat-days-hd').textContent = hdCount;
-            document.getElementById('stat-days-ul').textContent = ulCount;
+            const safeSetText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
+
+            safeSetText('stat-month-days', daysInMonth);
+            safeSetText('stat-days-present', presentCount);
+            safeSetText('stat-days-leave', leaveCount);
+            safeSetText('stat-days-holiday', holidayCount);
+            safeSetText('stat-days-hd', hdCount);
+            safeSetText('stat-days-ul', ulCount);
+            safeSetText('stat-days-sandwich', sandwichDayCount);
         }
 
         function renderStaffOverview() {
@@ -2219,11 +2268,65 @@
             if (!viewingUserId) return;
             const date = document.getElementById('manage-date-subtitle').dataset.date;
             try {
-                const existing = attendance.filter(a => a.userId === viewingUserId && (a.date === date || (a.startDate <= date && a.endDate >= date)));
-                for (const rec of existing) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); }
+                // Determine 4-day sandwich weekend span if sandwich is selected
+                let sandwichDates = [];
+                let sandwichStart = date;
+                let sandwichEnd = date;
 
-                const payload = { userId: viewingUserId, status, type, isLate, createdAt: new Date().toISOString() };
-                if (type === 'daily' || type === 'late' || type === 'sandwich') {
+                if (type === 'sandwich') {
+                    const clickDate = new Date(date + "T12:00:00");
+                    const dayOfWeek = clickDate.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri
+
+                    let fri = new Date(clickDate);
+                    if (dayOfWeek === 1) { // Clicked Monday -> Preceding Friday, Sat, Sun, Mon
+                        fri.setDate(clickDate.getDate() - 3);
+                    } else if (dayOfWeek === 5) { // Clicked Friday -> Friday, Sat, Sun, Next Mon
+                        fri = new Date(clickDate);
+                    } else { // Clicked other day, snap to week Friday
+                        const diff = (dayOfWeek === 0 ? 2 : (dayOfWeek === 6 ? 1 : (dayOfWeek - 5)));
+                        fri.setDate(clickDate.getDate() - diff);
+                    }
+
+                    const sat = new Date(fri); sat.setDate(fri.getDate() + 1);
+                    const sun = new Date(fri); sun.setDate(fri.getDate() + 2);
+                    const mon = new Date(fri); mon.setDate(fri.getDate() + 3);
+
+                    sandwichStart = normalizeToYYYYMMDD(fri);
+                    sandwichEnd = normalizeToYYYYMMDD(mon);
+                    sandwichDates = [
+                        normalizeToYYYYMMDD(fri),
+                        normalizeToYYYYMMDD(sat),
+                        normalizeToYYYYMMDD(sun),
+                        normalizeToYYYYMMDD(mon)
+                    ];
+                }
+
+                // Delete existing attendance records for the target dates
+                const datesToCheck = type === 'sandwich' ? sandwichDates : [date];
+                const existing = attendance.filter(a => {
+                    if (a.userId !== viewingUserId) return false;
+                    const rDate = a.date || a.startDate;
+                    return datesToCheck.includes(rDate) || (a.startDate <= date && a.endDate >= date);
+                });
+
+                for (const rec of existing) { 
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', rec.id)); 
+                }
+
+                const payload = { 
+                    userId: viewingUserId, 
+                    status, 
+                    type, 
+                    isLate: type === 'late' || isLate, 
+                    createdAt: new Date().toISOString() 
+                };
+
+                if (type === 'sandwich') {
+                    payload.date = date;
+                    payload.startDate = sandwichStart;
+                    payload.endDate = sandwichEnd;
+                    payload.sandwichSpan = sandwichDates;
+                } else if (type === 'daily' || type === 'late') {
                     payload.date = date; 
                 } else { 
                     payload.startDate = date; 
@@ -2232,7 +2335,7 @@
 
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), payload);
                 document.getElementById('day-management-modal').classList.replace('flex', 'hidden');
-                showToast("Record updated with governance code");
+                showToast(type === 'sandwich' ? "Sandwich 4-Day span applied (Fri-Mon)!" : "Attendance record updated!");
             } catch(e) { showToast("Save error"); }
         }
 
@@ -2953,7 +3056,7 @@
 
             let lateInstances = [];
             let unscheduledLeaves = [];
-            let sandwichLeaves = [];
+            let sandwichIncidents = [];
             let approvedPaidLeaves = [];
             let halfDays = [];
             let totalPresentDays = 0;
@@ -2973,7 +3076,8 @@
                         lateInstances.push({ date: normal, reason: "Late Shift Login (>15 mins)" });
                         totalPresentDays += 1;
                     } else if (rec.type === 'sandwich') {
-                        sandwichLeaves.push({ date: normal, reason: "Weekend Sandwich Rule Violation (Friday/Monday unapproved)" });
+                        const spanStr = (rec.sandwichSpan && rec.sandwichSpan.length) ? `(${rec.sandwichSpan[0]} to ${rec.sandwichSpan[3]})` : '';
+                        sandwichIncidents.push({ date: normal, reason: `Weekend Sandwich Rule Violation ${spanStr}` });
                     } else if (rec.type === 'ul') {
                         unscheduledLeaves.push({ date: normal, reason: "Unscheduled / Sudden Absence (<48 hrs notice)" });
                     } else if (rec.type === 'hd') {
@@ -2988,7 +3092,7 @@
             });
 
             // 1. Late Login Deductions:
-            // 1st & 2nd late = Grace Warning (₹0 cut).
+            // 1st & 2nd late = Grace Warning (0 cut).
             // 3rd late onwards = 0.5-Day salary cut per incident.
             let lateDeductionDays = 0;
             if (lateInstances.length >= 3) {
@@ -3003,22 +3107,31 @@
 
             // 3. Sandwich Leave Deductions:
             // 4-Day Salary Deducted (Fri+Sat+Sun+Mon)
-            const sandwichDeductionDays = sandwichLeaves.length * 4.0;
+            const sandwichDeductionDays = sandwichIncidents.length * 4.0;
             const sandwichDeductionAmount = sandwichDeductionDays * dailyRate;
 
             // 4. Half Day Deductions: 0.5 day cut per HD
             const hdDeductionDays = halfDays.length * 0.5;
             const hdDeductionAmount = hdDeductionDays * dailyRate;
 
-            // Total Days Penalized
-            const totalDeductionDays = lateDeductionDays + unscheduledDeductionDays + sandwichDeductionDays + hdDeductionDays;
-            const totalDeductionAmount = lateDeductionAmount + unscheduledDeductionAmount + sandwichDeductionAmount + hdDeductionAmount;
+            // 5. Approved Leaves Rule:
+            // 1st approved leave in the month is Paid Leave (PL) -> 0 salary cut, but Attendance Bonus is canceled.
+            // 2nd approved leave onwards -> 1-Day salary cut per additional day!
+            let extraApprovedLeaveDays = 0;
+            if (approvedPaidLeaves.length > 1) {
+                extraApprovedLeaveDays = approvedPaidLeaves.length - 1;
+            }
+            const extraApprovedLeaveAmount = extraApprovedLeaveDays * dailyRate;
 
-            // 5. Perfect Attendance Bonus (₹1,000 / $1,000):
+            // Total Days Penalized
+            const totalDeductionDays = lateDeductionDays + unscheduledDeductionDays + sandwichDeductionDays + hdDeductionDays + extraApprovedLeaveDays;
+            const totalDeductionAmount = lateDeductionAmount + unscheduledDeductionAmount + sandwichDeductionAmount + hdDeductionAmount + extraApprovedLeaveAmount;
+
+            // 6. Perfect Attendance Bonus (₹1,000 / $1,000):
             // 100% full attendance, zero unapproved leaves (unscheduled/sandwich == 0),
-            // late logins <= 2 (grace), and unused monthly 1 PL
+            // late logins <= 2 (grace), and unused monthly 1 PL (approvedPaidLeaves == 0)
             let attendanceBonus = 0;
-            const isFullAttendance = (unscheduledLeaves.length === 0 && sandwichLeaves.length === 0 && lateInstances.length <= 2);
+            const isFullAttendance = (unscheduledLeaves.length === 0 && sandwichIncidents.length === 0 && lateInstances.length <= 2);
             if (isFullAttendance && approvedPaidLeaves.length === 0 && baseSalary > 0) {
                 attendanceBonus = 1000;
             }
@@ -3036,12 +3149,15 @@
                 unscheduledLeaves,
                 unscheduledDeductionDays,
                 unscheduledDeductionAmount,
-                sandwichLeaves,
+                sandwichLeaves: sandwichIncidents,
                 sandwichDeductionDays,
                 sandwichDeductionAmount,
                 halfDays,
                 hdDeductionDays,
                 hdDeductionAmount,
+                approvedPaidLeaves,
+                extraApprovedLeaveDays,
+                extraApprovedLeaveAmount,
                 totalDeductionDays,
                 totalDeductionAmount,
                 attendanceBonus,
@@ -3172,8 +3288,9 @@
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <div class="text-[11px] font-bold ${r.unscheduledLeaves.length > 0 ? 'text-rose-400' : 'text-slate-400'}">
+                                                <div class="text-[11px] font-bold ${r.unscheduledLeaves.length > 0 || r.sandwichLeaves.length > 0 ? 'text-rose-400' : 'text-slate-400'}">
                                                     ${r.unscheduledLeaves.length} UL ${r.sandwichLeaves.length > 0 ? `+ ${r.sandwichLeaves.length} Sandwich` : ''}
+                                                    ${r.extraApprovedLeaveDays > 0 ? `<div class="text-[9px] text-cyan-400">+${r.extraApprovedLeaveDays} Unpaid Leave</div>` : ''}
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 text-center">
@@ -3212,18 +3329,14 @@
                                 <i class="fa-solid fa-user-check"></i>
                                 Agent Performance & Deduction Statement
                             </span>
-                            <h3 class="text-2xl font-black text-white font-display mt-0.5 flex items-center gap-2">
-                                <span>${indReport.user.name}</span>
-                                <span class="text-xs font-bold text-cyan-400 uppercase bg-cyan-500/10 px-2.5 py-0.5 rounded-lg border border-cyan-500/20">(${indReport.user.role})</span>
-                            </h3>
+                            <h3 class="text-2xl font-black text-white font-display mt-1">${indReport.user.name} <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">(${indReport.user.role})</span></h3>
                         </div>
                         <div class="text-right">
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Configured Base Rate</span>
-                            <h4 class="text-xl font-black text-emerald-400">₹${indReport.baseSalary.toLocaleString()} <span class="text-xs font-semibold text-slate-400">/ mo</span></h4>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Configured Base Rate</span>
+                            <h4 class="text-lg font-black text-emerald-400">₹${indReport.baseSalary.toLocaleString()} <span class="text-xs text-slate-500 font-normal">/ mo</span></h4>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
                         <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
                             <p class="text-[10px] font-bold text-slate-400 uppercase">Late Shift Logins</p>
                             <h4 class="text-lg font-black ${indReport.lateInstances.length > 2 ? 'text-amber-400' : 'text-slate-300'} mt-1">
@@ -3231,6 +3344,16 @@
                             </h4>
                             <p class="text-[9px] font-semibold text-slate-400 mt-1">
                                 ${indReport.lateInstances.length > 2 ? `Deducted: ${indReport.lateDeductionDays} Day(s) (₹${indReport.lateDeductionAmount.toFixed(0)})` : '2 Monthly Grace Allowed'}
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Approved Leaves</p>
+                            <h4 class="text-lg font-black ${indReport.approvedPaidLeaves.length > 0 ? 'text-cyan-400' : 'text-slate-300'} mt-1">
+                                ${indReport.approvedPaidLeaves.length} <span class="text-xs font-medium text-slate-500">days</span>
+                            </h4>
+                            <p class="text-[9px] font-semibold text-slate-400 mt-1">
+                                ${indReport.approvedPaidLeaves.length === 0 ? '0 Leaves (Bonus Eligible)' : (indReport.extraApprovedLeaveDays > 0 ? `1 PL Free + ${indReport.extraApprovedLeaveDays}d cut (-₹${indReport.extraApprovedLeaveAmount.toFixed(0)})` : '1st PL Free (0 Cut, Bonus Lost)')}
                             </p>
                         </div>
 
@@ -3260,7 +3383,7 @@
                                 ₹${indReport.attendanceBonus.toLocaleString()}
                             </h4>
                             <p class="text-[9px] font-semibold text-slate-400 mt-1">
-                                ${indReport.attendanceBonus > 0 ? '100% Punctual + Unused PL credited' : 'Requires 100% attendance & 0 unapproved'}
+                                ${indReport.attendanceBonus > 0 ? '100% Punctual + Unused PL credited' : 'Requires 100% attendance & 0 leaves'}
                             </p>
                         </div>
                     </div>
@@ -3269,23 +3392,25 @@
                     <div class="space-y-3">
                         <h4 class="text-xs font-black uppercase tracking-widest text-slate-400">Infraction Itemization Audit</h4>
                         <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scroll">
-                            ${[...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning' })),
+                            ${[...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning (0 Cut)' })),
+                              ...indReport.approvedPaidLeaves.map((x, idx) => ({ ...x, type: 'Approved Leave', penalty: idx === 0 ? '1st PL Free (0 Cut, Bonus Lost)' : 'Beyond 1 PL (1-Day Salary Cut)' })),
                               ...indReport.unscheduledLeaves.map(x => ({ ...x, type: 'Unscheduled', penalty: '2-Day Salary Cut' })),
                               ...indReport.sandwichLeaves.map(x => ({ ...x, type: 'Sandwich', penalty: '4-Day Salary Cut' })),
                               ...indReport.halfDays.map(x => ({ ...x, type: 'Half Day', penalty: '0.5-Day Deduction' }))
                             ].length > 0 ? 
-                            [...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning' })),
+                            [...indReport.lateInstances.map((x, idx) => ({ ...x, type: 'Late', penalty: idx >= 2 ? '0.5-Day Deduction' : 'Grace Warning (0 Cut)' })),
+                              ...indReport.approvedPaidLeaves.map((x, idx) => ({ ...x, type: 'Approved Leave', penalty: idx === 0 ? '1st PL Free (0 Cut, Bonus Lost)' : 'Beyond 1 PL (1-Day Salary Cut)' })),
                               ...indReport.unscheduledLeaves.map(x => ({ ...x, type: 'Unscheduled', penalty: '2-Day Salary Cut' })),
                               ...indReport.sandwichLeaves.map(x => ({ ...x, type: 'Sandwich', penalty: '4-Day Salary Cut' })),
                               ...indReport.halfDays.map(x => ({ ...x, type: 'Half Day', penalty: '0.5-Day Deduction' }))
                             ].map(item => `
                                 <div class="p-3 bg-slate-950/60 rounded-xl border border-white/5 flex items-center justify-between text-xs">
                                     <div class="flex items-center gap-3">
-                                        <span class="w-2 h-2 rounded-full ${item.type === 'Late' ? 'bg-amber-400' : (item.type === 'Sandwich' ? 'bg-purple-400' : 'bg-rose-400')}"></span>
+                                        <span class="w-2 h-2 rounded-full ${item.type === 'Late' ? 'bg-amber-400' : (item.type === 'Sandwich' ? 'bg-purple-400' : (item.type === 'Approved Leave' ? 'bg-cyan-400' : 'bg-rose-400'))}"></span>
                                         <span class="font-bold text-white uppercase">${item.type}: <span class="text-slate-400 font-semibold">${item.date}</span></span>
                                         <span class="text-[10px] text-slate-500 font-medium">${item.reason}</span>
                                     </div>
-                                    <span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${item.penalty.includes('Grace') ? 'bg-white/5 text-slate-400' : 'bg-rose-500/15 text-rose-300 border border-rose-500/20'}">
+                                    <span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${item.penalty.includes('0 Cut') ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20' : 'bg-rose-500/15 text-rose-300 border border-rose-500/20'}">
                                         ${item.penalty}
                                     </span>
                                 </div>
